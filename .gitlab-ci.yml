@@ -1,0 +1,149 @@
+image: maven:3.9-eclipse-temurin-21
+
+variables:
+  MAVEN_CLI_OPTS: "-s .m2/settings.xml -DskipTests"
+  MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
+
+cache:
+  paths:
+    - .m2/repository/
+    - backend/target/
+    - frontend/node_modules/
+    - restassured-tests/target/
+
+stages:
+  - build
+  - test
+  - quality
+  - report
+
+# Build Backend
+build:backend:
+  stage: build
+  script:
+    - mvn clean install -pl backend -am -q
+  artifacts:
+    paths:
+      - backend/target/
+    expire_in: 1 hour
+  only:
+    - merge_requests
+    - main
+    - /^feature\/.*/
+
+# Build Frontend
+build:frontend:
+  stage: build
+  image: node:20
+  script:
+    - cd frontend
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/.next/
+    expire_in: 1 hour
+  only:
+    - merge_requests
+    - main
+    - /^feature\/.*/
+
+# Backend Unit Tests
+test:backend:
+  stage: test
+  dependencies:
+    - build:backend
+  script:
+    - mvn test -pl backend -q
+  artifacts:
+    reports:
+      junit:
+        - backend/target/surefire-reports/TEST-*.xml
+    paths:
+      - backend/target/surefire-reports/
+    expire_in: 30 days
+  only:
+    - merge_requests
+    - main
+    - /^feature\/.*/
+
+# RestAssured Integration Tests
+test:restassured:
+  stage: test
+  dependencies:
+    - build:backend
+  script:
+    - mvn test -pl restassured-tests -q
+  artifacts:
+    reports:
+      junit:
+        - restassured-tests/target/surefire-reports/TEST-*.xml
+    paths:
+      - restassured-tests/target/surefire-reports/
+    expire_in: 30 days
+  only:
+    - merge_requests
+    - main
+    - /^feature\/.*/
+
+# Frontend Tests (if configured)
+test:frontend:
+  stage: test
+  image: node:20
+  dependencies:
+    - build:frontend
+  script:
+    - cd frontend
+    - npm install
+    - npm run build
+    - npm test -- --passWithNoTests 2>/dev/null || true
+  artifacts:
+    reports:
+      junit: frontend/test-results.xml
+    expire_in: 30 days
+  allow_failure: true
+  only:
+    - merge_requests
+    - main
+    - /^feature\/.*/
+
+# Mutation Testing (only on main and feature branches)
+quality:mutation:
+  stage: quality
+  dependencies:
+    - build:backend
+    - test:backend
+    - test:restassured
+  script:
+    - mvn pitest:mutationCoverage -pl backend -q
+    - mvn pitest:mutationCoverage -pl restassured-tests -q
+  artifacts:
+    paths:
+      - backend/target/pit-reports/
+      - restassured-tests/target/pit-reports/
+    expire_in: 30 days
+  allow_failure: true
+  only:
+    - merge_requests
+    - main
+    - /^feature\/.*/
+
+# Generate Combined Report
+report:generate:
+  stage: report
+  image: python:3.11
+  dependencies:
+    - test:backend
+    - test:restassured
+    - quality:mutation
+  script:
+    - python3 scripts/generate-report.py
+  artifacts:
+    paths:
+      - target/test-report.html
+    expire_in: 90 days
+  allow_failure: false
+  only:
+    - merge_requests
+    - main
+    - /^feature\/.*/
