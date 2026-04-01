@@ -1,0 +1,17 @@
+# Build output
+target/
+build/
+.next/
+out/
+
+# Dependencies
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+
+# Misc
+*.class
+*.jar
+*.log
