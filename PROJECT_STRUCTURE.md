@@ -81,9 +81,11 @@
 - `CorsIT.java` - CORS tests
 - `SecurityConfigIT.java` - Security tests
 - `controller/AuthControllerIntegrationTest.java` - Extended auth tests
+- `RegistrationIT.java` - Integration tests for registration endpoint
 
 ### Test Builders
 - `builder/LoginRequestBuilder.java` - Builder for LoginRequest
+- `builder/RegisterRequestBuilder.java` - Builder for RegisterRequest
 
 ### Testing
 - Uses `@SpringBootTest(webEnvironment = RANDOM_PORT)`
