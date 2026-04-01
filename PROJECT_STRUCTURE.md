@@ -11,7 +11,7 @@
 **Location:** `backend/src/main/java/techchamps/io/`
 
 ### Controllers
-- `AuthController.java` - Login endpoint (`POST /api/auth/login`)
+- `AuthController.java` - Login (`POST /api/auth/login`) and Register (`POST /api/auth/register`) endpoints
 - *(Add new controllers here)*
 
 ### Services
@@ -19,14 +19,16 @@
 
 ### DTOs
 - **Request:**
-  - `dto/request/LoginRequest.java` - email, password
+  - `dto/request/LoginRequest.java` - username, password
+  - `dto/request/RegisterRequest.java` - email, username, password (with Bean Validation)
   - *(Add new request DTOs here)*
 - **Response:**
-  - `dto/response/LoginResponse.java` - token, user info
+  - `dto/response/LoginResponse.java` - success, message
+  - `dto/response/RegisterResponse.java` - id, email, username, success, message
   - *(Add new response DTOs here)*
 
 ### Models (JPA Entities)
-- `model/AppUser.java` - User entity with id, email, username, password, roles, timestamps
+- `model/AppUser.java` - User entity with id, email (unique), username (unique), password, role
 
 ### Repositories
 - `repository/AppUserRepository.java` - JPA repository for AppUser
