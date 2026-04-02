@@ -30,6 +30,8 @@ export default function LoginForm() {
         if (data.username) {
           localStorage.setItem("username", data.username);
         }
+        // Store password for HTTP Basic auth in subsequent requests
+        localStorage.setItem("password", password);
         router.push("/dashboard");
       } else if (response.status === 401) {
         setError("Ongeldige gebruikersnaam of wachtwoord");
