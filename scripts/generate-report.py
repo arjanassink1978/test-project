@@ -295,7 +295,7 @@ def generate_html_report(tests, mutations):
             <div class="metric-card">
                 <h3>Mutations Killed</h3>
                 <div class="metric-value">{total_killed}/{total_mutations}</div>
-                <span class="badge pass">{round(total_killed/total_mutations*100, 1)}% Coverage</span>
+                <span class="badge pass">{round(total_killed/total_mutations*100, 1) if total_mutations > 0 else 0}% Coverage</span>
             </div>
         </div>
 
