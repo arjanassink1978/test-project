@@ -5,7 +5,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="w-full bg-white shadow-sm ring-1 ring-gray-900/5">
-        <div className="mx-auto flex max-w-5xl items-center justify-end gap-3 px-6 py-3">
+        <div className="mx-auto flex max-w-5xl items-center justify-start gap-3 px-6 py-3">
           <ProfileLink />
           <LogoutButton />
         </div>
