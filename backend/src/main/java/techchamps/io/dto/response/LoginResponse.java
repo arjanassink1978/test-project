@@ -1,5 +1,6 @@
 package techchamps.io.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Login response payload")
@@ -11,6 +12,7 @@ public class LoginResponse {
     @Schema(description = "Human-readable result message", example = "Login successful")
     private String message;
 
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     @Schema(description = "Username of the authenticated user (null when login fails)", example = "user", nullable = true)
     private String username;
 
