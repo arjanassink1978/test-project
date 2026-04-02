@@ -30,36 +30,21 @@ Multi-module Maven project with a Spring Boot backend, Next.js frontend, and sep
 **Problem:** Frontend and backend must stay in sync. A "green build" (passing tests) doesn't mean the app works.
 
 **Rule: Feature-analysis agent MUST identify and document all cross-layer constraints BEFORE implementation:**
+- File size limits (e.g., avatar max 5MB)
+- String length constraints (e.g., username max 20 chars)
+- Enum values (e.g., roles: [ADMIN, USER])
+- Rate limits, pagination size, timeouts
+- Authentication/authorization rules
 
-1. **What triggers this rule:**
-   - File size limits (e.g., avatar max 5MB)
-   - String length constraints (e.g., username max 20 chars)
-   - Enum values (e.g., roles: [ADMIN, USER])
-   - Rate limits, pagination size, timeouts
-   - Authentication/authorization rules
+**Feature-analysis creates a "CONSTRAINT" section in the issue:**
+```
+## Cross-Layer Constraints
+- Avatar file: max 5MB (frontend AND backend)
+- Locations: field must exist in backend, displayed on frontend
+- Auth: token expires in 1 hour (backend sends, frontend must refresh)
+```
 
-2. **Feature-analysis must create a "CONSTRAINT" section in the issue/PR:**
-   ```
-   ## Cross-Layer Constraints
-   - Avatar file: max 5MB (frontend AND backend)
-   - Locations: field must exist in backend, displayed on frontend
-   - Auth: token expires in 1 hour (backend sends, frontend must refresh)
-   ```
-
-3. **Backend agent checklist:**
-   - [ ] Read the constraints section in the issue
-   - [ ] Implement server-side validation + tests that VERIFY the constraint
-   - [ ] Add comment in code: `// CONSTRAINT: max 5MB — must match frontend validation`
-
-4. **Frontend agent checklist:**
-   - [ ] Read the constraints section in the issue
-   - [ ] Implement client-side validation matching the backend constraint
-   - [ ] Add comment in code: `// CONSTRAINT: max 5MB (5 * 1024 * 1024 bytes) — must match backend`
-
-5. **Test agent checklist (RestAssured):**
-   - [ ] Write **boundary tests** that verify constraints
-   - [ ] Example: `@Test uploadFile_oversized_returns413()` — test that files > limit fail
-   - [ ] Don't just test happy path; test the limit itself
+Backend and frontend agents read constraints from issue and implement them. See their agent prompts for details.
 
 ### Standard Agent Steps
 1. **Feature-analysis:** Read PROJECT_STRUCTURE.md for codebase overview
