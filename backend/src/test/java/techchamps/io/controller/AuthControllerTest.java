@@ -1,26 +1,50 @@
 package techchamps.io.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import techchamps.io.config.CorsConfig;
+import techchamps.io.config.SecurityConfig;
 import techchamps.io.dto.request.LoginRequest;
+import techchamps.io.dto.request.RegisterRequest;
+import techchamps.io.model.AppUser;
+import techchamps.io.repository.AppUserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Collections;
+
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
+@Import({SecurityConfig.class, CorsConfig.class, AuthControllerTest.TestSecurityConfig.class})
 class AuthControllerTest {
+
+    /** Provides a no-op UserDetailsService so SecurityConfig wires up without the real DB service. */
+    @TestConfiguration
+    static class TestSecurityConfig {
+        @Bean
+        UserDetailsService userDetailsService() {
+            return username -> {
+                throw new UsernameNotFoundException("No users in test context");
+            };
+        }
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -31,11 +55,18 @@ class AuthControllerTest {
     @MockBean
     private AuthenticationManager authenticationManager;
 
+    @MockBean
+    private AppUserRepository appUserRepository;
+
+    @MockBean
+    private PasswordEncoder passwordEncoder;
+
     // --- happy path: valid credentials ---
 
     @Test
     void login_withValidCredentials_returns200AndSuccess() throws Exception {
-        Authentication auth = mock(Authentication.class);
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken("user", null, Collections.emptyList());
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(auth);
 
@@ -101,7 +132,8 @@ class AuthControllerTest {
 
     @Test
     void login_withValidCredentials_returnsJsonContentType() throws Exception {
-        Authentication auth = mock(Authentication.class);
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken("user", null, Collections.emptyList());
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(auth);
 
@@ -112,5 +144,97 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
+    }
+
+    // --- register: happy path ---
+
+    @Test
+    void register_withValidRequest_returns200AndSuccess() throws Exception {
+        when(appUserRepository.existsByEmail(anyString())).thenReturn(false);
+        when(appUserRepository.existsByUsername(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("hashedPassword");
+
+        AppUser savedUser = new AppUser("new@example.com", "newuser", "hashedPassword", "USER");
+        when(appUserRepository.save(any(AppUser.class))).thenReturn(savedUser);
+
+        RegisterRequest request = new RegisterRequest("new@example.com", "newuser", "password123");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Registration successful"))
+                .andExpect(jsonPath("$.email").value("new@example.com"))
+                .andExpect(jsonPath("$.username").value("newuser"));
+    }
+
+    // --- register: duplicate email ---
+
+    @Test
+    void register_withDuplicateEmail_returns409() throws Exception {
+        when(appUserRepository.existsByEmail("taken@example.com")).thenReturn(true);
+
+        RegisterRequest request = new RegisterRequest("taken@example.com", "newuser", "password123");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Email address is already in use"));
+    }
+
+    // --- register: duplicate username ---
+
+    @Test
+    void register_withDuplicateUsername_returns409() throws Exception {
+        when(appUserRepository.existsByEmail(anyString())).thenReturn(false);
+        when(appUserRepository.existsByUsername("takenuser")).thenReturn(true);
+
+        RegisterRequest request = new RegisterRequest("new@example.com", "takenuser", "password123");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Username is already in use"));
+    }
+
+    // --- register: invalid email format ---
+
+    @Test
+    void register_withInvalidEmail_returns400() throws Exception {
+        RegisterRequest request = new RegisterRequest("not-an-email", "newuser", "password123");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // --- register: password too short ---
+
+    @Test
+    void register_withShortPassword_returns400() throws Exception {
+        RegisterRequest request = new RegisterRequest("new@example.com", "newuser", "short");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // --- register: blank username ---
+
+    @Test
+    void register_withBlankUsername_returns400() throws Exception {
+        RegisterRequest request = new RegisterRequest("new@example.com", "", "password123");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 }

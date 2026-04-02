@@ -21,7 +21,7 @@ public class DataInitializer implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         if (userRepository.findByUsername("user").isEmpty()) {
-            userRepository.save(new AppUser("user", passwordEncoder.encode("user1234"), "USER"));
+            userRepository.save(new AppUser("user@example.com", "user", passwordEncoder.encode("user1234"), "USER"));
         }
     }
 }

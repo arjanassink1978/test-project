@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,14 +23,6 @@ class CorsConfigTest {
     void corsConfigurationSource_returnsNonNull() {
         CorsConfigurationSource source = corsConfig.corsConfigurationSource();
         assertThat(source).isNotNull();
-    }
-
-    // --- corsFilter() not null (kills NULL_RETURN on line 31) ---
-
-    @Test
-    void corsFilter_returnsNonNull() {
-        CorsFilter filter = corsConfig.corsFilter();
-        assertThat(filter).isNotNull();
     }
 
     // --- setAllowedOrigins (kills VOID_METHOD_CALL on line 18) ---

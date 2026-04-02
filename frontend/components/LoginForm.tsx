@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -115,6 +116,13 @@ export default function LoginForm() {
           "Inloggen"
         )}
       </button>
+
+      <p className="text-center text-sm text-gray-600">
+        Heeft u nog geen account?{" "}
+        <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+          Registreren
+        </Link>
+      </p>
     </form>
   );
 }
