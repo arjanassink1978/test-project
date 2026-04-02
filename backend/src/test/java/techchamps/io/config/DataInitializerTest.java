@@ -86,6 +86,24 @@ class DataInitializerTest {
         assertThat(captor.getValue().getRole()).isEqualTo("USER");
     }
 
+    // --- happy path: saved user has correct profile fields ---
+
+    @Test
+    void run_whenUserDoesNotExist_savesUserWithProfileFields() throws Exception {
+        when(userRepository.findByUsername("user")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("user1234")).thenReturn("encodedPassword");
+
+        dataInitializer.run(applicationArguments);
+
+        ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
+        verify(userRepository).save(captor.capture());
+        AppUser saved = captor.getValue();
+        assertThat(saved.getDisplayName()).isEqualTo("Demo User");
+        assertThat(saved.getBio()).isEqualTo("Software developer and coffee enthusiast");
+        assertThat(saved.getLocation()).isEqualTo("Amsterdam, Netherlands");
+        assertThat(saved.getAvatarUrl()).isEqualTo("https://api.dicebear.com/7.x/avataaars/svg?seed=user");
+    }
+
     // --- edge case: user already exists, no save should happen ---
 
     @Test

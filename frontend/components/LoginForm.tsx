@@ -24,6 +24,7 @@ export default function LoginForm() {
       });
 
       if (response.ok) {
+        localStorage.setItem("username", username);
         router.push("/dashboard");
       } else if (response.status === 401) {
         setError("Ongeldige gebruikersnaam of wachtwoord");

@@ -64,6 +64,7 @@
                 <configuration>
                     <targetClasses>
                         <param>techchamps.io.controller.*</param>
+                        <param>techchamps.io.service.*</param>
                         <param>techchamps.io.dto.*</param>
                         <param>techchamps.io.model.*</param>
                         <param>techchamps.io.security.*</param>

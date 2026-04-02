@@ -1,6 +1,6 @@
 # Project Structure Index
 
-**Last Updated:** 2026-04-01
+**Last Updated:** 2026-04-02
 **Important:** When agents add new files/components, they MUST update this file.
 
 ---
@@ -12,23 +12,30 @@
 
 ### Controllers
 - `AuthController.java` - Login (`POST /api/auth/login`) and Register (`POST /api/auth/register`) endpoints
-- *(Add new controllers here)*
+- `ProfileController.java` - User profile management:
+  - `GET /api/profile/{username}` - Get profile (200 / 404)
+  - `PUT /api/profile/{username}` - Update profile fields (200 / 404)
+  - `POST /api/profile/{username}/avatar` - Upload avatar as multipart file (200 / 404)
+  - `DELETE /api/profile/{username}/avatar` - Remove avatar (200 / 404)
 
 ### Services
-- *(No services yet, add here as needed)*
+- `service/ProfileService.java` - Business logic for profile CRUD and avatar upload/delete
 
 ### DTOs
 - **Request:**
   - `dto/request/LoginRequest.java` - username, password
   - `dto/request/RegisterRequest.java` - email, username, password (with Bean Validation)
+  - `dto/request/UpdateProfileRequest.java` - displayName, bio, location (optional, with @Size validation)
   - *(Add new request DTOs here)*
 - **Response:**
   - `dto/response/LoginResponse.java` - success, message
   - `dto/response/RegisterResponse.java` - id, email, username, success, message
+  - `dto/response/ProfileResponse.java` - id, email, username, displayName, bio, location, avatarUrl
+  - `dto/response/AvatarUploadResponse.java` - avatarUrl, message
   - *(Add new response DTOs here)*
 
 ### Models (JPA Entities)
-- `model/AppUser.java` - User entity with id, email (unique), username (unique), password, role
+- `model/AppUser.java` - User entity with id, email (unique), username (unique), password, role, displayName, bio, location, avatarUrl
 
 ### Repositories
 - `repository/AppUserRepository.java` - JPA repository for AppUser
@@ -44,6 +51,13 @@
 
 ### Testing
 - `src/test/java/techchamps/io/` - Unit tests
+  - `controller/AuthControllerTest.java` - Auth controller tests
+  - `controller/ProfileControllerTest.java` - Profile controller tests (12 tests)
+  - `service/ProfileServiceTest.java` - Profile service tests (10 tests)
+  - `config/DataInitializerTest.java` - Data initializer tests
+  - `config/CorsConfigTest.java` - CORS config tests
+  - `security/DatabaseUserDetailsServiceTest.java` - User details service tests
+  - `model/AppUserTest.java` - AppUser model tests
 
 ---
 
@@ -95,14 +109,22 @@
 
 ---
 
-## E2E Tests (Playwright - Optional)
+## E2E Tests (Playwright)
 
-**Location:** `playwright-tests/` (if created)
+**Location:** `playwright-tests/`
+**Config:** `playwright-tests/playwright.config.ts` — baseURL: http://localhost:3000, headless Chromium
+**Run:** `cd playwright-tests && npm test`
 
 ### Test Files
-- `tests/e2e/` - End-to-end test files
-- `tests/e2e/pages/` - Page Object Model classes
-- `tests/e2e/fixtures/` - Shared fixtures
+- `tests/e2e/profile.spec.ts` - Issue #4: User Profile Page Flow (19 tests)
+
+### Page Objects (`tests/e2e/pages/`)
+- `LoginPage.ts` - Login form navigation, credential entry, error message accessor
+- `DashboardPage.ts` - Dashboard heading, profile link, logout button
+- `ProfilePage.ts` - Profile display fields, edit form inputs, alert banner, avatar upload, logout
+
+### Fixtures (`tests/e2e/fixtures/`)
+- `auth.ts` - `loginAsDefaultUser(page)` helper, `DEFAULT_USER` constant
 
 ---
 

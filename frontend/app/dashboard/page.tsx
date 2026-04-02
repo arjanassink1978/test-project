@@ -1,4 +1,5 @@
 import LogoutButton from "@/components/LogoutButton";
+import ProfileLink from "@/components/ProfileLink";
 
 export default function DashboardPage() {
   return (
@@ -30,7 +31,10 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <LogoutButton />
+        <div className="space-y-3 w-full">
+          <ProfileLink />
+          <LogoutButton />
+        </div>
       </div>
     </main>
   );
