@@ -27,7 +27,11 @@ export class LoginPage {
     await this.submit();
   }
 
-  async getErrorMessage() {
-    return this.page.locator('[role="alert"]');
+  getErrorMessage() {
+    // Exclude the Next.js route announcer which also uses role="alert"
+    return this.page
+      .locator('[role="alert"]')
+      .filter({ hasNot: this.page.locator('[id="__next-route-announcer__"]') })
+      .first();
   }
 }

@@ -78,19 +78,23 @@ export class ProfilePage {
 
   // -------------------------------------------------------------------------
   // Alert / feedback banner  (role="alert" — used for both success and error)
+  // Next.js also renders a route announcer with role="alert" (id="__next-route-announcer__")
+  // so we filter that out explicitly.
   // -------------------------------------------------------------------------
 
   getAlertBanner(): Locator {
-    return this.page.locator('[role="alert"]');
+    return this.page
+      .locator('[role="alert"]')
+      .filter({ hasNot: this.page.locator('[id="__next-route-announcer__"]') })
+      .first();
   }
 
   getSuccessAlert(): Locator {
-    // Success alerts have the green colour class
-    return this.page.locator('[role="alert"].text-green-700, [role="alert"].bg-green-50').or(
-      this.page
-        .locator('[role="alert"]')
-        .filter({ hasText: /succesvol|opgeslagen|geupload/i })
-    );
+    return this.page
+      .locator('[role="alert"]')
+      .filter({ hasNot: this.page.locator('[id="__next-route-announcer__"]') })
+      .filter({ hasText: /succesvol|opgeslagen|geupload/i })
+      .first();
   }
 
   // -------------------------------------------------------------------------
