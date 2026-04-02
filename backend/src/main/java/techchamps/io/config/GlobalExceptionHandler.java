@@ -1,6 +1,7 @@
 package techchamps.io.config;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -21,5 +22,11 @@ public class GlobalExceptionHandler {
             errors.put(error.getField(), error.getDefaultMessage())
         );
         return ResponseEntity.badRequest().body(errors);
+    }
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, String>> handleResponseStatusException(ResponseStatusException ex) {
+        Map<String, String> body = new HashMap<>();
+        body.put("message", ex.getReason() != null ? ex.getReason() : ex.getMessage());
+        return ResponseEntity.status(ex.getStatusCode()).body(body);
     }
 }

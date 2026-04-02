@@ -1,5 +1,6 @@
 package techchamps.io.config;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -43,10 +44,11 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/profile/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/forum/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
             )
-            .httpBasic(AbstractHttpConfigurer::disable)
+            .httpBasic(org.springframework.security.config.Customizer.withDefaults())
             .formLogin(AbstractHttpConfigurer::disable);
 
         return http.build();
