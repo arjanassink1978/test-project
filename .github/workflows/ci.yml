@@ -73,7 +73,7 @@ jobs:
           path: backend/target/
 
       - name: Run backend tests
-        run: mvn test -pl backend -q
+        run: mvn clean test -pl backend -q
 
       - name: Upload test results
         if: always()
@@ -103,7 +103,7 @@ jobs:
           path: backend/target/
 
       - name: Run RestAssured tests
-        run: mvn test -pl restassured-tests -q
+        run: mvn clean test -pl restassured-tests -q
 
       - name: Upload test results
         if: always()
@@ -161,10 +161,10 @@ jobs:
           path: backend/target/
 
       - name: Run backend mutation tests
-        run: mvn pitest:mutationCoverage -pl backend -q
+        run: mvn clean pitest:mutationCoverage -pl backend -q
 
       - name: Run RestAssured mutation tests
-        run: mvn pitest:mutationCoverage -pl restassured-tests -q
+        run: mvn clean pitest:mutationCoverage -pl restassured-tests -q
 
       - name: Upload mutation results
         uses: actions/upload-artifact@v4
