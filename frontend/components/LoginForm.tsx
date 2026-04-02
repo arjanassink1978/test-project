@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { alert, input, button, typography, link } from "@/lib/theme";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -24,7 +25,11 @@ export default function LoginForm() {
       });
 
       if (response.ok) {
-        localStorage.setItem("username", username);
+        const data = await response.json();
+        // Store the username from the response (server-confirmed)
+        if (data.username) {
+          localStorage.setItem("username", data.username);
+        }
         router.push("/dashboard");
       } else if (response.status === 401) {
         setError("Ongeldige gebruikersnaam of wachtwoord");
@@ -39,18 +44,19 @@ export default function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-5" noValidate data-testid="login-form">
       {error && (
         <div
           role="alert"
-          className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"
+          data-testid="login-error"
+          className={alert.error}
         >
           {error}
         </div>
       )}
 
       <div>
-        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="username" className={typography.label}>
           Gebruikersnaam
         </label>
         <input
@@ -61,13 +67,14 @@ export default function LoginForm() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           disabled={loading}
-          className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm"
+          data-testid="username-input"
+          className={input.base}
           placeholder="Voer uw gebruikersnaam in"
         />
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="password" className={typography.label}>
           Wachtwoord
         </label>
         <input
@@ -78,7 +85,8 @@ export default function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={loading}
-          className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm"
+          data-testid="password-input"
+          className={input.base}
           placeholder="Voer uw wachtwoord in"
         />
       </div>
@@ -86,12 +94,13 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        data-testid="login-button"
+        className={button.primary}
       >
         {loading ? (
           <>
             <svg
-              className="mr-2 h-4 w-4 animate-spin"
+              className={button.spinner}
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -118,9 +127,9 @@ export default function LoginForm() {
         )}
       </button>
 
-      <p className="text-center text-sm text-gray-600">
+      <p className={`text-center ${typography.bodyText}`}>
         Heeft u nog geen account?{" "}
-        <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+        <Link href="/register" className={link.primary} data-testid="register-link">
           Registreren
         </Link>
       </p>

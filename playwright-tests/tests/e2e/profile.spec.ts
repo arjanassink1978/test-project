@@ -8,18 +8,19 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
 
 // ---------------------------------------------------------------------------
-// Constants
+// Constants – reflect the real seeded user from DataInitializer
 // ---------------------------------------------------------------------------
 
-const MOCK_PROFILE = {
-  id: 1,
+const SEEDED_PROFILE = {
   username: "user",
   email: "user@example.com",
-  displayName: "Test User",
-  bio: "Hello World",
-  location: "Amsterdam",
-  avatarUrl: null as string | null,
+  displayName: "Demo User",
+  bio: "Software developer and coffee enthusiast",
+  location: "Amsterdam, Netherlands",
 };
+
+// Backend base URL used for direct API calls in setup/teardown helpers
+const API_BASE = "http://localhost:8080";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -39,56 +40,59 @@ function createTestImage(): string {
 }
 
 /**
- * Mocks GET /api/profile/<username> to return the given profile data.
- * Must be called before navigating to the profile page.
+ * Resets the seeded user's profile fields to the initial seeded values via
+ * a direct API call. Call this in beforeEach for tests that mutate profile data.
  */
-async function mockGetProfile(page: Page, profile: typeof MOCK_PROFILE) {
-  await page.route(`**/api/profile/${profile.username}`, async (route, request) => {
-    if (request.method() === "GET") {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(profile),
-      });
-    } else {
-      await route.continue();
-    }
+async function resetProfile(): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/profile/${DEFAULT_USER.username}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      displayName: SEEDED_PROFILE.displayName,
+      bio: SEEDED_PROFILE.bio,
+      location: SEEDED_PROFILE.location,
+    }),
   });
+
+  if (!response.ok) {
+    throw new Error(`resetProfile failed: ${response.status}`);
+  }
 }
 
 /**
- * Mocks PUT /api/profile/<username> to echo back the updated profile.
+ * Restores the seeded avatar via a direct API call, so avatar-related tests
+ * always start from a known state (avatar present).
  */
-async function mockUpdateProfile(page: Page, username: string) {
-  await page.route(`**/api/profile/${username}`, async (route, request) => {
-    if (request.method() === "PUT") {
-      const body = JSON.parse(request.postData() ?? "{}") as Partial<typeof MOCK_PROFILE>;
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ ...MOCK_PROFILE, ...body }),
-      });
-    } else {
-      await route.continue();
-    }
+async function restoreAvatar(): Promise<void> {
+  // Re-seed the avatar by uploading a tiny PNG via the real API
+  const PNG_1X1 = Buffer.from(
+    "89504e470d0a1a0a0000000d49484452000000010000000108020000009001" +
+      "2e00000000c49444154789c6260f8cfc00000000200019e21bc330000000049454e44ae426082",
+    "hex"
+  );
+  const formData = new FormData();
+  formData.append("file", new Blob([PNG_1X1], { type: "image/png" }), "avatar.png");
+  const response = await fetch(`${API_BASE}/api/profile/${DEFAULT_USER.username}/avatar`, {
+    method: "POST",
+    body: formData,
   });
+
+  if (!response.ok) {
+    throw new Error(`restoreAvatar failed: ${response.status}`);
+  }
 }
 
 /**
- * Mocks POST /api/profile/<username>/avatar to return a success response.
+ * Deletes the avatar via a direct API call (resets to no-avatar state).
  */
-async function mockUploadAvatar(page: Page, username: string) {
-  await page.route(`**/api/profile/${username}/avatar`, async (route, request) => {
-    if (request.method() === "POST") {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ success: true, message: "Avatar succesvol geupload." }),
-      });
-    } else {
-      await route.continue();
-    }
+async function deleteAvatarViaApi(): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/profile/${DEFAULT_USER.username}/avatar`, {
+    method: "DELETE",
   });
+
+  if (!response.ok) {
+    throw new Error(`deleteAvatarViaApi failed: ${response.status}`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -113,12 +117,7 @@ test.describe("User Profile Page Flow", () => {
       await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
     });
 
-    // This test will fail until Issue #4 adds a profile link to the dashboard.
-    // test.fail() inside the test body marks it as an expected failure so CI does not block.
     test("dashboard has a Go to Profile link that navigates to /profile/user", async ({ page }) => {
-      // Remove this line once the profile link is added to DashboardPage
-      test.fail(true, "Dashboard profile link not yet implemented (Issue #4)");
-      await mockGetProfile(page, MOCK_PROFILE);
       await loginAsDefaultUser(page);
 
       const dashboardPage = new DashboardPage(page);
@@ -148,11 +147,11 @@ test.describe("User Profile Page Flow", () => {
   });
 
   // -------------------------------------------------------------------------
-  // 2. Profile Display – all fields visible
+  // 2. Profile Display – all fields visible (real API)
   // -------------------------------------------------------------------------
   test.describe("2. Profile display", () => {
     test.beforeEach(async ({ page }) => {
-      await mockGetProfile(page, MOCK_PROFILE);
+      // Navigate directly — no mock needed, real GET /api/profile/user
       await page.goto(`/profile/${DEFAULT_USER.username}`);
       const profilePage = new ProfilePage(page);
       await profilePage.waitForLoad();
@@ -175,7 +174,7 @@ test.describe("User Profile Page Flow", () => {
       const profilePage = new ProfilePage(page);
       const emailEl = profilePage.getEmailDisplay();
       await expect(emailEl).toBeVisible({ timeout: 5000 });
-      await expect(emailEl).toContainText(MOCK_PROFILE.email);
+      await expect(emailEl).toContainText(SEEDED_PROFILE.email);
     });
 
     test("shows edit form with displayName, bio, location inputs and save button", async ({ page }) => {
@@ -186,110 +185,49 @@ test.describe("User Profile Page Flow", () => {
       await expect(profilePage.getSaveButton()).toBeVisible({ timeout: 5000 });
     });
 
-    test("edit form inputs are populated with existing profile data", async ({ page }) => {
+    test("edit form inputs are populated with seeded profile data", async ({ page }) => {
       const profilePage = new ProfilePage(page);
-      await expect(profilePage.getDisplayNameInput()).toHaveValue(MOCK_PROFILE.displayName!);
-      await expect(profilePage.getBioInput()).toHaveValue(MOCK_PROFILE.bio!);
-      await expect(profilePage.getLocationInput()).toHaveValue(MOCK_PROFILE.location!);
+      await expect(profilePage.getDisplayNameInput()).toHaveValue(SEEDED_PROFILE.displayName);
+      await expect(profilePage.getBioInput()).toHaveValue(SEEDED_PROFILE.bio);
+      await expect(profilePage.getLocationInput()).toHaveValue(SEEDED_PROFILE.location);
     });
 
-    test("shows avatar placeholder when no avatar is set", async ({ page }) => {
-      // When avatarUrl is null, a <div> with initials is rendered, not an <img>
+    test("shows avatar <img> because seeded user has an avatarUrl", async ({ page }) => {
+      // The DataInitializer seeds the user with a dicebear avatar URL,
+      // so <img data-testid="avatar-image"> should always be present.
       const profilePage = new ProfilePage(page);
-      // The avatar <img> should NOT be present since avatarUrl is null
-      await expect(profilePage.getAvatarImage()).toHaveCount(0);
-
-      // The placeholder div with the first letter of the username should be visible
-      await expect(
-        page.locator("div").filter({ hasText: /^U$/ }).first()
-      ).toBeVisible({ timeout: 5000 });
-    });
-
-    test("shows avatar <img> when avatarUrl is set", async ({ page }) => {
-      // Override mock with an avatar URL
-      const profileWithAvatar = {
-        ...MOCK_PROFILE,
-        avatarUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-      };
-
-      // Unregister previous route and add a new one
-      await page.unrouteAll();
-      await mockGetProfile(page, profileWithAvatar);
-      await page.goto(`/profile/${DEFAULT_USER.username}`);
-      const profilePage = new ProfilePage(page);
-      await profilePage.waitForLoad();
-
       const avatarImg = profilePage.getAvatarImage();
       await expect(avatarImg).toBeVisible({ timeout: 5000 });
-      await expect(avatarImg).toHaveAttribute("src", profileWithAvatar.avatarUrl);
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // 3. Edit Profile
-  // -------------------------------------------------------------------------
-  test.describe("3. Edit profile", () => {
-    test.beforeEach(async ({ page }) => {
-      await mockGetProfile(page, { ...MOCK_PROFILE, displayName: "", bio: "", location: "" });
-      await mockUpdateProfile(page, DEFAULT_USER.username);
-      await page.goto(`/profile/${DEFAULT_USER.username}`);
-      const profilePage = new ProfilePage(page);
-      await profilePage.waitForLoad();
     });
 
-    test("fills and saves profile fields then shows success alert", async ({ page }) => {
+    test("shows validation maxlength attributes on edit inputs", async ({ page }) => {
       const profilePage = new ProfilePage(page);
-
-      // Fill the edit form
-      await profilePage.fillEditForm("Test User", "Hello World", "Amsterdam");
-
-      // Verify inputs hold the typed values
-      await expect(profilePage.getDisplayNameInput()).toHaveValue("Test User");
-      await expect(profilePage.getBioInput()).toHaveValue("Hello World");
-      await expect(profilePage.getLocationInput()).toHaveValue("Amsterdam");
-
-      // Submit
-      await profilePage.saveProfile();
-
-      // Wait for success alert
-      const alert = profilePage.getAlertBanner();
-      await expect(alert).toBeVisible({ timeout: 10000 });
-      await expect(alert).toContainText(/succesvol|opgeslagen/i);
-    });
-
-    test("shows validation error for display name exceeding 100 characters", async ({ page }) => {
-      const profilePage = new ProfilePage(page);
-      // maxLength attribute on the input prevents typing beyond 100 chars in a browser,
-      // but we can verify the Save button is available and the input respects max length.
-      const input = profilePage.getDisplayNameInput();
-      await expect(input).toHaveAttribute("maxlength", "100");
-    });
-
-    test("shows validation error for bio exceeding 500 characters", async ({ page }) => {
-      const profilePage = new ProfilePage(page);
+      await expect(profilePage.getDisplayNameInput()).toHaveAttribute("maxlength", "100");
       await expect(profilePage.getBioInput()).toHaveAttribute("maxlength", "500");
     });
   });
 
   // -------------------------------------------------------------------------
-  // 4. Avatar Upload
+  // 2b. Profile display with no avatar (error scenario / edge case)
   // -------------------------------------------------------------------------
-  test.describe("4. Avatar upload", () => {
-    test.beforeEach(async ({ page }) => {
-      await mockGetProfile(page, MOCK_PROFILE);
-      // Mock GET again after avatar upload (component re-fetches profile)
-      const profileWithAvatar = {
-        ...MOCK_PROFILE,
-        avatarUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-      };
-      await mockUploadAvatar(page, DEFAULT_USER.username);
-      // After upload the component calls getProfile again — route it to return avatar
+  test.describe("2b. Profile display – no avatar state", () => {
+    test("shows avatar placeholder when no avatar is set", async ({ page }) => {
+      // Mock GET so the frontend receives a profile with no avatarUrl.
+      // This is an edge-case path (not the seeded default) — mocking is appropriate.
       await page.route(`**/api/profile/${DEFAULT_USER.username}`, async (route, request) => {
         if (request.method() === "GET") {
           await route.fulfill({
             status: 200,
             contentType: "application/json",
-            body: JSON.stringify(profileWithAvatar),
+            body: JSON.stringify({
+              id: 1,
+              username: DEFAULT_USER.username,
+              email: SEEDED_PROFILE.email,
+              displayName: SEEDED_PROFILE.displayName,
+              bio: SEEDED_PROFILE.bio,
+              location: SEEDED_PROFILE.location,
+              avatarUrl: null,
+            }),
           });
         } else {
           await route.continue();
@@ -299,20 +237,118 @@ test.describe("User Profile Page Flow", () => {
       await page.goto(`/profile/${DEFAULT_USER.username}`);
       const profilePage = new ProfilePage(page);
       await profilePage.waitForLoad();
+
+      // The avatar <img> should NOT be present since avatarUrl is null
+      await expect(profilePage.getAvatarImage()).toHaveCount(0);
+
+      // The placeholder div with the first letter of the username should be visible
+      await expect(
+        page.locator("div").filter({ hasText: /^U$/ }).first()
+      ).toBeVisible({ timeout: 5000 });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 3. Edit Profile (real API)
+  // -------------------------------------------------------------------------
+  test.describe("3. Edit profile", () => {
+    test.beforeEach(async () => {
+      // Reset the profile to known seeded values before each edit test
+      await resetProfile();
+    });
+
+    test.afterEach(async () => {
+      // Restore seeded values after each edit so other suites see a clean state
+      await resetProfile();
+    });
+
+    test("fills and saves profile fields then shows success alert", async ({ page }) => {
+      await page.goto(`/profile/${DEFAULT_USER.username}`);
+      const profilePage = new ProfilePage(page);
+      await profilePage.waitForLoad();
+
+      // Fill new values over the seeded ones
+      await profilePage.fillEditForm("Test User", "Hello World", "Amsterdam");
+
+      await expect(profilePage.getDisplayNameInput()).toHaveValue("Test User");
+      await expect(profilePage.getBioInput()).toHaveValue("Hello World");
+      await expect(profilePage.getLocationInput()).toHaveValue("Amsterdam");
+
+      // Submit to real PUT /api/profile/user
+      await profilePage.saveProfile();
+
+      // Wait for success alert from backend
+      const alert = profilePage.getAlertBanner();
+      await expect(alert).toBeVisible({ timeout: 10000 });
+      await expect(alert).toContainText(/succesvol|opgeslagen/i);
+    });
+
+    test("persists updated values — re-loading the page shows the saved data", async ({ page }) => {
+      await page.goto(`/profile/${DEFAULT_USER.username}`);
+      const profilePage = new ProfilePage(page);
+      await profilePage.waitForLoad();
+
+      await profilePage.fillEditForm("Saved Name", "Saved bio", "Rotterdam");
+      await profilePage.saveProfile();
+
+      const alert = profilePage.getAlertBanner();
+      await expect(alert).toBeVisible({ timeout: 10000 });
+
+      // Reload and confirm the backend persisted the change
+      await page.reload();
+      await profilePage.waitForLoad();
+
+      await expect(profilePage.getDisplayNameInput()).toHaveValue("Saved Name");
+      await expect(profilePage.getBioInput()).toHaveValue("Saved bio");
+      await expect(profilePage.getLocationInput()).toHaveValue("Rotterdam");
+    });
+
+    test("shows validation error for display name exceeding 100 characters", async ({ page }) => {
+      await page.goto(`/profile/${DEFAULT_USER.username}`);
+      const profilePage = new ProfilePage(page);
+      await profilePage.waitForLoad();
+
+      const input = profilePage.getDisplayNameInput();
+      await expect(input).toHaveAttribute("maxlength", "100");
+    });
+
+    test("shows validation error for bio exceeding 500 characters", async ({ page }) => {
+      await page.goto(`/profile/${DEFAULT_USER.username}`);
+      const profilePage = new ProfilePage(page);
+      await profilePage.waitForLoad();
+
+      await expect(profilePage.getBioInput()).toHaveAttribute("maxlength", "500");
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 4. Avatar Upload (real API — catches field name mismatches)
+  // -------------------------------------------------------------------------
+  test.describe("4. Avatar upload", () => {
+    test.afterEach(async () => {
+      // Restore the avatar after each test so display tests always see an avatar
+      await restoreAvatar();
     });
 
     test("avatar file input exists and accepts image files", async ({ page }) => {
+      await page.goto(`/profile/${DEFAULT_USER.username}`);
       const profilePage = new ProfilePage(page);
+      await profilePage.waitForLoad();
+
       const fileInput = profilePage.getAvatarFileInput();
       await expect(fileInput).toBeAttached({ timeout: 5000 });
       await expect(fileInput).toHaveAttribute("accept", /image\//);
     });
 
     test("uploading a valid image shows success alert and updates avatar preview", async ({ page }) => {
+      await page.goto(`/profile/${DEFAULT_USER.username}`);
       const profilePage = new ProfilePage(page);
+      await profilePage.waitForLoad();
+
       const tmpImage = createTestImage();
 
       try {
+        // Real POST /api/profile/user/avatar — will fail if field name is wrong
         await profilePage.uploadAvatar(tmpImage);
 
         // Success alert should appear
@@ -320,7 +356,7 @@ test.describe("User Profile Page Flow", () => {
         await expect(alert).toBeVisible({ timeout: 10000 });
         await expect(alert).toContainText(/succesvol|geupload/i);
 
-        // Avatar image should now be visible
+        // Avatar image should now be visible (component refreshes profile after upload)
         const avatarImg = profilePage.getAvatarImage();
         await expect(avatarImg).toBeVisible({ timeout: 5000 });
       } finally {
@@ -330,11 +366,48 @@ test.describe("User Profile Page Flow", () => {
   });
 
   // -------------------------------------------------------------------------
-  // 5. Logout from profile page
+  // 4b. Avatar Delete (real API)
+  // -------------------------------------------------------------------------
+  test.describe("4b. Avatar delete", () => {
+    test.beforeEach(async () => {
+      // Ensure avatar exists so delete has something to remove
+      await restoreAvatar();
+    });
+
+    test.afterEach(async () => {
+      // Always restore avatar so display tests see a clean state
+      await restoreAvatar();
+    });
+
+    test("delete avatar button removes the avatar and shows placeholder", async ({ page }) => {
+      await page.goto(`/profile/${DEFAULT_USER.username}`);
+      const profilePage = new ProfilePage(page);
+      await profilePage.waitForLoad();
+
+      // Avatar image should be visible before delete
+      await expect(profilePage.getAvatarImage()).toBeVisible({ timeout: 5000 });
+
+      // Click delete — real DELETE /api/profile/user/avatar
+      const deleteButton = page.getByTestId("delete-avatar-button");
+      await expect(deleteButton).toBeVisible({ timeout: 5000 });
+      await deleteButton.click();
+
+      // Success alert should appear
+      const alert = profilePage.getAlertBanner();
+      await expect(alert).toBeVisible({ timeout: 10000 });
+      await expect(alert).toContainText(/verwijderd|succesvol/i);
+
+      // Avatar image should be gone; placeholder should be shown
+      await expect(profilePage.getAvatarImage()).toHaveCount(0, { timeout: 5000 });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 5. Logout from profile page (real navigation)
   // -------------------------------------------------------------------------
   test.describe("5. Logout from profile page", () => {
     test.beforeEach(async ({ page }) => {
-      await mockGetProfile(page, MOCK_PROFILE);
+      // Navigate directly — real GET /api/profile/user
       await page.goto(`/profile/${DEFAULT_USER.username}`);
       const profilePage = new ProfilePage(page);
       await profilePage.waitForLoad();
@@ -348,7 +421,7 @@ test.describe("User Profile Page Flow", () => {
     test("clicking Logout redirects to the home page", async ({ page }) => {
       const profilePage = new ProfilePage(page);
       await profilePage.clickLogout();
-      // LogoutButton calls router.push("/") — should land on home
+      // LogoutButton calls router.push("/") — should land on home or login
       await expect(page).toHaveURL(/^http:\/\/localhost:3000\/(login)?$/, {
         timeout: 10000,
       });
@@ -356,17 +429,18 @@ test.describe("User Profile Page Flow", () => {
   });
 
   // -------------------------------------------------------------------------
-  // Error scenarios
+  // Error scenarios — mocks kept intentionally for 4xx/5xx paths
   // -------------------------------------------------------------------------
   test.describe("Error scenarios", () => {
     test("shows error alert when profile API returns 404", async ({ page }) => {
+      // Mock a 404 — this is an error path that cannot be tested against a real
+      // seeded user, so mocking is the correct approach here.
       await page.route(`**/api/profile/${DEFAULT_USER.username}`, async (route) => {
         await route.fulfill({ status: 404, body: "" });
       });
 
       await page.goto(`/profile/${DEFAULT_USER.username}`);
 
-      // Should show an error alert — exclude Next.js route announcer
       const profilePage = new ProfilePage(page);
       const alert = profilePage.getAlertBanner();
       await expect(alert).toBeVisible({ timeout: 10000 });
@@ -374,12 +448,40 @@ test.describe("User Profile Page Flow", () => {
     });
 
     test("login shows error alert for invalid credentials", async ({ page }) => {
+      // Real POST /api/auth/login with wrong password — no mock needed
       const loginPage = new LoginPage(page);
       await loginPage.login("user", "wrongpassword");
 
       const error = await loginPage.getErrorMessage();
       await expect(error).toBeVisible({ timeout: 5000 });
       await expect(error).toContainText(/ongeldig|wachtwoord/i);
+    });
+
+    test("shows error alert when profile update API returns 500", async ({ page }) => {
+      await page.goto(`/profile/${DEFAULT_USER.username}`);
+      const profilePage = new ProfilePage(page);
+      await profilePage.waitForLoad();
+
+      // Mock only the PUT to return 500 — simulates a server error on save
+      await page.route(`**/api/profile/${DEFAULT_USER.username}`, async (route, request) => {
+        if (request.method() === "PUT") {
+          await route.fulfill({
+            status: 500,
+            contentType: "application/json",
+            body: JSON.stringify({ message: "Internal Server Error" }),
+          });
+        } else {
+          await route.continue();
+        }
+      });
+
+      await profilePage.fillEditForm("Will Fail", "bio", "city");
+      await profilePage.saveProfile();
+
+      const alert = profilePage.getAlertBanner();
+      await expect(alert).toBeVisible({ timeout: 10000 });
+      // Alert should convey failure, not success
+      await expect(alert).not.toContainText(/succesvol/i);
     });
   });
 });

@@ -40,7 +40,7 @@ export async function uploadAvatar(
   file: File
 ): Promise<ProfileUpdateResponse> {
   const formData = new FormData();
-  formData.append("avatar", file);
+  formData.append("file", file);
 
   const response = await fetch(`${API_BASE}/api/profile/${username}/avatar`, {
     method: "POST",

@@ -3,8 +3,8 @@ import { Page, expect, Locator } from "@playwright/test";
 /**
  * Page Object for /profile/[username].
  *
- * The profile page is rendered by ProfileForm.tsx.  All selectors are based
- * on the actual DOM produced by that component — ids, roles, and text labels.
+ * The profile page is rendered by ProfileForm.tsx.  All selectors use
+ * data-testid as the primary strategy with semantic fallbacks via .or().
  */
 export class ProfilePage {
   constructor(private readonly page: Page) {}
@@ -18,10 +18,10 @@ export class ProfilePage {
     await expect(this.page).toHaveURL(new RegExp(`/profile/${username}`));
   }
 
-  /** Wait until the profile content has fully loaded (spinner gone, h1 visible). */
+  /** Wait until the profile content has fully loaded (spinner gone, heading visible). */
   async waitForLoad() {
     await expect(this.page).toHaveURL(/\/profile\//);
-    await expect(this.page.locator("h1")).toBeVisible({ timeout: 10000 });
+    await expect(this.getHeading()).toBeVisible({ timeout: 10000 });
     // Also confirm the loading spinner is gone
     await expect(
       this.page.getByText("Profiel laden…")
@@ -32,90 +32,168 @@ export class ProfilePage {
   // Page heading
   // -------------------------------------------------------------------------
 
+  /**
+   * Expected data-testid: "profile-heading"
+   * Fallback: h1 element
+   */
   getHeading(): Locator {
-    return this.page.locator("h1");
+    return this.page
+      .getByTestId("profile-heading")
+      .or(this.page.locator("h1"));
   }
 
   // -------------------------------------------------------------------------
-  // Read-only account info (inside <dl> / <dd> pairs)
+  // Read-only account info
   // -------------------------------------------------------------------------
 
-  /** <dd> that follows the "Gebruikersnaam" label */
+  /**
+   * Expected data-testid: "profile-username"
+   * Fallback: <dd> that follows the "Gebruikersnaam" label in a <dl>
+   */
   getUsernameDisplay(): Locator {
     return this.page
-      .locator("dl div")
-      .filter({ has: this.page.locator("dt", { hasText: /gebruikersnaam/i }) })
-      .locator("dd");
+      .getByTestId("profile-username")
+      .or(
+        this.page
+          .locator("dl div")
+          .filter({ has: this.page.locator("dt", { hasText: /gebruikersnaam/i }) })
+          .locator("dd")
+      );
   }
 
-  /** <dd> that follows the "E-mail" label */
+  /**
+   * Expected data-testid: "profile-email"
+   * Fallback: <dd> that follows the "E-mail" label in a <dl>
+   */
   getEmailDisplay(): Locator {
     return this.page
-      .locator("dl div")
-      .filter({ has: this.page.locator("dt", { hasText: /e-mail/i }) })
-      .locator("dd");
+      .getByTestId("profile-email")
+      .or(
+        this.page
+          .locator("dl div")
+          .filter({ has: this.page.locator("dt", { hasText: /e-mail/i }) })
+          .locator("dd")
+      );
   }
 
   // -------------------------------------------------------------------------
   // Edit-form inputs
   // -------------------------------------------------------------------------
 
+  /**
+   * Expected data-testid: "display-name-input"
+   * Fallback: input with id="displayName"
+   */
   getDisplayNameInput(): Locator {
-    return this.page.locator("input#displayName");
+    return this.page
+      .getByTestId("display-name-input")
+      .or(this.page.locator("input#displayName"));
   }
 
+  /**
+   * Expected data-testid: "bio-input"
+   * Fallback: textarea with id="bio"
+   */
   getBioInput(): Locator {
-    return this.page.locator("textarea#bio");
+    return this.page
+      .getByTestId("bio-input")
+      .or(this.page.locator("textarea#bio"));
   }
 
+  /**
+   * Expected data-testid: "location-input"
+   * Fallback: input with id="location"
+   */
   getLocationInput(): Locator {
-    return this.page.locator("input#location");
+    return this.page
+      .getByTestId("location-input")
+      .or(this.page.locator("input#location"));
   }
 
+  /**
+   * Expected data-testid: "save-button"
+   * Fallback: button with save/opslaan text
+   */
   getSaveButton(): Locator {
-    return this.page.getByRole("button", { name: /opslaan/i });
+    return this.page
+      .getByTestId("save-button")
+      .or(this.page.getByRole("button", { name: /opslaan|save/i }));
   }
 
   // -------------------------------------------------------------------------
-  // Alert / feedback banner  (role="alert" — used for both success and error)
+  // Alert / feedback banner
   // Next.js also renders a route announcer with role="alert" (id="__next-route-announcer__")
-  // so we filter that out explicitly.
+  // so we filter that out explicitly in the fallback.
   // -------------------------------------------------------------------------
 
+  /**
+   * Expected data-testid: "profile-alert"
+   * Fallback: role="alert" excluding the Next.js route announcer
+   */
   getAlertBanner(): Locator {
     return this.page
-      .locator('[role="alert"]')
-      .filter({ hasNot: this.page.locator('[id="__next-route-announcer__"]') })
-      .first();
+      .getByTestId("profile-alert")
+      .or(
+        this.page
+          .locator('[role="alert"]')
+          .filter({ hasNot: this.page.locator('[id="__next-route-announcer__"]') })
+          .first()
+      );
   }
 
+  /**
+   * Expected data-testid: "profile-alert" filtered by success text
+   * Fallback: role="alert" with success text, excluding route announcer
+   */
   getSuccessAlert(): Locator {
     return this.page
-      .locator('[role="alert"]')
-      .filter({ hasNot: this.page.locator('[id="__next-route-announcer__"]') })
+      .getByTestId("profile-alert")
       .filter({ hasText: /succesvol|opgeslagen|geupload/i })
-      .first();
+      .or(
+        this.page
+          .locator('[role="alert"]')
+          .filter({ hasNot: this.page.locator('[id="__next-route-announcer__"]') })
+          .filter({ hasText: /succesvol|opgeslagen|geupload/i })
+          .first()
+      );
   }
 
   // -------------------------------------------------------------------------
   // Avatar
   // -------------------------------------------------------------------------
 
+  /**
+   * Expected data-testid: "avatar-image"
+   * Fallback: img element with alt text containing "Avatar"
+   */
   getAvatarImage(): Locator {
-    return this.page.locator(`img[alt*="Avatar"]`);
+    return this.page
+      .getByTestId("avatar-image")
+      .or(this.page.locator(`img[alt*="Avatar"]`));
   }
 
-  /** The file input for avatar upload — hidden via sr-only, so use force */
+  /**
+   * Expected data-testid: "avatar-upload-input"
+   * Fallback: file input with id="avatar-upload" (visually hidden, use force)
+   */
   getAvatarFileInput(): Locator {
-    return this.page.locator("input#avatar-upload");
+    return this.page
+      .getByTestId("avatar-upload-input")
+      .or(this.page.locator("input#avatar-upload"));
   }
 
   // -------------------------------------------------------------------------
   // Logout
   // -------------------------------------------------------------------------
 
+  /**
+   * Expected data-testid: "logout-button"
+   * Fallback: button with uitloggen/logout text
+   */
   getLogoutButton(): Locator {
-    return this.page.getByRole("button", { name: /uitloggen/i });
+    return this.page
+      .getByTestId("logout-button")
+      .or(this.page.getByRole("button", { name: /uitloggen|logout/i }));
   }
 
   async clickLogout() {

@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { alert, input, button, typography, link } from "@/lib/theme";
 
 interface ValidationErrors {
   email?: string;
@@ -92,18 +93,19 @@ export default function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-5" noValidate data-testid="register-form">
       {error && (
         <div
           role="alert"
-          className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"
+          data-testid="register-error"
+          className={alert.error}
         >
           {error}
         </div>
       )}
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="email" className={typography.label}>
           E-mail
         </label>
         <input
@@ -114,18 +116,17 @@ export default function RegisterForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
-          className={`block w-full rounded-lg border ${
-            errors.email ? "border-red-300" : "border-gray-300"
-          } bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm`}
+          data-testid="email-input"
+          className={errors.email ? input.error : input.base}
           placeholder="Voer uw e-mailadres in"
         />
         {errors.email && (
-          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+          <p className={typography.errorText}>{errors.email}</p>
         )}
       </div>
 
       <div>
-        <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="username" className={typography.label}>
           Gebruikersnaam
         </label>
         <input
@@ -136,18 +137,17 @@ export default function RegisterForm() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           disabled={loading}
-          className={`block w-full rounded-lg border ${
-            errors.username ? "border-red-300" : "border-gray-300"
-          } bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm`}
+          data-testid="username-input"
+          className={errors.username ? input.error : input.base}
           placeholder="Voer uw gebruikersnaam in"
         />
         {errors.username && (
-          <p className="mt-1 text-sm text-red-600">{errors.username}</p>
+          <p className={typography.errorText}>{errors.username}</p>
         )}
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="password" className={typography.label}>
           Wachtwoord
         </label>
         <input
@@ -158,18 +158,17 @@ export default function RegisterForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={loading}
-          className={`block w-full rounded-lg border ${
-            errors.password ? "border-red-300" : "border-gray-300"
-          } bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm`}
+          data-testid="password-input"
+          className={errors.password ? input.error : input.base}
           placeholder="Voer uw wachtwoord in"
         />
         {errors.password && (
-          <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+          <p className={typography.errorText}>{errors.password}</p>
         )}
       </div>
 
       <div>
-        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="confirmPassword" className={typography.label}>
           Wachtwoord bevestigen
         </label>
         <input
@@ -180,25 +179,25 @@ export default function RegisterForm() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           disabled={loading}
-          className={`block w-full rounded-lg border ${
-            errors.confirmPassword ? "border-red-300" : "border-gray-300"
-          } bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm`}
+          data-testid="confirm-password-input"
+          className={errors.confirmPassword ? input.error : input.base}
           placeholder="Bevestig uw wachtwoord"
         />
         {errors.confirmPassword && (
-          <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+          <p className={typography.errorText}>{errors.confirmPassword}</p>
         )}
       </div>
 
       <button
         type="submit"
         disabled={loading}
-        className="flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        data-testid="register-button"
+        className={button.primary}
       >
         {loading ? (
           <>
             <svg
-              className="mr-2 h-4 w-4 animate-spin"
+              className={button.spinner}
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -225,9 +224,9 @@ export default function RegisterForm() {
         )}
       </button>
 
-      <p className="text-center text-sm text-gray-600">
+      <p className={`text-center ${typography.bodyText}`}>
         Heeft u al een account?{" "}
-        <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+        <Link href="/login" className={link.primary} data-testid="login-link">
           Inloggen
         </Link>
       </p>

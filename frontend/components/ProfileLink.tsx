@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { profileLink } from "@/lib/theme";
 
 export default function ProfileLink() {
   const [username, setUsername] = useState<string | null>(null);
@@ -18,7 +19,8 @@ export default function ProfileLink() {
   return (
     <Link
       href={`/profile/${username}`}
-      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 shadow-sm hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors"
+      className={profileLink.base}
+      data-testid="profile-link"
     >
       <svg
         className="h-4 w-4"
