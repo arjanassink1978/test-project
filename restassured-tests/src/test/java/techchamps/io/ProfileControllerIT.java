@@ -10,8 +10,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 
 import java.io.InputStream;
 
@@ -23,16 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-@SpringBootTest(
-        classes = techchamps.io.BackendApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
-)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Profile endpoints — /api/profile/{username}")
-class ProfileControllerIT {
-
-    @LocalServerPort
-    private int port;
+class ProfileControllerIT extends BaseIntegrationTest {
 
     private static final String USERNAME = "user";
 
