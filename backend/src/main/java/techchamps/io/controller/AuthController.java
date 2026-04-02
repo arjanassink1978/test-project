@@ -55,7 +55,7 @@ public class AuthController {
                 )
             );
 
-            return ResponseEntity.ok(new LoginResponse(true, "Login successful"));
+            return ResponseEntity.ok(new LoginResponse(true, "Login successful", loginRequest.getUsername()));
 
         } catch (BadCredentialsException e) {
             return ResponseEntity

@@ -15,6 +15,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 @SpringBootTest(
         classes = techchamps.io.BackendApplication.class,
@@ -46,7 +47,8 @@ class AuthControllerIT {
         .then()
             .statusCode(200)
             .body("success", equalTo(true))
-            .body("message", notNullValue());
+            .body("message", notNullValue())
+            .body("username", equalTo("user"));
     }
 
     @Test
@@ -63,7 +65,8 @@ class AuthControllerIT {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("message", equalTo("Login successful"));
+            .body("message", equalTo("Login successful"))
+            .body("username", equalTo("user"));
     }
 
     // ---------------------------------------------------------------
@@ -86,7 +89,8 @@ class AuthControllerIT {
             .post("/api/auth/login")
         .then()
             .statusCode(401)
-            .body("success", equalTo(false));
+            .body("success", equalTo(false))
+            .body("username", nullValue());
     }
 
     @Test

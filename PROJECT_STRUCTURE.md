@@ -28,7 +28,7 @@
   - `dto/request/UpdateProfileRequest.java` - displayName, bio, location (optional, with @Size validation)
   - *(Add new request DTOs here)*
 - **Response:**
-  - `dto/response/LoginResponse.java` - success, message
+  - `dto/response/LoginResponse.java` - success, message, username (nullable; populated on successful login)
   - `dto/response/RegisterResponse.java` - id, email, username, success, message
   - `dto/response/ProfileResponse.java` - id, email, username, displayName, bio, location, avatarUrl
   - `dto/response/AvatarUploadResponse.java` - avatarUrl, message

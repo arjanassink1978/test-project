@@ -12,6 +12,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 
 /**
  * Bestaande integratietests herschreven met LoginRequestBuilder.
@@ -40,7 +41,8 @@ class AuthControllerIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true));
+            .body("success", equalTo(true))
+            .body("username", equalTo("user"));
     }
 
     @Test
@@ -55,7 +57,8 @@ class AuthControllerIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(401)
-            .body("success", equalTo(false));
+            .body("success", equalTo(false))
+            .body("username", nullValue());
     }
 
     @Test
