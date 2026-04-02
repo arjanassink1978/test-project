@@ -9,24 +9,15 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
-@SpringBootTest(
-        classes = techchamps.io.BackendApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
-)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("POST /api/auth/login")
-class AuthControllerIT {
-
-    @LocalServerPort
-    private int port;
+class AuthControllerIT extends BaseIntegrationTest {
 
     // ---------------------------------------------------------------
     // Happy path

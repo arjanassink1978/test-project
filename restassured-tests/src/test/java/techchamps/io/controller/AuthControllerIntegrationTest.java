@@ -1,5 +1,6 @@
 package techchamps.io.controller;
 
+import techchamps.io.BaseIntegrationTest;
 import techchamps.io.builder.LoginRequestBuilder;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.DisplayName;
@@ -7,8 +8,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -18,16 +17,9 @@ import static org.hamcrest.Matchers.nullValue;
  * Bestaande integratietests herschreven met LoginRequestBuilder.
  * De uitgebreide testsuite staat in AuthControllerIT.
  */
-@SpringBootTest(
-        classes = techchamps.io.BackendApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
-)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("AuthController – basis smoke tests")
-class AuthControllerIntegrationTest {
-
-    @LocalServerPort
-    private int port;
+class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     @Order(1)

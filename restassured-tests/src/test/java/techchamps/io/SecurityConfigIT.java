@@ -9,23 +9,14 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(
-        classes = techchamps.io.BackendApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
-)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("SecurityConfig, DataInitializer en AppUser")
-class SecurityConfigIT {
-
-    @LocalServerPort
-    private int port;
+class SecurityConfigIT extends BaseIntegrationTest {
 
     // ---------------------------------------------------------------
     // @BeforeEach: startup-conditie — seed-user moet beschikbaar zijn
