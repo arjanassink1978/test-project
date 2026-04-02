@@ -78,7 +78,70 @@ export class ThreadDetailPage {
     return this.page.getByTestId(`reply-content-${id}`);
   }
 
+  /**
+   * reply-toggle-{id} is the inline "Reply/Cancel" button used to show or
+   * hide the nested reply form for a given reply.
+   */
   getReplyToggle(id: number): Locator {
     return this.page.getByTestId(`reply-toggle-${id}`);
+  }
+
+  /**
+   * Returns the author header row for a reply.
+   * Contains the avatar, username, and depth indicator.
+   */
+  getReplyAuthorRow(id: number): Locator {
+    return this.page.getByTestId(`reply-author-${id}`);
+  }
+
+  /**
+   * Returns the username text within the author row of a reply.
+   * The author row (reply-author-{id}) wraps avatar + username span.
+   */
+  getReplyAuthorName(id: number): Locator {
+    return this.page
+      .getByTestId(`reply-author-${id}`)
+      .locator("span")
+      .first();
+  }
+
+  /**
+   * Returns the vote-buttons badge element scoped to a specific reply item.
+   * The badge is rendered at the top-right of the reply header row.
+   */
+  getReplyVoteBadge(id: number): Locator {
+    return this.page
+      .getByTestId(`reply-item-${id}`)
+      .getByTestId("vote-buttons");
+  }
+
+  /**
+   * Returns the upvote button scoped to a specific reply item.
+   */
+  getReplyUpvoteButton(id: number): Locator {
+    return this.page
+      .getByTestId(`reply-item-${id}`)
+      .getByTestId("upvote-button");
+  }
+
+  /**
+   * Returns the vote-score element scoped to a specific reply item.
+   */
+  getReplyVoteScore(id: number): Locator {
+    return this.page
+      .getByTestId(`reply-item-${id}`)
+      .getByTestId("vote-score");
+  }
+
+  /**
+   * Returns the collapse toggle button (–/+) for a nested reply.
+   * This button appears in the left gutter only for depth > 0 replies
+   * that have child replies. It is identified by its aria-label.
+   */
+  getCollapseToggle(id: number): Locator {
+    return this.page
+      .getByTestId(`reply-item-${id}`)
+      .getByRole("button", { name: /collapse replies|expand replies/i })
+      .first();
   }
 }

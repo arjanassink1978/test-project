@@ -30,49 +30,52 @@ Multi-module Maven project with a Spring Boot backend, Next.js frontend, and sep
 **Problem:** Frontend and backend must stay in sync. A "green build" (passing tests) doesn't mean the app works.
 
 **Rule: Feature-analysis agent MUST identify and document all cross-layer constraints BEFORE implementation:**
+- File size limits (e.g., avatar max 5MB)
+- String length constraints (e.g., username max 20 chars)
+- Enum values (e.g., roles: [ADMIN, USER])
+- Rate limits, pagination size, timeouts
+- Authentication/authorization rules
 
-1. **What triggers this rule:**
-   - File size limits (e.g., avatar max 5MB)
-   - String length constraints (e.g., username max 20 chars)
-   - Enum values (e.g., roles: [ADMIN, USER])
-   - Rate limits, pagination size, timeouts
-   - Authentication/authorization rules
+**Feature-analysis creates a "CONSTRAINT" section in the issue:**
+```
+## Cross-Layer Constraints
+- Avatar file: max 5MB (frontend AND backend)
+- Locations: field must exist in backend, displayed on frontend
+- Auth: token expires in 1 hour (backend sends, frontend must refresh)
+```
 
-2. **Feature-analysis must create a "CONSTRAINT" section in the issue/PR:**
-   ```
-   ## Cross-Layer Constraints
-   - Avatar file: max 5MB (frontend AND backend)
-   - Locations: field must exist in backend, displayed on frontend
-   - Auth: token expires in 1 hour (backend sends, frontend must refresh)
-   ```
+Backend and frontend agents read constraints from issue and implement them. See their agent prompts for details.
 
-3. **Backend agent checklist:**
-   - [ ] Read the constraints section in the issue
-   - [ ] Implement server-side validation + tests that VERIFY the constraint
-   - [ ] Add comment in code: `// CONSTRAINT: max 5MB — must match frontend validation`
+### Standard Agent Steps (Three-Phase Workflow)
 
-4. **Frontend agent checklist:**
-   - [ ] Read the constraints section in the issue
-   - [ ] Implement client-side validation matching the backend constraint
-   - [ ] Add comment in code: `// CONSTRAINT: max 5MB (5 * 1024 * 1024 bytes) — must match backend`
+**PHASE 1: Planning**
+1. **Feature-analysis:**
+   - Fetch GitHub issue
+   - Identify all cross-layer constraints
+   - Read PROJECT_STRUCTURE.md
+   - Create implementation plan
+   - **SHOW PLAN AND WAIT FOR USER APPROVAL**
 
-5. **Test agent checklist:**
-   - [ ] Write **boundary tests** that verify constraints
-   - [ ] Example: `@Test uploadFile_oversized_returns413()` — test that files > limit fail
-   - [ ] Don't just test happy path; test the limit itself
+**PHASE 2: Implementation** (after user approves)
+1. **Feature-analysis:** Create feature branch `issue-{number}-{description}`
+2. **Backend agent:** Implement changes + tests (on feature branch)
+   - Check constraints from issue
+   - Implement server-side validation
+3. **Frontend agent:** Implement changes (on feature branch)
+   - Check constraints from issue
+   - Implement client-side validation
+4. **RestAssured/Playwright agents:** Add integration/E2E tests
+   - Write boundary tests for constraints
+5. **Mutation testing:** Run PIT mutation tests (target: ≥80% score)
+6. **ALL agents:** Update PROJECT_STRUCTURE.md when adding files
 
-### Standard Agent Steps
-1. **Feature-analysis:** Read PROJECT_STRUCTURE.md for codebase overview
-   - **NEW:** Identify all cross-layer constraints and document them
-2. **Backend agent:** Implement changes + tests
-   - **NEW:** Check constraints from issue, implement server-side validation
-3. **Frontend agent:** Implement changes
-   - **NEW:** Check constraints from issue, implement client-side validation
-4. **Test agent:** Add integration/E2E tests
-   - **NEW:** Write boundary tests for constraints, not just happy path
-5. **Update INDEX:** ALL agents MUST update PROJECT_STRUCTURE.md when adding files
-6. **Create MRs:** Each agent creates their own merge request (or link feature-analysis PR)
+**PHASE 3: Review & Merge** (after all tests pass)
+1. **Feature-analysis:** Create PR to main
+2. Comment on GitHub issue with test results + mutation score
+3. **ASK USER FOR APPROVAL** before merging PR
+4. **Only merge after user confirms**
 
-**IMPORTANT:** Agents must update PROJECT_STRUCTURE.md with new files/components added. This keeps the index current and reduces token usage for future features.
-
-**CRITICAL:** A passing build ≠ working feature. Constraints must be tested across layers.
+**IMPORTANT:**
+- Never commit directly to main — always use feature branches
+- A passing build ≠ working feature — constraints must be tested across layers
+- Mutation score ≥80% required before merging

@@ -35,9 +35,9 @@ export default function ThreadList({
             data-testid={`thread-item-${thread.id}`}
           >
             <div className="flex items-start gap-3">
-              <div className="text-center min-w-[2rem]">
+              <div className="flex-shrink-0 mt-0.5">
                 <span
-                  className={`text-sm font-semibold ${thread.score >= 0 ? "text-indigo-600" : "text-red-600"}`}
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${thread.score >= 0 ? "bg-indigo-50 text-indigo-600" : "bg-red-50 text-red-600"}`}
                   data-testid={`thread-score-${thread.id}`}
                 >
                   {thread.score}
