@@ -154,11 +154,14 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Build all modules
+        run: mvn clean install -q -DskipTests
+
       - name: Run backend mutation tests
-        run: mvn clean pitest:mutationCoverage -pl backend -q
+        run: mvn pitest:mutationCoverage -pl backend -q
 
       - name: Run RestAssured mutation tests
-        run: mvn clean pitest:mutationCoverage -pl restassured-tests -q
+        run: mvn pitest:mutationCoverage -pl restassured-tests -q
 
       - name: Upload mutation results
         uses: actions/upload-artifact@v4
