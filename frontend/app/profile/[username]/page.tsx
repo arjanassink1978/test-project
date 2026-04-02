@@ -5,3 +5,4 @@ export default async function ProfilePage(props: PageProps<"/profile/[username]"
 
   return <ProfileForm username={username} />;
 }
+
