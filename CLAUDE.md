@@ -24,10 +24,6 @@ Multi-module Maven project with a Spring Boot backend, Next.js frontend, and sep
 - Test builders in `restassured-tests/src/test/java/techchamps/io/builder/`
 - Test classes use suffix `IT`
 
-## 📝 Code Style
-- **Minimal comments** — Only comment non-obvious logic. Prefer self-documenting code.
-- **English only** — All code, variable names, comments, docstrings, and log messages in English. No Dutch text.
-
 ## 🔄 Agent Workflow
 
 ### Cross-Layer Constraints (Critical!)
