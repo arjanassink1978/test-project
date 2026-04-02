@@ -4,6 +4,7 @@ import techchamps.io.builder.LoginRequestBuilder;
 import techchamps.io.dto.request.LoginRequest;
 import techchamps.io.dto.response.LoginResponse;
 import io.restassured.http.ContentType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -18,6 +19,22 @@ import static org.hamcrest.Matchers.nullValue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("POST /api/auth/login")
 class AuthControllerIT extends BaseIntegrationTest {
+
+    // ---------------------------------------------------------------
+    // Setup: Ensure seed user exists before tests
+    // ---------------------------------------------------------------
+
+    @BeforeEach
+    void ensureSeedUserExists() {
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(new LoginRequestBuilder().build())
+        .when()
+            .post("/api/auth/login")
+        .then()
+            .statusCode(200);
+    }
 
     // ---------------------------------------------------------------
     // Happy path
