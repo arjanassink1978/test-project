@@ -56,6 +56,14 @@ export class ThreadDetailPage {
     return this.page.getByTestId("vote-score").first();
   }
 
+  /**
+   * Returns the numeric vote score value from the thread-level vote-score element.
+   */
+  async getVoteScoreValue(): Promise<number> {
+    const text = await this.getVoteScore().textContent();
+    return Number(text?.trim() ?? "0");
+  }
+
   getReplyForm(): Locator {
     return this.page.getByTestId("reply-form");
   }
@@ -131,6 +139,14 @@ export class ThreadDetailPage {
     return this.page
       .getByTestId(`reply-item-${id}`)
       .getByTestId("vote-score");
+  }
+
+  /**
+   * Returns the numeric vote score value for a specific reply.
+   */
+  async getReplyVoteScoreValue(id: number): Promise<number> {
+    const text = await this.getReplyVoteScore(id).textContent();
+    return Number(text?.trim() ?? "0");
   }
 
   /**
