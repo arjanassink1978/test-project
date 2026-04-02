@@ -60,6 +60,7 @@ class ProfileControllerTest {
 
         mockMvc.perform(get("/api/profile/user"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.username").value("user"))
                 .andExpect(jsonPath("$.email").value("user@example.com"))
                 .andExpect(jsonPath("$.displayName").value("Demo User"))
@@ -127,40 +128,46 @@ class ProfileControllerTest {
     // --- PUT /api/profile/{username}: validation error - bio too long ---
 
     @Test
-    void updateProfile_withBioTooLong_returns400() throws Exception {
+    void updateProfile_withBioTooLong_returns400WithFieldError() throws Exception {
         String longBio = "x".repeat(501);
         UpdateProfileRequest request = new UpdateProfileRequest("Name", longBio, "Loc");
 
         mockMvc.perform(put("/api/profile/user")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.bio").value("Bio must not exceed 500 characters"));
     }
 
     // --- PUT /api/profile/{username}: validation error - displayName too long ---
 
     @Test
-    void updateProfile_withDisplayNameTooLong_returns400() throws Exception {
+    void updateProfile_withDisplayNameTooLong_returns400WithFieldError() throws Exception {
         String longName = "x".repeat(101);
         UpdateProfileRequest request = new UpdateProfileRequest(longName, "Bio", "Loc");
 
         mockMvc.perform(put("/api/profile/user")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.displayName").value("Display name must not exceed 100 characters"));
     }
 
     // --- PUT /api/profile/{username}: validation error - location too long ---
 
     @Test
-    void updateProfile_withLocationTooLong_returns400() throws Exception {
+    void updateProfile_withLocationTooLong_returns400WithFieldError() throws Exception {
         String longLocation = "x".repeat(101);
         UpdateProfileRequest request = new UpdateProfileRequest("Name", "Bio", longLocation);
 
         mockMvc.perform(put("/api/profile/user")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.location").value("Location must not exceed 100 characters"));
     }
 
     // --- POST /api/profile/{username}/avatar: happy path ---

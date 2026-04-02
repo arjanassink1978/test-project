@@ -38,11 +38,13 @@ class ProfileServiceTest {
         Optional<ProfileResponse> result = profileService.getProfile("user");
 
         assertThat(result).isPresent();
-        assertThat(result.get().getUsername()).isEqualTo("user");
-        assertThat(result.get().getEmail()).isEqualTo("user@example.com");
-        assertThat(result.get().getDisplayName()).isEqualTo("Demo User");
-        assertThat(result.get().getBio()).isEqualTo("A short bio");
-        assertThat(result.get().getLocation()).isEqualTo("Amsterdam");
+        ProfileResponse profile = result.get();
+        assertThat(profile.getId()).isNull();
+        assertThat(profile.getUsername()).isEqualTo("user");
+        assertThat(profile.getEmail()).isEqualTo("user@example.com");
+        assertThat(profile.getDisplayName()).isEqualTo("Demo User");
+        assertThat(profile.getBio()).isEqualTo("A short bio");
+        assertThat(profile.getLocation()).isEqualTo("Amsterdam");
     }
 
     // --- getProfile: user not found ---
