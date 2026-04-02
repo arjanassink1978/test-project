@@ -113,11 +113,7 @@ test.describe("User Profile Page Flow", () => {
       await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
     });
 
-    // This test will fail until Issue #4 adds a profile link to the dashboard.
-    // test.fail() inside the test body marks it as an expected failure so CI does not block.
     test("dashboard has a Go to Profile link that navigates to /profile/user", async ({ page }) => {
-      // Remove this line once the profile link is added to DashboardPage
-      test.fail(true, "Dashboard profile link not yet implemented (Issue #4)");
       await mockGetProfile(page, MOCK_PROFILE);
       await loginAsDefaultUser(page);
 

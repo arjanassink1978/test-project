@@ -69,12 +69,13 @@
 - `app/page.tsx` - Home page
 - `app/layout.tsx` - Root layout
 - `app/[login]/page.tsx` - Login page
-- `app/[dashboard]/page.tsx` - Dashboard (authenticated)
+- `app/dashboard/page.tsx` - Dashboard: top nav bar with ProfileLink + LogoutButton, centered "Welkom op deze site" heading
 - *(Add new pages here)*
 
 ### Components
 - `components/LoginForm.tsx` - Login form component
-- `components/LogoutButton.tsx` - Logout button
+- `components/LogoutButton.tsx` - Logout button; clears `localStorage["username"]` and navigates to `/`
+- `components/ProfileLink.tsx` - Link to `/profile/{username}`, reads username from localStorage
 - *(Add new components here)*
 
 ### Configuration
