@@ -129,14 +129,7 @@ export default function ThreadDetailPage() {
       <main className="mx-auto max-w-3xl px-4 py-8">
         {/* Thread header */}
         <div className={card.paddedLg}>
-          <div className="flex gap-4">
-            <VoteButtons
-              score={thread.score}
-              postId={thread.id}
-              postType="thread"
-              onVote={handleVoteThread}
-              disabled={!username}
-            />
+          <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <h1
                 className={typography.pageHeading}
@@ -166,6 +159,13 @@ export default function ThreadDetailPage() {
                 Score: {thread.score}
               </p>
             </div>
+            <VoteButtons
+              score={thread.score}
+              postId={thread.id}
+              postType="thread"
+              onVote={handleVoteThread}
+              disabled={!username}
+            />
           </div>
         </div>
 

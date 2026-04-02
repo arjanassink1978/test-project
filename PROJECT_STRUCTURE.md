@@ -1,6 +1,6 @@
 # Project Structure Index
 
-**Last Updated:** 2026-04-02 (Forum feature: threads, replies, voting, categories)
+**Last Updated:** 2026-04-02 (Forum layout update: vote badge, reply header, nesting border, collapse toggle)
 **Important:** When agents add new files/components, they MUST update this file.
 
 ---
@@ -124,6 +124,8 @@
 - `components/LogoutButton.test.tsx` - 5 tests: render, data-testid, navigation, localStorage
 - `components/ProfileLink.test.tsx` - 4 tests: render, data-testid, href construction
 - `components/ProfileForm.test.tsx` - 13 tests: loading, profile data, data-testid, save/delete/upload avatar flows
+- `components/VoteButtons.test.tsx` - 9 tests: render, data-testid, score colors, click handlers, disabled state, badge layout
+- `components/ReplyItem.test.tsx` - 19 tests: render, data-testid, author header, avatar initials, vote badge, reply toggle, collapse/expand, nesting border, hidden score threshold
 
 ### Libraries
 - `lib/api.ts` - All API calls (auth, profile, avatar, forum: getForumCategories, getForumThreads, getForumThread, createForumThread, createForumReply, voteOnPost)
