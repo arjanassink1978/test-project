@@ -131,7 +131,11 @@ describe("LoginForm", () => {
   });
 
   it("redirects to dashboard and stores username on successful login", async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({ ok: true, status: 200 });
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValueOnce({ username: "testuser" }),
+    });
 
     render(<LoginForm />);
 

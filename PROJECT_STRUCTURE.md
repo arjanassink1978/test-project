@@ -89,6 +89,10 @@
 - `components/ProfileLink.test.tsx` - 4 tests: render, data-testid, href construction
 - `components/ProfileForm.test.tsx` - 13 tests: loading, profile data, data-testid, save/delete/upload avatar flows
 
+### Libraries
+- `lib/api.ts` - All API calls (auth, profile, avatar)
+- `lib/theme.ts` - Centralized design tokens: colors, typography, spacing, borders, shadows, and composite className patterns (alert, card, input, button, nav, avatar, link, profileLink). Import named exports (`alert`, `button`, `card`, `input`, `typography`, `nav`, `avatar`, `link`, `profileLink`, `colors`, `spacing`, `borders`, `shadows`, `states`) in components instead of writing Tailwind strings inline.
+
 ### Configuration
 - `next.config.ts` - Next.js config
 - `tsconfig.json` - TypeScript config

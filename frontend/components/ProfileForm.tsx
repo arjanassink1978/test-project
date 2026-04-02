@@ -4,6 +4,14 @@ import { useState, useEffect, useRef, ChangeEvent } from "react";
 import LogoutButton from "@/components/LogoutButton";
 import { getProfile, updateProfile, uploadAvatar, deleteAvatar } from "@/lib/api";
 import type { UserProfile } from "@/types/profile";
+import {
+  alert,
+  avatar,
+  button,
+  card,
+  input,
+  typography,
+} from "@/lib/theme";
 
 interface ProfileFormProps {
   username: string;
@@ -42,7 +50,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [deletingAvatar, setDeletingAvatar] = useState(false);
-  const [alert, setAlert] = useState<Alert | null>(null);
+  const [alertState, setAlertState] = useState<Alert | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -60,7 +68,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
         }
       } catch {
         if (!cancelled) {
-          setAlert({ kind: "error", message: "Profiel kon niet worden geladen." });
+          setAlertState({ kind: "error", message: "Profiel kon niet worden geladen." });
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -74,7 +82,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
   }, [username]);
 
   function showAlert(kind: AlertKind, message: string) {
-    setAlert({ kind, message });
+    setAlertState({ kind, message });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -86,7 +94,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
     }
 
     setSaving(true);
-    setAlert(null);
+    setAlertState(null);
     try {
       await updateProfile(username, { displayName, bio, location });
       setProfile((prev) =>
@@ -117,7 +125,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
     }
 
     setUploadingAvatar(true);
-    setAlert(null);
+    setAlertState(null);
     try {
       await uploadAvatar(username, file);
       const updated = await getProfile(username);
@@ -135,7 +143,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
 
   async function handleDeleteAvatar() {
     setDeletingAvatar(true);
-    setAlert(null);
+    setAlertState(null);
     try {
       await deleteAvatar(username);
       setProfile((prev) => (prev ? { ...prev, avatarUrl: null } : prev));
@@ -185,30 +193,26 @@ export default function ProfileForm({ username }: ProfileFormProps) {
       <div className="w-full max-w-xl space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between" data-testid="profile-header">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900" data-testid="profile-heading">
+          <h1 className={typography.pageHeading} data-testid="profile-heading">
             Mijn profiel
           </h1>
           <LogoutButton />
         </div>
 
         {/* Alert */}
-        {alert && (
+        {alertState && (
           <div
             role="alert"
             data-testid="profile-alert"
-            className={`rounded-md border px-4 py-3 text-sm ${
-              alert.kind === "success"
-                ? "border-green-200 bg-green-50 text-green-700"
-                : "border-red-200 bg-red-50 text-red-700"
-            }`}
+            className={alertState.kind === "success" ? alert.success : alert.error}
           >
-            {alert.message}
+            {alertState.message}
           </div>
         )}
 
         {/* Avatar section */}
-        <div className="rounded-xl bg-white px-6 py-6 shadow-md ring-1 ring-gray-900/5" data-testid="avatar-section">
-          <h2 className="mb-4 text-base font-semibold text-gray-900" data-testid="avatar-heading">Avatar</h2>
+        <div className={card.padded} data-testid="avatar-section">
+          <h2 className={`mb-4 ${typography.sectionHeading}`} data-testid="avatar-heading">Avatar</h2>
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
             <div className="flex-shrink-0">
               {profile?.avatarUrl ? (
@@ -216,11 +220,11 @@ export default function ProfileForm({ username }: ProfileFormProps) {
                   src={profile.avatarUrl}
                   alt={`Avatar van ${username}`}
                   data-testid="avatar-image"
-                  className="h-24 w-24 rounded-full object-cover ring-2 ring-gray-200"
+                  className={avatar.image}
                 />
               ) : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-indigo-100 ring-2 ring-gray-200" data-testid="avatar-placeholder">
-                  <span className="text-2xl font-bold text-indigo-600">
+                <div className={avatar.placeholder} data-testid="avatar-placeholder">
+                  <span className={avatar.initial}>
                     {username.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -241,10 +245,8 @@ export default function ProfileForm({ username }: ProfileFormProps) {
               <label
                 htmlFor="avatar-upload"
                 data-testid="avatar-upload-label"
-                className={`inline-flex cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors ${
-                  uploadingAvatar || deletingAvatar
-                    ? "cursor-not-allowed opacity-50"
-                    : ""
+                className={`${button.secondary} cursor-pointer${
+                  uploadingAvatar || deletingAvatar ? " cursor-not-allowed opacity-50" : ""
                 }`}
               >
                 {uploadingAvatar ? "Uploaden…" : "Nieuwe avatar uploaden"}
@@ -255,7 +257,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
                   onClick={handleDeleteAvatar}
                   disabled={deletingAvatar || uploadingAvatar}
                   data-testid="delete-avatar-button"
-                  className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                  className={button.danger}
                 >
                   {deletingAvatar ? "Verwijderen…" : "Avatar verwijderen"}
                 </button>
@@ -268,36 +270,36 @@ export default function ProfileForm({ username }: ProfileFormProps) {
         </div>
 
         {/* Profile info (read-only) */}
-        <div className="rounded-xl bg-white px-6 py-6 shadow-md ring-1 ring-gray-900/5" data-testid="account-info-section">
-          <h2 className="mb-4 text-base font-semibold text-gray-900" data-testid="account-info-heading">
+        <div className={card.padded} data-testid="account-info-section">
+          <h2 className={`mb-4 ${typography.sectionHeading}`} data-testid="account-info-heading">
             Accountgegevens
           </h2>
           <dl className="space-y-3">
             <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              <dt className={typography.metaLabel}>
                 Gebruikersnaam
               </dt>
-              <dd className="mt-1 text-sm text-gray-900" data-testid="profile-username">{profile?.username}</dd>
+              <dd className={typography.bodyValue} data-testid="profile-username">{profile?.username}</dd>
             </div>
             <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              <dt className={typography.metaLabel}>
                 E-mail
               </dt>
-              <dd className="mt-1 text-sm text-gray-900" data-testid="profile-email">{profile?.email}</dd>
+              <dd className={typography.bodyValue} data-testid="profile-email">{profile?.email}</dd>
             </div>
           </dl>
         </div>
 
         {/* Editable fields */}
-        <div className="rounded-xl bg-white px-6 py-6 shadow-md ring-1 ring-gray-900/5" data-testid="edit-profile-section">
-          <h2 className="mb-4 text-base font-semibold text-gray-900" data-testid="edit-profile-heading">
+        <div className={card.padded} data-testid="edit-profile-section">
+          <h2 className={`mb-4 ${typography.sectionHeading}`} data-testid="edit-profile-heading">
             Profielinformatie bewerken
           </h2>
           <div className="space-y-4" data-testid="edit-profile-form">
             <div>
               <label
                 htmlFor="displayName"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className={typography.label}
               >
                 Weergavenaam
               </label>
@@ -310,14 +312,14 @@ export default function ProfileForm({ username }: ProfileFormProps) {
                 maxLength={100}
                 placeholder="Voer uw weergavenaam in"
                 data-testid="display-name-input"
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+                className={input.base}
               />
             </div>
 
             <div>
               <label
                 htmlFor="bio"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className={typography.label}
               >
                 Biografie
               </label>
@@ -330,9 +332,9 @@ export default function ProfileForm({ username }: ProfileFormProps) {
                 maxLength={500}
                 placeholder="Vertel iets over uzelf"
                 data-testid="bio-input"
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm resize-none"
+                className={input.textarea}
               />
-              <p className="mt-1 text-xs text-gray-400 text-right">
+              <p className={typography.charCounter}>
                 {bio.length}/500
               </p>
             </div>
@@ -340,7 +342,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
             <div>
               <label
                 htmlFor="location"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className={typography.label}
               >
                 Locatie
               </label>
@@ -353,7 +355,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
                 maxLength={100}
                 placeholder="Voer uw locatie in"
                 data-testid="location-input"
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+                className={input.base}
               />
             </div>
 
@@ -362,12 +364,12 @@ export default function ProfileForm({ username }: ProfileFormProps) {
               onClick={handleSave}
               disabled={saving}
               data-testid="save-button"
-              className="flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+              className={button.primary}
             >
               {saving ? (
                 <>
                   <svg
-                    className="mr-2 h-4 w-4 animate-spin"
+                    className={button.spinner}
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
