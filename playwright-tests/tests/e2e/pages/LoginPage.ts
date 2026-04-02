@@ -1,0 +1,33 @@
+import { Page, expect } from "@playwright/test";
+
+export class LoginPage {
+  constructor(private readonly page: Page) {}
+
+  async goto() {
+    await this.page.goto("/login");
+    await expect(this.page).toHaveURL(/\/login/);
+  }
+
+  async fillUsername(username: string) {
+    await this.page.locator("#username").fill(username);
+  }
+
+  async fillPassword(password: string) {
+    await this.page.locator("#password").fill(password);
+  }
+
+  async submit() {
+    await this.page.locator('button[type="submit"]').click();
+  }
+
+  async login(username: string, password: string) {
+    await this.goto();
+    await this.fillUsername(username);
+    await this.fillPassword(password);
+    await this.submit();
+  }
+
+  async getErrorMessage() {
+    return this.page.locator('[role="alert"]');
+  }
+}
