@@ -75,4 +75,26 @@ export class ForumPage {
       .getByTestId("load-more-button")
       .or(this.page.getByRole("button", { name: /load more/i }));
   }
+
+  /** Clicks the New Thread button and waits for navigation to /forum/new. */
+  async clickNewThreadButton(): Promise<void> {
+    await this.getNewThreadButton().click();
+    await this.page.waitForURL(/\/forum\/new/, { timeout: 5000 });
+  }
+
+  /**
+   * Selects a sort order in the sort select dropdown.
+   * @param value — "newest" or "popular"
+   */
+  async selectSort(value: "newest" | "popular"): Promise<void> {
+    await this.getSortSelect().selectOption(value);
+  }
+
+  /**
+   * Selects a category in the category filter.
+   * @param id — numeric category ID or "all"
+   */
+  async selectCategory(id: number | "all"): Promise<void> {
+    await this.getCategoryOption(id).click();
+  }
 }
