@@ -7,15 +7,28 @@ This project uses Claude Code agents for automated development tasks. All agents
 ### feature-analysis
 **Purpose**: Analyze GitHub issues and create implementation plans
 
-**Tools**: Glob, Grep, Read
+**Tools**: Glob, Grep, Read, Bash
 
 **Key Responsibilities**:
-- Reads GitHub issues from the repository
-- Reviews PROJECT_STRUCTURE.md for context
+- Fetches GitHub issues directly using `gh` CLI
+- Reviews PROJECT_STRUCTURE.md for codebase context
 - Creates structured implementation plans
 - Assigns work to specialized agents (backend, frontend, restassured, playwright)
 
-**GitHub Integration**: Uses `gh` CLI to fetch issues
+**GitHub Integration**: Fetches issues automatically with `gh issue view`
+
+**Usage**:
+```
+"Analyze GitHub Issue #4"
+"Create implementation plan for Issue #5"
+"What should we build for Issue #3?"
+```
+
+The agent will:
+1. Fetch the GitHub issue using `gh issue view <number>`
+2. Read PROJECT_STRUCTURE.md
+3. Read relevant source files mentioned in the issue
+4. Generate a JSON plan with tasks for each agent
 
 ### backend
 **Purpose**: Build and modify Spring Boot REST API modules
