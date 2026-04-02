@@ -24,6 +24,27 @@ Multi-module Maven project with a Spring Boot backend, Next.js frontend, and sep
 - Test builders in `restassured-tests/src/test/java/techchamps/io/builder/`
 - Test classes use suffix `IT`
 
+## ⚠️ CRITICAL: Playwright Agent Rules
+
+**RULE: Never use API shortcuts in Playwright tests.**
+
+❌ **DO NOT:**
+```typescript
+// ❌ BAD: Creates thread via API, bypasses UI auth flow
+async function createThreadViaApi() { ... }
+```
+
+✅ **DO:**
+```typescript
+// ✅ GOOD: Tests real user flow through UI
+await loginAsDefaultUser(page);
+await page.goto("/forum/new");
+await page.getByTestId("thread-title-input").fill(title);
+await page.getByTestId("thread-submit-button").click();
+```
+
+**Why:** API shortcuts hide authentication errors. Tests pass but features break in production. Always test through the real UI so you catch what users experience.
+
 ## 🔄 Agent Workflow
 
 ### Cross-Layer Constraints (Critical!)
@@ -56,7 +77,13 @@ Multi-module Maven project with a Spring Boot backend, Next.js frontend, and sep
    - [ ] Implement client-side validation matching the backend constraint
    - [ ] Add comment in code: `// CONSTRAINT: max 5MB (5 * 1024 * 1024 bytes) — must match backend`
 
-5. **Test agent checklist:**
+5. **Playwright E2E agent checklist:**
+   - [ ] **NEVER use API shortcuts** (direct API calls, fetch() in test setup)
+   - [ ] Test features through the actual UI — this catches auth/validation errors real users hit
+   - [ ] Example: Instead of `createThreadViaApi()`, navigate to form → fill → submit and check for errors
+   - [ ] Reason: API shortcuts bypass authentication flows, so tests pass but features are broken in practice
+
+6. **Test agent checklist (RestAssured):**
    - [ ] Write **boundary tests** that verify constraints
    - [ ] Example: `@Test uploadFile_oversized_returns413()` — test that files > limit fail
    - [ ] Don't just test happy path; test the limit itself
