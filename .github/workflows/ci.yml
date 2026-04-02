@@ -73,7 +73,7 @@ jobs:
           path: backend/target/
 
       - name: Run backend tests
-        run: mvn clean test -pl backend -q
+        run: mvn clean test -pl backend -am -q
 
       - name: Upload test results
         if: always()
@@ -103,7 +103,7 @@ jobs:
           path: backend/target/
 
       - name: Run RestAssured tests
-        run: mvn clean test -pl restassured-tests -q
+        run: mvn clean test -pl restassured-tests -am -q
 
       - name: Upload test results
         if: always()
