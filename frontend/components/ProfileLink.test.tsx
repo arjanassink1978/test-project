@@ -11,12 +11,14 @@ jest.mock("next/link", () => {
     href,
     children,
     className,
+    "data-testid": dataTestid,
   }: {
     href: string;
     children: React.ReactNode;
     className?: string;
+    "data-testid"?: string;
   }) => (
-    <a href={href} className={className}>
+    <a href={href} className={className} data-testid={dataTestid}>
       {children}
     </a>
   );
@@ -41,6 +43,13 @@ describe("ProfileLink", () => {
     const link = screen.getByRole("link", { name: /mijn profiel/i });
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute("href", "/profile/arjan");
+  });
+
+  it("has data-testid='profile-link' on the rendered link", () => {
+    localStorage.setItem("username", "arjan");
+    render(<ProfileLink />);
+
+    expect(screen.getByTestId("profile-link")).toBeInTheDocument();
   });
 
   it("uses the stored username in the href", () => {

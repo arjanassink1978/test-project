@@ -5,7 +5,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900" data-testid="login-heading">
             Inloggen
           </h1>
           <p className="mt-2 text-sm text-gray-600">

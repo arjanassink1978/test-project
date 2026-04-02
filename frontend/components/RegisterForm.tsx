@@ -92,10 +92,11 @@ export default function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-5" noValidate data-testid="register-form">
       {error && (
         <div
           role="alert"
+          data-testid="register-error"
           className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"
         >
           {error}
@@ -114,6 +115,7 @@ export default function RegisterForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
+          data-testid="email-input"
           className={`block w-full rounded-lg border ${
             errors.email ? "border-red-300" : "border-gray-300"
           } bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm`}
@@ -136,6 +138,7 @@ export default function RegisterForm() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           disabled={loading}
+          data-testid="username-input"
           className={`block w-full rounded-lg border ${
             errors.username ? "border-red-300" : "border-gray-300"
           } bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm`}
@@ -158,6 +161,7 @@ export default function RegisterForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={loading}
+          data-testid="password-input"
           className={`block w-full rounded-lg border ${
             errors.password ? "border-red-300" : "border-gray-300"
           } bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm`}
@@ -180,6 +184,7 @@ export default function RegisterForm() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           disabled={loading}
+          data-testid="confirm-password-input"
           className={`block w-full rounded-lg border ${
             errors.confirmPassword ? "border-red-300" : "border-gray-300"
           } bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm`}
@@ -193,6 +198,7 @@ export default function RegisterForm() {
       <button
         type="submit"
         disabled={loading}
+        data-testid="register-button"
         className="flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? (
@@ -227,7 +233,7 @@ export default function RegisterForm() {
 
       <p className="text-center text-sm text-gray-600">
         Heeft u al een account?{" "}
-        <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+        <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500" data-testid="login-link">
           Inloggen
         </Link>
       </p>

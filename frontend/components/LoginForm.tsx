@@ -39,10 +39,11 @@ export default function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-5" noValidate data-testid="login-form">
       {error && (
         <div
           role="alert"
+          data-testid="login-error"
           className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700"
         >
           {error}
@@ -61,6 +62,7 @@ export default function LoginForm() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           disabled={loading}
+          data-testid="username-input"
           className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm"
           placeholder="Voer uw gebruikersnaam in"
         />
@@ -78,6 +80,7 @@ export default function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={loading}
+          data-testid="password-input"
           className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm"
           placeholder="Voer uw wachtwoord in"
         />
@@ -86,6 +89,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={loading}
+        data-testid="login-button"
         className="flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? (
@@ -120,7 +124,7 @@ export default function LoginForm() {
 
       <p className="text-center text-sm text-gray-600">
         Heeft u nog geen account?{" "}
-        <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+        <Link href="/register" className="font-medium text-indigo-600 hover:text-indigo-500" data-testid="register-link">
           Registreren
         </Link>
       </p>

@@ -1,6 +1,6 @@
 # Project Structure Index
 
-**Last Updated:** 2026-04-02
+**Last Updated:** 2026-04-02 (data-testid primary locator strategy)
 **Important:** When agents add new files/components, they MUST update this file.
 
 ---
@@ -68,15 +68,26 @@
 ### Pages (App Router)
 - `app/page.tsx` - Home page
 - `app/layout.tsx` - Root layout
-- `app/[login]/page.tsx` - Login page
-- `app/dashboard/page.tsx` - Dashboard: top nav bar with ProfileLink + LogoutButton, centered "Welkom op deze site" heading
+- `app/login/page.tsx` - Login page; `data-testid`: `login-heading`
+- `app/register/page.tsx` - Register page; `data-testid`: `register-heading`
+- `app/dashboard/page.tsx` - Dashboard: top nav bar with ProfileLink + LogoutButton, centered "Welkom op deze site" heading; `data-testid`: `welcome-heading`
+- `app/profile/[username]/page.tsx` - Profile page; delegates to `ProfileForm`
 - *(Add new pages here)*
 
 ### Components
-- `components/LoginForm.tsx` - Login form component
-- `components/LogoutButton.tsx` - Logout button; clears `localStorage["username"]` and navigates to `/`
-- `components/ProfileLink.tsx` - Link to `/profile/{username}`, reads username from localStorage
+- `components/LoginForm.tsx` - Login form component; `data-testid`: `login-form`, `username-input`, `password-input`, `login-button`, `login-error`, `register-link`
+- `components/RegisterForm.tsx` - Registration form component; `data-testid`: `register-form`, `email-input`, `username-input`, `password-input`, `confirm-password-input`, `register-button`, `register-error`, `login-link`
+- `components/LogoutButton.tsx` - Logout button; clears `localStorage["username"]` and navigates to `/`; `data-testid`: `logout-button`
+- `components/ProfileLink.tsx` - Link to `/profile/{username}`, reads username from localStorage; `data-testid`: `profile-link`
+- `components/ProfileForm.tsx` - Full profile edit form (avatar, account info, editable fields); `data-testid`: `profile-heading`, `profile-alert`, `avatar-section`, `avatar-image`, `avatar-placeholder`, `avatar-upload-input`, `avatar-upload-label`, `delete-avatar-button`, `account-info-section`, `profile-username`, `profile-email`, `edit-profile-section`, `edit-profile-form`, `display-name-input`, `bio-input`, `location-input`, `save-button`
 - *(Add new components here)*
+
+### Component Unit Tests
+- `components/LoginForm.test.tsx` - 8 tests: render, data-testid, interactions, error states, loading state
+- `components/RegisterForm.test.tsx` - 9 tests: render, data-testid, validation, error states, loading state
+- `components/LogoutButton.test.tsx` - 5 tests: render, data-testid, navigation, localStorage
+- `components/ProfileLink.test.tsx` - 4 tests: render, data-testid, href construction
+- `components/ProfileForm.test.tsx` - 13 tests: loading, profile data, data-testid, save/delete/upload avatar flows
 
 ### Configuration
 - `next.config.ts` - Next.js config
@@ -120,12 +131,13 @@
 - `tests/e2e/profile.spec.ts` - Issue #4: User Profile Page Flow (19 tests)
 
 ### Page Objects (`tests/e2e/pages/`)
-- `LoginPage.ts` - Login form navigation, credential entry, error message accessor
-- `DashboardPage.ts` - Dashboard heading, profile link, logout button
-- `ProfilePage.ts` - Profile display fields, edit form inputs, alert banner, avatar upload, logout
+All page objects use `getByTestId("…")` as the **primary** locator, with `.or()` semantic fallbacks (role, text, CSS).
+- `LoginPage.ts` - Login form navigation; locators: `username-input`, `password-input`, `login-button`, `login-error`
+- `DashboardPage.ts` - Dashboard heading, profile link, logout button; locators: `welcome-heading`, `profile-link`, `logout-button`
+- `ProfilePage.ts` - Profile display fields, edit form inputs, alert banner, avatar upload, logout; locators: `profile-heading`, `profile-username`, `profile-email`, `display-name-input`, `bio-input`, `location-input`, `save-button`, `profile-alert`, `avatar-image`, `avatar-upload-input`, `logout-button`
 
 ### Fixtures (`tests/e2e/fixtures/`)
-- `auth.ts` - `loginAsDefaultUser(page)` helper, `DEFAULT_USER` constant
+- `auth.ts` - `loginAsDefaultUser(page)` helper, `DEFAULT_USER` constant; delegates to `LoginPage` for data-testid-first login
 
 ---
 

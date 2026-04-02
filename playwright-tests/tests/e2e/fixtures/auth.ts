@@ -8,6 +8,8 @@ export const DEFAULT_USER = {
 
 /**
  * Performs a full login via the UI and waits for the dashboard URL.
+ * Delegates to LoginPage, which uses data-testid as the primary locator
+ * strategy with semantic fallbacks for all form fields.
  */
 export async function loginAsDefaultUser(page: Page): Promise<void> {
   const loginPage = new LoginPage(page);

@@ -25,6 +25,11 @@ describe("LogoutButton", () => {
     ).toBeInTheDocument();
   });
 
+  it("has data-testid='logout-button'", () => {
+    render(<LogoutButton />);
+    expect(screen.getByTestId("logout-button")).toBeInTheDocument();
+  });
+
   it("navigates to home on click", () => {
     render(<LogoutButton />);
     fireEvent.click(screen.getByRole("button", { name: /uitloggen/i }));

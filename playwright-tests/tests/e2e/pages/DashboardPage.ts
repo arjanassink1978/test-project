@@ -12,21 +12,26 @@ export class DashboardPage {
 
   async waitForLoad() {
     await expect(this.page).toHaveURL(/\/dashboard/, { timeout: 10000 });
-    await expect(this.page.locator("h1")).toBeVisible({ timeout: 10000 });
-  }
-
-  getHeading(): Locator {
-    return this.page.locator("h1");
+    await expect(this.getHeading()).toBeVisible({ timeout: 10000 });
   }
 
   /**
-   * Attempts to find a profile navigation link on the dashboard.
-   * Tries data-testid first, then href-based, then text-based selectors.
+   * Expected data-testid: "welcome-heading"
+   * Fallback: h1 element
+   */
+  getHeading(): Locator {
+    return this.page
+      .getByTestId("welcome-heading")
+      .or(this.page.locator("h1"));
+  }
+
+  /**
+   * Expected data-testid: "profile-link"
+   * Fallback: href-based then text-based link selectors
    */
   getProfileLink(): Locator {
-    // Priority: data-testid → href contains "/profile" → link text
     return this.page
-      .locator('[data-testid="profile-link"]')
+      .getByTestId("profile-link")
       .or(this.page.locator('a[href*="/profile"]'))
       .or(this.page.getByRole("link", { name: /go to profile|mijn profiel|profiel/i }));
   }
@@ -35,9 +40,13 @@ export class DashboardPage {
     await this.getProfileLink().click();
   }
 
+  /**
+   * Expected data-testid: "logout-button"
+   * Fallback: button with logout text
+   */
   getLogoutButton(): Locator {
     return this.page
-      .locator('[data-testid="logout-button"]')
+      .getByTestId("logout-button")
       .or(this.page.getByRole("button", { name: /uitloggen|logout/i }));
   }
 

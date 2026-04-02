@@ -184,8 +184,8 @@ export default function ProfileForm({ username }: ProfileFormProps) {
     <main className="flex min-h-screen flex-col items-center px-4 py-12">
       <div className="w-full max-w-xl space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+        <div className="flex items-center justify-between" data-testid="profile-header">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900" data-testid="profile-heading">
             Mijn profiel
           </h1>
           <LogoutButton />
@@ -195,6 +195,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
         {alert && (
           <div
             role="alert"
+            data-testid="profile-alert"
             className={`rounded-md border px-4 py-3 text-sm ${
               alert.kind === "success"
                 ? "border-green-200 bg-green-50 text-green-700"
@@ -206,18 +207,19 @@ export default function ProfileForm({ username }: ProfileFormProps) {
         )}
 
         {/* Avatar section */}
-        <div className="rounded-xl bg-white px-6 py-6 shadow-md ring-1 ring-gray-900/5">
-          <h2 className="mb-4 text-base font-semibold text-gray-900">Avatar</h2>
+        <div className="rounded-xl bg-white px-6 py-6 shadow-md ring-1 ring-gray-900/5" data-testid="avatar-section">
+          <h2 className="mb-4 text-base font-semibold text-gray-900" data-testid="avatar-heading">Avatar</h2>
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
             <div className="flex-shrink-0">
               {profile?.avatarUrl ? (
                 <img
                   src={profile.avatarUrl}
                   alt={`Avatar van ${username}`}
+                  data-testid="avatar-image"
                   className="h-24 w-24 rounded-full object-cover ring-2 ring-gray-200"
                 />
               ) : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-indigo-100 ring-2 ring-gray-200">
+                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-indigo-100 ring-2 ring-gray-200" data-testid="avatar-placeholder">
                   <span className="text-2xl font-bold text-indigo-600">
                     {username.charAt(0).toUpperCase()}
                   </span>
@@ -234,9 +236,11 @@ export default function ProfileForm({ username }: ProfileFormProps) {
                 onChange={handleAvatarChange}
                 disabled={uploadingAvatar || deletingAvatar}
                 aria-label="Avatar uploaden"
+                data-testid="avatar-upload-input"
               />
               <label
                 htmlFor="avatar-upload"
+                data-testid="avatar-upload-label"
                 className={`inline-flex cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors ${
                   uploadingAvatar || deletingAvatar
                     ? "cursor-not-allowed opacity-50"
@@ -250,6 +254,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
                   type="button"
                   onClick={handleDeleteAvatar}
                   disabled={deletingAvatar || uploadingAvatar}
+                  data-testid="delete-avatar-button"
                   className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
                 >
                   {deletingAvatar ? "Verwijderen…" : "Avatar verwijderen"}
@@ -263,8 +268,8 @@ export default function ProfileForm({ username }: ProfileFormProps) {
         </div>
 
         {/* Profile info (read-only) */}
-        <div className="rounded-xl bg-white px-6 py-6 shadow-md ring-1 ring-gray-900/5">
-          <h2 className="mb-4 text-base font-semibold text-gray-900">
+        <div className="rounded-xl bg-white px-6 py-6 shadow-md ring-1 ring-gray-900/5" data-testid="account-info-section">
+          <h2 className="mb-4 text-base font-semibold text-gray-900" data-testid="account-info-heading">
             Accountgegevens
           </h2>
           <dl className="space-y-3">
@@ -272,23 +277,23 @@ export default function ProfileForm({ username }: ProfileFormProps) {
               <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">
                 Gebruikersnaam
               </dt>
-              <dd className="mt-1 text-sm text-gray-900">{profile?.username}</dd>
+              <dd className="mt-1 text-sm text-gray-900" data-testid="profile-username">{profile?.username}</dd>
             </div>
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">
                 E-mail
               </dt>
-              <dd className="mt-1 text-sm text-gray-900">{profile?.email}</dd>
+              <dd className="mt-1 text-sm text-gray-900" data-testid="profile-email">{profile?.email}</dd>
             </div>
           </dl>
         </div>
 
         {/* Editable fields */}
-        <div className="rounded-xl bg-white px-6 py-6 shadow-md ring-1 ring-gray-900/5">
-          <h2 className="mb-4 text-base font-semibold text-gray-900">
+        <div className="rounded-xl bg-white px-6 py-6 shadow-md ring-1 ring-gray-900/5" data-testid="edit-profile-section">
+          <h2 className="mb-4 text-base font-semibold text-gray-900" data-testid="edit-profile-heading">
             Profielinformatie bewerken
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-4" data-testid="edit-profile-form">
             <div>
               <label
                 htmlFor="displayName"
@@ -304,6 +309,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
                 disabled={saving}
                 maxLength={100}
                 placeholder="Voer uw weergavenaam in"
+                data-testid="display-name-input"
                 className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
               />
             </div>
@@ -323,6 +329,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
                 disabled={saving}
                 maxLength={500}
                 placeholder="Vertel iets over uzelf"
+                data-testid="bio-input"
                 className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm resize-none"
               />
               <p className="mt-1 text-xs text-gray-400 text-right">
@@ -345,6 +352,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
                 disabled={saving}
                 maxLength={100}
                 placeholder="Voer uw locatie in"
+                data-testid="location-input"
                 className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
               />
             </div>
@@ -353,6 +361,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
               type="button"
               onClick={handleSave}
               disabled={saving}
+              data-testid="save-button"
               className="flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
               {saving ? (

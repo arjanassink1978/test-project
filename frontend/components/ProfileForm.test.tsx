@@ -70,6 +70,28 @@ describe("ProfileForm", () => {
     expect(screen.getByDisplayValue("Amsterdam")).toBeInTheDocument();
   });
 
+  it("renders key data-testid attributes after loading", async () => {
+    mockGetProfile.mockResolvedValueOnce(baseProfile);
+
+    render(<ProfileForm username="testuser" />);
+
+    await waitFor(() =>
+      expect(screen.queryByText(/profiel laden/i)).not.toBeInTheDocument()
+    );
+
+    expect(screen.getByTestId("profile-heading")).toBeInTheDocument();
+    expect(screen.getByTestId("avatar-section")).toBeInTheDocument();
+    expect(screen.getByTestId("account-info-section")).toBeInTheDocument();
+    expect(screen.getByTestId("profile-username")).toHaveTextContent("testuser");
+    expect(screen.getByTestId("profile-email")).toHaveTextContent("test@example.com");
+    expect(screen.getByTestId("edit-profile-section")).toBeInTheDocument();
+    expect(screen.getByTestId("display-name-input")).toBeInTheDocument();
+    expect(screen.getByTestId("bio-input")).toBeInTheDocument();
+    expect(screen.getByTestId("location-input")).toBeInTheDocument();
+    expect(screen.getByTestId("save-button")).toBeInTheDocument();
+    expect(screen.getByTestId("avatar-upload-input")).toBeInTheDocument();
+  });
+
   it("shows error alert when profile loading fails", async () => {
     mockGetProfile.mockRejectedValueOnce(new Error("Network error"));
 
