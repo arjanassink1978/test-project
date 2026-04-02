@@ -13,10 +13,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
  * do not need to repeat this boilerplate.
  */
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(
-        classes = techchamps.io.BackendApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
-)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public abstract class BaseIntegrationTest {
 
     @LocalServerPort
