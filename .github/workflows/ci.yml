@@ -53,13 +53,6 @@ jobs:
       - name: Build frontend
         run: cd frontend && npm run build
 
-      - name: Upload frontend artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-next
-          path: frontend/.next/
-          retention-days: 1
-
   test-backend:
     needs: build-backend
     runs-on: ubuntu-latest
@@ -137,14 +130,8 @@ jobs:
       - name: Install frontend dependencies
         run: cd frontend && npm install
 
-      - name: Download frontend artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-next
-          path: frontend/.next/
-
-      - name: Run frontend tests
-        run: cd frontend && npm test -- --passWithNoTests 2>/dev/null || true
+      - name: Build and test frontend
+        run: cd frontend && npm run build && npm test -- --passWithNoTests 2>/dev/null || true
 
       - name: Upload test results
         if: always()
