@@ -1,6 +1,10 @@
 package techchamps.io.config;
 
 import techchamps.io.model.AppUser;
+import techchamps.io.model.ForumCategory;
+import techchamps.io.repository.ForumCategoryRepository;
+import java.util.List;
+
 import techchamps.io.repository.AppUserRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -12,10 +16,13 @@ public class DataInitializer implements ApplicationRunner {
 
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ForumCategoryRepository forumCategoryRepository;
 
-    public DataInitializer(AppUserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public DataInitializer(AppUserRepository userRepository, PasswordEncoder passwordEncoder,
+                            ForumCategoryRepository forumCategoryRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.forumCategoryRepository = forumCategoryRepository;
     }
 
     @Override
@@ -27,6 +34,15 @@ public class DataInitializer implements ApplicationRunner {
             user.setLocation("Amsterdam, Netherlands");
             user.setAvatarUrl("https://api.dicebear.com/7.x/avataaars/svg?seed=user");
             userRepository.save(user);
+        }
+
+        // Seed forum categories
+        if (forumCategoryRepository.count() == 0) {
+            forumCategoryRepository.saveAll(List.of(
+                new ForumCategory("Algemeen", "Algemene discussies", "\uD83D\uDCAC"),
+                new ForumCategory("Technologie", "Tech nieuws en vragen", "\uD83D\uDCBB"),
+                new ForumCategory("Off-topic", "Alles wat niet past", "\uD83C\uDFAF")
+            ));
         }
     }
 }
