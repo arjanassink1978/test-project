@@ -21,20 +21,8 @@ import static org.hamcrest.Matchers.nullValue;
 class AuthControllerIT extends BaseIntegrationTest {
 
     // ---------------------------------------------------------------
-    // Setup: Ensure seed user exists before tests
+    // Note: Test user 'user/user1234' is created by DataInitializer
     // ---------------------------------------------------------------
-
-    @BeforeEach
-    void ensureSeedUserExists() {
-        given()
-            .port(port)
-            .contentType(ContentType.JSON)
-            .body(new LoginRequestBuilder().build())
-        .when()
-            .post("/api/auth/login")
-        .then()
-            .statusCode(200);
-    }
 
     // ---------------------------------------------------------------
     // Happy path
