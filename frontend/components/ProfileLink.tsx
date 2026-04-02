@@ -19,6 +19,7 @@ export default function ProfileLink() {
     <Link
       href={`/profile/${username}`}
       className="inline-flex w-32 items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 shadow-sm hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors"
+      data-testid="profile-link"
     >
       <svg
         className="h-4 w-4"

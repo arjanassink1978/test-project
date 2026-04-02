@@ -12,7 +12,7 @@ export default function DashboardPage() {
       </nav>
 
       <main className="flex flex-col items-center justify-center px-4 py-24">
-        <h1 className="text-2xl font-semibold text-gray-900">
+        <h1 className="text-2xl font-semibold text-gray-900" data-testid="welcome-heading">
           Welkom op deze site
         </h1>
       </main>
