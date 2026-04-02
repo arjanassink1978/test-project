@@ -46,18 +46,36 @@ Multi-module Maven project with a Spring Boot backend, Next.js frontend, and sep
 
 Backend and frontend agents read constraints from issue and implement them. See their agent prompts for details.
 
-### Standard Agent Steps
-1. **Feature-analysis:** Read PROJECT_STRUCTURE.md for codebase overview
-   - **NEW:** Identify all cross-layer constraints and document them
-2. **Backend agent:** Implement changes + tests
-   - **NEW:** Check constraints from issue, implement server-side validation
-3. **Frontend agent:** Implement changes
-   - **NEW:** Check constraints from issue, implement client-side validation
-4. **Test agent:** Add integration/E2E tests
-   - **NEW:** Write boundary tests for constraints, not just happy path
-5. **Update INDEX:** ALL agents MUST update PROJECT_STRUCTURE.md when adding files
-6. **Create MRs:** Each agent creates their own merge request (or link feature-analysis PR)
+### Standard Agent Steps (Three-Phase Workflow)
 
-**IMPORTANT:** Agents must update PROJECT_STRUCTURE.md with new files/components added. This keeps the index current and reduces token usage for future features.
+**PHASE 1: Planning**
+1. **Feature-analysis:**
+   - Fetch GitHub issue
+   - Identify all cross-layer constraints
+   - Read PROJECT_STRUCTURE.md
+   - Create implementation plan
+   - **SHOW PLAN AND WAIT FOR USER APPROVAL**
 
-**CRITICAL:** A passing build ≠ working feature. Constraints must be tested across layers.
+**PHASE 2: Implementation** (after user approves)
+1. **Feature-analysis:** Create feature branch `issue-{number}-{description}`
+2. **Backend agent:** Implement changes + tests (on feature branch)
+   - Check constraints from issue
+   - Implement server-side validation
+3. **Frontend agent:** Implement changes (on feature branch)
+   - Check constraints from issue
+   - Implement client-side validation
+4. **RestAssured/Playwright agents:** Add integration/E2E tests
+   - Write boundary tests for constraints
+5. **Mutation testing:** Run PIT mutation tests (target: ≥80% score)
+6. **ALL agents:** Update PROJECT_STRUCTURE.md when adding files
+
+**PHASE 3: Review & Merge** (after all tests pass)
+1. **Feature-analysis:** Create PR to main
+2. Comment on GitHub issue with test results + mutation score
+3. **ASK USER FOR APPROVAL** before merging PR
+4. **Only merge after user confirms**
+
+**IMPORTANT:**
+- Never commit directly to main — always use feature branches
+- A passing build ≠ working feature — constraints must be tested across layers
+- Mutation score ≥80% required before merging

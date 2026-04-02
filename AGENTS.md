@@ -5,30 +5,57 @@ This project uses Claude Code agents for automated development tasks. All agents
 ## Agents
 
 ### feature-analysis
-**Purpose**: Analyze GitHub issues and create implementation plans
+**Purpose**: Analyze GitHub issues and create implementation plans (three-phase workflow)
 
 **Tools**: Glob, Grep, Read, Bash
 
 **Key Responsibilities**:
 - Fetches GitHub issues directly using `gh` CLI
 - Reviews PROJECT_STRUCTURE.md for codebase context
-- Creates structured implementation plans
+- Creates structured implementation plans with cross-layer constraints
 - Assigns work to specialized agents (backend, frontend, restassured, playwright)
+- **Phase 1:** Shows plan to user, waits for approval
+- **Phase 2:** Creates feature branch, agents implement, runs mutation testing
+- **Phase 3:** Creates PR, asks for approval, merges after user confirmation
 
 **GitHub Integration**: Fetches issues automatically with `gh issue view`
+
+**Workflow (Three Phases):**
+
+**Phase 1: PLAN**
+1. Fetch issue with `gh issue view <number>`
+2. Identify cross-layer constraints (file sizes, string lengths, enums, auth rules)
+3. Read PROJECT_STRUCTURE.md
+4. Create detailed implementation plan (JSON with tasks for each agent)
+5. **STOP** — Show plan to user, ask for approval
+6. **DO NOT PROCEED** until user confirms
+
+**Phase 2: IMPLEMENT** (after user says "approve")
+1. Create feature branch: `git checkout -b issue-{number}-{description}`
+2. Call sub-agents (BACKEND, FRONTEND, RESTASSURED, PLAYWRIGHT) to work on branch
+3. Run all tests (unit, E2E)
+4. **Run mutation testing** on backend changes (target: ≥80% score)
+5. Create PR: `gh pr create --title "Issue #{number}: ..." --body "..."`
+
+**Phase 3: MERGE** (after tests and mutation testing pass)
+1. Comment on GitHub issue with:
+   - What was implemented
+   - Test results (unit + E2E scores)
+   - Mutation score percentage
+   - Link to PR
+2. **STOP** — Ask user: "All tests passing. Ready to merge PR?"
+3. **Only merge after user confirms** — Don't merge automatically
 
 **Usage**:
 ```
 "Analyze GitHub Issue #4"
-"Create implementation plan for Issue #5"
-"What should we build for Issue #3?"
+"Create plan for Issue #5"
 ```
 
 The agent will:
-1. Fetch the GitHub issue using `gh issue view <number>`
-2. Read PROJECT_STRUCTURE.md
-3. Read relevant source files mentioned in the issue
-4. Generate a JSON plan with tasks for each agent
+1. Show the plan and wait for "approve" or "needs changes"
+2. After approval: create branch, call agents, run mutation testing
+3. Ask for permission to merge after all tests pass
 
 ### backend
 **Purpose**: Build and modify Spring Boot REST API modules
