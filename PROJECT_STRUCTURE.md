@@ -1,6 +1,6 @@
 # Project Structure Index
 
-**Last Updated:** 2026-04-02 (data-testid primary locator strategy)
+**Last Updated:** 2026-04-02 (real API integration for happy-path E2E tests)
 **Important:** When agents add new files/components, they MUST update this file.
 
 ---
@@ -132,7 +132,13 @@
 **Run:** `cd playwright-tests && npm test`
 
 ### Test Files
-- `tests/e2e/profile.spec.ts` - Issue #4: User Profile Page Flow (19 tests)
+- `tests/e2e/profile.spec.ts` - User Profile Page Flow (23 tests); happy-path tests use real API calls (no mocks); mocks kept only for error scenarios (404, 500) and the no-avatar edge case
+
+### Test Strategy
+- **Happy path tests** — real GET/PUT/POST/DELETE calls to backend on port 8080; catches integration mismatches (e.g. multipart field names)
+- **Error scenarios** — `page.route()` mocks used for 404/500 responses and unreachable edge cases
+- **Setup helpers** — `resetProfile()`, `restoreAvatar()`, `deleteAvatarViaApi()` call the backend directly in `beforeEach`/`afterEach` to keep test state deterministic
+- **Seeded data constant** — `SEEDED_PROFILE` mirrors `DataInitializer.java` so assertions match the real DB state
 
 ### Page Objects (`tests/e2e/pages/`)
 All page objects use `getByTestId("…")` as the **primary** locator, with `.or()` semantic fallbacks (role, text, CSS).
