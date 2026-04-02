@@ -24,7 +24,11 @@ export default function LoginForm() {
       });
 
       if (response.ok) {
-        localStorage.setItem("username", username);
+        const data = await response.json();
+        // Store the username from the response (server-confirmed)
+        if (data.username) {
+          localStorage.setItem("username", data.username);
+        }
         router.push("/dashboard");
       } else if (response.status === 401) {
         setError("Ongeldige gebruikersnaam of wachtwoord");
