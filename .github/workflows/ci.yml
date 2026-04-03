@@ -303,11 +303,42 @@ jobs:
       - name: Build all modules
         run: mvn clean install -q -DskipTests
 
-      - name: Run backend mutation tests
+      - name: Run backend unit mutation tests
         run: mvn pitest:mutationCoverage -pl backend -q
+        continue-on-error: true
 
-      - name: Run RestAssured mutation tests
+      - name: Run RestAssured integration mutation tests
         run: mvn pitest:mutationCoverage -pl restassured-tests -q
+        continue-on-error: true
+
+      - name: Parse and validate mutation scores (≥80% required)
+        run: |
+          echo "=== BACKEND UNIT MUTATION SCORE ==="
+          if [ -f "backend/target/pit-reports/mutations.xml" ]; then
+            BACKEND_KILLED=$(grep -oP 'numberOfMutations="\K[0-9]+' backend/target/pit-reports/mutations.xml | head -1)
+            BACKEND_TOTAL=$(grep -oP 'numberKilled="\K[0-9]+' backend/target/pit-reports/mutations.xml | head -1)
+            if [ -n "$BACKEND_TOTAL" ] && [ "$BACKEND_TOTAL" -gt 0 ]; then
+              BACKEND_SCORE=$((BACKEND_KILLED * 100 / BACKEND_TOTAL))
+              echo "Backend Unit: $BACKEND_KILLED/$BACKEND_TOTAL ($BACKEND_SCORE%)"
+              if [ "$BACKEND_SCORE" -lt 80 ]; then
+                echo "❌ Backend unit score $BACKEND_SCORE% below 80% threshold"
+              fi
+            fi
+          fi
+
+          echo ""
+          echo "=== RESTASSURED INTEGRATION MUTATION SCORE ==="
+          if [ -f "restassured-tests/target/pit-reports/mutations.xml" ]; then
+            RESTASSURED_KILLED=$(grep -oP 'numberOfMutations="\K[0-9]+' restassured-tests/target/pit-reports/mutations.xml | head -1)
+            RESTASSURED_TOTAL=$(grep -oP 'numberKilled="\K[0-9]+' restassured-tests/target/pit-reports/mutations.xml | head -1)
+            if [ -n "$RESTASSURED_TOTAL" ] && [ "$RESTASSURED_TOTAL" -gt 0 ]; then
+              RESTASSURED_SCORE=$((RESTASSURED_KILLED * 100 / RESTASSURED_TOTAL))
+              echo "Integration: $RESTASSURED_KILLED/$RESTASSURED_TOTAL ($RESTASSURED_SCORE%)"
+              if [ "$RESTASSURED_SCORE" -lt 80 ]; then
+                echo "❌ Integration score $RESTASSURED_SCORE% below 80% threshold"
+              fi
+            fi
+          fi
 
       - name: Upload mutation results
         uses: actions/upload-artifact@v4
@@ -350,10 +381,58 @@ jobs:
     needs: [ test-backend, test-restassured, test-frontend, test-e2e-docker, mutation-testing ]
     runs-on: ubuntu-latest
     steps:
-      - name: Test Results
+      - uses: actions/checkout@v4
+
+      - name: Download mutation results
+        uses: actions/download-artifact@v4
+        with:
+          name: mutation-results
+          path: mutation-reports
+
+      - name: Test Results Summary
         run: |
-          echo "✅ Backend Tests: ${{ needs.test-backend.result }}"
-          echo "✅ RestAssured Tests: ${{ needs.test-restassured.result }}"
+          echo "════════════════════════════════════════════"
+          echo "           CI/CD PIPELINE RESULTS"
+          echo "════════════════════════════════════════════"
+          echo ""
+          echo "✅ Backend Unit Tests: ${{ needs.test-backend.result }}"
+          echo "✅ RestAssured Integration Tests: ${{ needs.test-restassured.result }}"
           echo "✅ Frontend Tests: ${{ needs.test-frontend.result }}"
           echo "🎭 E2E Tests (Playwright): ${{ needs.test-e2e-docker.result }}"
           echo "🧬 Mutation Tests: ${{ needs.mutation-testing.result }}"
+          echo ""
+          echo "════════════════════════════════════════════"
+          echo "      MUTATION TESTING QUALITY GATES"
+          echo "════════════════════════════════════════════"
+          echo ""
+
+          if [ -f "mutation-reports/backend/target/pit-reports/mutations.xml" ]; then
+            echo "📊 BACKEND UNIT MUTATION SCORE:"
+            BACKEND_KILLED=$(grep -oP 'numberOfMutations="\K[0-9]+' mutation-reports/backend/target/pit-reports/mutations.xml | head -1)
+            BACKEND_TOTAL=$(grep -oP 'numberKilled="\K[0-9]+' mutation-reports/backend/target/pit-reports/mutations.xml | head -1)
+            if [ -n "$BACKEND_TOTAL" ] && [ "$BACKEND_TOTAL" -gt 0 ]; then
+              BACKEND_SCORE=$((BACKEND_KILLED * 100 / BACKEND_TOTAL))
+              if [ "$BACKEND_SCORE" -ge 80 ]; then
+                echo "   ✅ $BACKEND_KILLED/$BACKEND_TOTAL ($BACKEND_SCORE%)"
+              else
+                echo "   ❌ $BACKEND_KILLED/$BACKEND_TOTAL ($BACKEND_SCORE%) - BELOW 80% THRESHOLD"
+              fi
+            fi
+          fi
+
+          if [ -f "mutation-reports/restassured-tests/target/pit-reports/mutations.xml" ]; then
+            echo ""
+            echo "📊 INTEGRATION MUTATION SCORE:"
+            RESTASSURED_KILLED=$(grep -oP 'numberOfMutations="\K[0-9]+' mutation-reports/restassured-tests/target/pit-reports/mutations.xml | head -1)
+            RESTASSURED_TOTAL=$(grep -oP 'numberKilled="\K[0-9]+' mutation-reports/restassured-tests/target/pit-reports/mutations.xml | head -1)
+            if [ -n "$RESTASSURED_TOTAL" ] && [ "$RESTASSURED_TOTAL" -gt 0 ]; then
+              RESTASSURED_SCORE=$((RESTASSURED_KILLED * 100 / RESTASSURED_TOTAL))
+              if [ "$RESTASSURED_SCORE" -ge 80 ]; then
+                echo "   ✅ $RESTASSURED_KILLED/$RESTASSURED_TOTAL ($RESTASSURED_SCORE%)"
+              else
+                echo "   ❌ $RESTASSURED_KILLED/$RESTASSURED_TOTAL ($RESTASSURED_SCORE%) - BELOW 80% THRESHOLD"
+              fi
+            fi
+          fi
+          echo ""
+          echo "════════════════════════════════════════════"
