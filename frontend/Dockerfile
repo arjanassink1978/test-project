@@ -22,8 +22,8 @@ WORKDIR /app
 # Copy package files
 COPY frontend/package*.json ./
 
-# Install production dependencies only
-RUN npm ci --omit=dev
+# Copy node_modules from builder to avoid network issues
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy built app from builder
 COPY --from=builder /app/.next ./.next

@@ -160,8 +160,11 @@ jobs:
           name: backend-target
           path: backend/target/
 
+      - name: Install backend to Maven repo
+        run: mvn install -pl backend -DskipTests -q
+
       - name: Run RestAssured tests (Testcontainers PostgreSQL)
-        run: mvn clean test -pl restassured-tests -am -q
+        run: mvn test -pl restassured-tests -q
         env:
           TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
           DOCKER_HOST: unix:///var/run/docker.sock
