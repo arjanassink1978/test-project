@@ -17,6 +17,8 @@ import {
 } from "@/lib/api";
 import LogoutButton from "@/components/LogoutButton";
 import ProfileLink from "@/components/ProfileLink";
+import Link from "next/link";
+import { button } from "@/lib/theme";
 
 export default function ThreadDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -158,6 +160,13 @@ export default function ThreadDetailPage() {
       <nav className={nav.bar}>
         <div className={nav.inner}>
           <ProfileLink />
+          <Link
+            href="/forum"
+            className="inline-flex w-32 items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 shadow-sm hover:bg-indigo-100 transition-colors"
+            data-testid="forum-link"
+          >
+            Forum
+          </Link>
           <LogoutButton />
         </div>
       </nav>
@@ -216,7 +225,7 @@ export default function ThreadDetailPage() {
                 <button
                   onClick={() => handleCloseThread(!thread.closed)}
                   disabled={closeLoading}
-                  className="text-sm px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                  className={button.danger}
                   data-testid="close-thread-button"
                 >
                   {thread.closed ? "Reopen Thread" : "Close Thread"}
