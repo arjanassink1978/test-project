@@ -7,3 +7,7 @@ databaseChangeLog:
       file: classpath:db/migration/V003__seed_test_data.sql
   - include:
       file: classpath:db/migration/V004__add_role_and_thread_closed.sql
+  - include:
+      file: classpath:db/migration/V005__add_icon_to_forum_categories.sql
+  - include:
+      file: classpath:db/migration/V006__update_forum_votes_schema.sql
