@@ -25,8 +25,12 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
 
+import org.mockito.ArgumentCaptor;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -172,6 +176,30 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.username").value("newuser"));
     }
 
+    // --- register: verify id is returned in response ---
+
+    @Test
+    void register_returnsIdFromSavedUser() throws Exception {
+        when(appUserRepository.existsByEmail(anyString())).thenReturn(false);
+        when(appUserRepository.existsByUsername(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("hashedPassword");
+
+        AppUser savedUser = new AppUser("new@example.com", "newuser", "hashedPassword", "USER");
+        // Simulate that the repository sets an ID on save
+        java.lang.reflect.Field idField = AppUser.class.getDeclaredField("id");
+        idField.setAccessible(true);
+        idField.set(savedUser, 42L);
+        when(appUserRepository.save(any(AppUser.class))).thenReturn(savedUser);
+
+        RegisterRequest request = new RegisterRequest("new@example.com", "newuser", "password123");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(42));
+    }
+
     // --- register: duplicate email ---
 
     @Test
@@ -227,6 +255,28 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    // --- login: verify password is passed through to authenticationManager ---
+
+    @Test
+    void login_verifiesPasswordPassedToAuthManager() throws Exception {
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken("user", null, Collections.emptyList());
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(auth);
+
+        LoginRequest request = new LoginRequest("user", "secretpass");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<UsernamePasswordAuthenticationToken> captor =
+                ArgumentCaptor.forClass(UsernamePasswordAuthenticationToken.class);
+        verify(authenticationManager).authenticate(captor.capture());
+        assertThat(captor.getValue().getCredentials()).isEqualTo("secretpass");
     }
 
     // --- register: blank username ---

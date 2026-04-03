@@ -140,6 +140,22 @@ class ProfileServiceTest {
         verify(appUserRepository).save(any(AppUser.class));
     }
 
+    @Test
+    void uploadAvatar_verifySavedUserHasAvatarUrl() throws IOException {
+        AppUser user = createSampleUser();
+        when(appUserRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        when(appUserRepository.save(any(AppUser.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        MultipartFile file = mock(MultipartFile.class);
+        when(file.getContentType()).thenReturn("image/png");
+        when(file.getBytes()).thenReturn(new byte[]{1, 2, 3});
+
+        profileService.uploadAvatar("user", file);
+
+        verify(appUserRepository).save(argThat(u ->
+                u.getAvatarUrl() != null && u.getAvatarUrl().startsWith("data:image/png;base64,")));
+    }
+
     // --- uploadAvatar: user not found ---
 
     @Test

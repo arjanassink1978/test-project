@@ -1209,6 +1209,220 @@ class ForumServiceTest {
     }
 
     // ============================================================
+    // Mutation-killing tests: verify entities passed to save()
+    // ============================================================
+
+    @Test
+    void createThread_verifySavedEntityHasAuthor() {
+        AppUser author = createUser("testuser");
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(author));
+
+        ForumThread saved = createThread(1L, "Title", "Desc");
+        when(threadRepository.save(any(ForumThread.class))).thenReturn(saved);
+        when(threadRepository.countRepliesByThreadId(1L)).thenReturn(0L);
+
+        CreateThreadRequest request = new CreateThreadRequest("Title", "Desc", null);
+        forumService.createThread("testuser", request);
+
+        verify(threadRepository).save(argThat(thread ->
+                thread.getAuthor() != null && "testuser".equals(thread.getAuthor().getUsername())));
+    }
+
+    @Test
+    void createThread_verifySavedEntityHasTitle() {
+        AppUser author = createUser("testuser");
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(author));
+
+        ForumThread saved = createThread(1L, "My Title", "Desc");
+        when(threadRepository.save(any(ForumThread.class))).thenReturn(saved);
+        when(threadRepository.countRepliesByThreadId(1L)).thenReturn(0L);
+
+        CreateThreadRequest request = new CreateThreadRequest("My Title", "Desc", null);
+        forumService.createThread("testuser", request);
+
+        verify(threadRepository).save(argThat(thread ->
+                "My Title".equals(thread.getTitle())));
+    }
+
+    @Test
+    void createThread_verifySavedEntityHasDescription() {
+        AppUser author = createUser("testuser");
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(author));
+
+        ForumThread saved = createThread(1L, "Title", "My description");
+        when(threadRepository.save(any(ForumThread.class))).thenReturn(saved);
+        when(threadRepository.countRepliesByThreadId(1L)).thenReturn(0L);
+
+        CreateThreadRequest request = new CreateThreadRequest("Title", "My description", null);
+        forumService.createThread("testuser", request);
+
+        verify(threadRepository).save(argThat(thread ->
+                "My description".equals(thread.getDescription())));
+    }
+
+    @Test
+    void createThread_withCategory_verifySavedEntityHasCategory() {
+        AppUser author = createUser("testuser");
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(author));
+
+        ForumCategory cat = createCategory(5L, "Tech", "Technology", "icon");
+        when(categoryRepository.findById(5L)).thenReturn(Optional.of(cat));
+
+        ForumThread saved = createThread(1L, "Title", "Desc");
+        saved.setCategory(cat);
+        when(threadRepository.save(any(ForumThread.class))).thenReturn(saved);
+        when(threadRepository.countRepliesByThreadId(1L)).thenReturn(0L);
+
+        CreateThreadRequest request = new CreateThreadRequest("Title", "Desc", 5L);
+        forumService.createThread("testuser", request);
+
+        verify(threadRepository).save(argThat(thread ->
+                thread.getCategory() != null && thread.getCategory().getId().equals(5L)));
+    }
+
+    @Test
+    void createReply_verifySavedEntityHasThread() {
+        AppUser author = createUser("testuser");
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(author));
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+
+        ForumReply saved = createReply(10L, thread, null, "Content", 0);
+        when(replyRepository.save(any(ForumReply.class))).thenReturn(saved);
+
+        CreateReplyRequest request = new CreateReplyRequest("Content", null);
+        forumService.createReply(1L, "testuser", request);
+
+        verify(replyRepository).save(argThat(reply ->
+                reply.getThread() != null && reply.getThread().getId().equals(1L)));
+    }
+
+    @Test
+    void createReply_verifySavedEntityHasAuthor() {
+        AppUser author = createUser("testuser");
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(author));
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+
+        ForumReply saved = createReply(10L, thread, null, "Content", 0);
+        when(replyRepository.save(any(ForumReply.class))).thenReturn(saved);
+
+        CreateReplyRequest request = new CreateReplyRequest("Content", null);
+        forumService.createReply(1L, "testuser", request);
+
+        verify(replyRepository).save(argThat(reply ->
+                reply.getAuthor() != null && "testuser".equals(reply.getAuthor().getUsername())));
+    }
+
+    @Test
+    void createReply_verifySavedEntityHasContent() {
+        AppUser author = createUser("testuser");
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(author));
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+
+        ForumReply saved = createReply(10L, thread, null, "My reply content", 0);
+        when(replyRepository.save(any(ForumReply.class))).thenReturn(saved);
+
+        CreateReplyRequest request = new CreateReplyRequest("My reply content", null);
+        forumService.createReply(1L, "testuser", request);
+
+        verify(replyRepository).save(argThat(reply ->
+                "My reply content".equals(reply.getContent())));
+    }
+
+    @Test
+    void createReply_verifySavedEntityHasCorrectDepth() {
+        AppUser author = createUser("testuser");
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        ForumReply parent = createReply(10L, thread, null, "Parent", 1);
+
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(author));
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(replyRepository.findById(10L)).thenReturn(Optional.of(parent));
+
+        ForumReply saved = createReply(20L, thread, parent, "Child", 2);
+        when(replyRepository.save(any(ForumReply.class))).thenReturn(saved);
+
+        CreateReplyRequest request = new CreateReplyRequest("Child", 10L);
+        forumService.createReply(1L, "testuser", request);
+
+        verify(replyRepository).save(argThat(reply -> reply.getDepth() == 2));
+    }
+
+    @Test
+    void createReply_nestedReply_verifySavedEntityHasParentReply() {
+        AppUser author = createUser("testuser");
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        ForumReply parent = createReply(10L, thread, null, "Parent", 0);
+
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(author));
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(replyRepository.findById(10L)).thenReturn(Optional.of(parent));
+
+        ForumReply saved = createReply(20L, thread, parent, "Child", 1);
+        when(replyRepository.save(any(ForumReply.class))).thenReturn(saved);
+
+        CreateReplyRequest request = new CreateReplyRequest("Child", 10L);
+        forumService.createReply(1L, "testuser", request);
+
+        verify(replyRepository).save(argThat(reply ->
+                reply.getParentReply() != null && reply.getParentReply().getId().equals(10L)));
+    }
+
+    @Test
+    void vote_existingVote_verifySavedVoteHasNewValue() {
+        AppUser voter = createUser("voter");
+        when(userRepository.findByUsername("voter")).thenReturn(Optional.of(voter));
+
+        ForumVote existingVote = new ForumVote(voter, 1L, "thread", 1);
+        when(voteRepository.findByVoterUsernameAndPostIdAndPostType("voter", 1L, "thread"))
+                .thenReturn(Optional.of(existingVote));
+
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        thread.setScore(5);
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(threadRepository.save(any(ForumThread.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        forumService.vote(1L, "thread", "voter", -1);
+
+        verify(voteRepository).save(argThat(vote -> vote.getVoteValue() == -1));
+    }
+
+    @Test
+    void buildReplyTree_atDepthOne_recursesWithIncrementedDepth() {
+        // Test that buildReplyTree correctly increments depth:
+        // At root level (depth 0), with MAX_REPLY_DEPTH=3, children at depth 1 should also recurse
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(threadRepository.countRepliesByThreadId(1L)).thenReturn(0L);
+
+        ForumReply root = createReply(10L, thread, null, "Root", 0);
+        ForumReply child = createReply(20L, thread, root, "Child", 1);
+        ForumReply grandchild = createReply(30L, thread, child, "Grandchild", 2);
+
+        when(replyRepository.findByThreadIdAndParentReplyIsNull(1L)).thenReturn(List.of(root));
+        when(replyRepository.findByParentReplyId(10L)).thenReturn(List.of(child));
+        when(replyRepository.findByParentReplyId(20L)).thenReturn(List.of(grandchild));
+        // At depth 2 (MAX_REPLY_DEPTH - 1 = 2), should still call findByParentReplyId but NOT recurse children
+        when(replyRepository.findByParentReplyId(30L)).thenReturn(Collections.emptyList());
+
+        ForumThreadDetailResponse result = forumService.getThread(1L);
+
+        // Verify full tree: root -> child -> grandchild (no children)
+        ForumReplyResponse rootResp = result.getReplies().get(0);
+        assertThat(rootResp.getReplies()).hasSize(1);
+        ForumReplyResponse childResp = rootResp.getReplies().get(0);
+        assertThat(childResp.getReplies()).hasSize(1);
+        ForumReplyResponse grandchildResp = childResp.getReplies().get(0);
+        assertThat(grandchildResp.getContent()).isEqualTo("Grandchild");
+        assertThat(grandchildResp.getReplies()).isEmpty();
+
+        // Verify findByParentReplyId was called for grandchild (depth 2), but children are empty
+        verify(replyRepository).findByParentReplyId(30L);
+    }
+
+    // ============================================================
     // helpers
     // ============================================================
 
