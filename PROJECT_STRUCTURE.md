@@ -170,8 +170,9 @@
 ## E2E Tests (Playwright)
 
 **Location:** `playwright-tests/`
-**Config:** `playwright-tests/playwright.config.ts` — baseURL: http://localhost:3000, headless Chromium
+**Config:** `playwright-tests/playwright.config.ts` — baseURL: http://localhost:3000, headless Chromium, retries enabled in CI, HTML + JUnit reporters
 **Run:** `cd playwright-tests && npm test`
+**Reports:** Generated in `playwright-tests/playwright-report/` (HTML) and `playwright-tests/test-results/junit.xml` (JUnit)
 
 ### Test Files
 - `tests/e2e/profile.spec.ts` - User Profile Page Flow (23 tests); happy-path tests use real API calls (no mocks); mocks kept only for error scenarios (404, 500) and the no-avatar edge case
@@ -199,11 +200,52 @@ All page objects use `getByTestId("…")` as the **primary** locator, with `.or(
 ## Configuration Files
 
 - `pom.xml` (root) - Parent POM, groupId: `techchamps.io`
-- `backend/pom.xml` - Backend module
-- `restassured-tests/pom.xml` - Integration tests module
+- `backend/pom.xml` - Backend module (includes Spring Boot, Spring Security, Liquibase, PostgreSQL, Actuator)
+- `restassured-tests/pom.xml` - Integration tests module (includes Testcontainers PostgreSQL)
 - `.claude/settings.json` - Claude Code project settings
 - `CLAUDE.md` - Project instructions and conventions
 - `PROJECT_STRUCTURE.md` - **This file** (update when adding files)
+
+---
+
+## Docker & CI/CD Configuration
+
+### Docker Files
+- `backend/Dockerfile` - Multi-stage build for backend: Maven JDK 21 builder → JRE 21-alpine runtime; health check on /actuator/health
+- `frontend/Dockerfile` - Multi-stage build for frontend: Node 20 builder → Node 20-alpine runtime; health check on http://localhost:3000
+- `backend/.dockerignore` - Excludes unnecessary files from backend Docker image
+- `frontend/.dockerignore` - Excludes unnecessary files from frontend Docker image
+- `docker-compose.yml` - Local development: PostgreSQL 15, Backend (port 8080), Frontend (port 3000) with health checks and volumes for hot reload
+
+### Database Configuration
+- `backend/src/main/resources/application.properties` - H2 in-memory database for local dev; Liquibase disabled
+- `backend/src/main/resources/application-docker.properties` - PostgreSQL configuration for Docker; Liquibase enabled
+- `backend/src/main/resources/db/changelog/db.changelog-master.yaml` - Liquibase master changelog
+- `backend/src/main/resources/db/migration/V001__create_users_table.sql` - Create app_users and user_profiles tables
+- `backend/src/main/resources/db/migration/V002__create_forum_tables.sql` - Create forum_categories, forum_threads, forum_replies, forum_votes tables
+- `backend/src/main/resources/db/migration/V003__seed_test_data.sql` - Placeholder for schema completion
+
+### CI/CD Pipeline
+- `.github/workflows/ci.yml` - GitHub Actions pipeline:
+  - `build-backend` - Build backend with Maven
+  - `build-backend-docker` - Build and save backend Docker image
+  - `build-frontend` - Build frontend with Node
+  - `build-frontend-docker` - Build and save frontend Docker image
+  - `test-backend` - Run backend unit tests
+  - `test-restassured` - Run RestAssured integration tests with Testcontainers PostgreSQL
+  - `test-frontend` - Run frontend tests
+  - `test-e2e-docker` - Run Playwright E2E tests against containerized stack
+  - `mutation-testing` - Run PIT mutation tests on backend and RestAssured
+  - `generate-report` - Generate combined test report (requires all tests to pass)
+  - `test-summary` - Summary of all test results
+
+### Scripts
+- `start.sh` - Start all services with `docker-compose up --build` (PostgreSQL, Backend, Frontend)
+- `start-test.sh` - Start containerized stack with docker-compose, run Playwright E2E tests, collect reports, and cleanup
+
+### Configuration Profiles
+- **Local Development (H2):** `application.properties` - No profile, H2 in-memory, Hibernate DDL auto
+- **Docker/Production (PostgreSQL):** `application-docker.properties` - Activated by `SPRING_PROFILES_ACTIVE=docker`, PostgreSQL, Liquibase migrations
 
 ---
 

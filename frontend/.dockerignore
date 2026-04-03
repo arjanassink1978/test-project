@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.gitignore
+README.md
+.DS_Store
+*.log
+.vscode
+.idea
+*.swp
+*.swo
+.env
+.env.local
+jest.config.js
+jest.setup.js
+test/
+__tests__/
