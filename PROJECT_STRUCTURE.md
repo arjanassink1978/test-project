@@ -189,6 +189,7 @@
 - `tests/e2e/auth.spec.ts` - Auth E2E tests (11 tests): login wrong credentials, nonexistent user, empty fields, register-to-login link, full registration happy path, mismatched passwords, invalid email, duplicate username, short password, login link, logout from dashboard
 - `tests/e2e/rbac.spec.ts` - RBAC E2E tests: moderator close thread flow, delete reply visibility, closed thread UI
 - `tests/e2e/user-journey.spec.ts` - End-to-end user journeys (12 tests): full register→login→forum→create thread→reply→vote journey, forum navigation from dashboard, category filter flow, thread upvote/downvote/toggle, profile update journey, public thread access, forum search→detail navigation, reply constraint (content > 2000 chars errors on submit, counter)
+- `tests/e2e/forumThreadDetail.spec.ts` - Forum thread detail page UI fixes (issue #28, 18 tests): forum link visibility for logged-in and anonymous users, forum link navigation to /forum, forum link indigo styling, close thread button visibility by role (MODERATOR/ADMIN only), close thread button red danger styling, close/reopen thread button text updates, navigation bar integration with profile link, styling consistency between dashboard and thread detail
 
 ### Test Strategy
 - **Happy path tests** — real GET/PUT/POST/DELETE calls to backend on port 8080; catches integration mismatches (e.g. multipart field names)
