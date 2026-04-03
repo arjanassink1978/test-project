@@ -17,7 +17,7 @@ import {
 } from "@/lib/api";
 import LogoutButton from "@/components/LogoutButton";
 import ProfileLink from "@/components/ProfileLink";
-import Link from "next/link";
+import ForumLink from "@/components/ForumLink";
 import { button } from "@/lib/theme";
 
 export default function ThreadDetailPage() {
@@ -160,13 +160,7 @@ export default function ThreadDetailPage() {
       <nav className={nav.bar}>
         <div className={nav.inner}>
           <ProfileLink />
-          <Link
-            href="/forum"
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors"
-            data-testid="forum-link"
-          >
-            Forum
-          </Link>
+          <ForumLink />
           <LogoutButton />
         </div>
       </nav>

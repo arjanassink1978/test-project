@@ -1,6 +1,7 @@
 import LogoutButton from "@/components/LogoutButton";
 import Link from "next/link";
 import ProfileLink from "@/components/ProfileLink";
+import ForumLink from "@/components/ForumLink";
 import { nav, typography, button } from "@/lib/theme";
 
 export default function DashboardPage() {
@@ -9,13 +10,7 @@ export default function DashboardPage() {
       <nav className={nav.bar}>
         <div className={nav.inner}>
           <ProfileLink />
-          <Link
-            href="/forum"
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors"
-            data-testid="forum-link"
-          >
-            Forum
-          </Link>
+          <ForumLink />
           <LogoutButton />
         </div>
       </nav>
