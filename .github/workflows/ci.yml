@@ -160,8 +160,11 @@ jobs:
           name: backend-target
           path: backend/target/
 
+      - name: Install backend to Maven repo
+        run: mvn install -pl backend -DskipTests -q
+
       - name: Run RestAssured tests (Testcontainers PostgreSQL)
-        run: mvn clean test -pl restassured-tests -am -q
+        run: mvn test -pl restassured-tests -q
         env:
           TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
           DOCKER_HOST: unix:///var/run/docker.sock
@@ -301,14 +304,28 @@ jobs:
           cache: maven
 
       - name: Build all modules
-        run: mvn clean install -q -DskipTests
+        run: mvn install -q -DskipTests
 
       - name: Run backend unit mutation tests
-        run: mvn pitest:mutationCoverage -pl backend -q
+        run: mvn pitest:mutationCoverage -pl backend -am -q
         continue-on-error: true
 
       - name: Run RestAssured integration mutation tests
-        run: mvn pitest:mutationCoverage -pl restassured-tests -q
+        run: mvn pitest:mutationCoverage -pl restassured-tests -am -q
+        continue-on-error: true
+
+      - name: Setup Node.js for frontend mutation testing
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm install
+
+      - name: Run frontend mutation tests (Stryker)
+        run: cd frontend && npm run test:mutate
         continue-on-error: true
 
       - name: Parse mutation scores (informational only, does not fail build)
@@ -342,6 +359,8 @@ jobs:
           path: |
             backend/target/pit-reports/
             restassured-tests/target/pit-reports/
+            frontend/reports/mutation/
+            frontend/stryker-report.json
           retention-days: 30
 
   generate-report:

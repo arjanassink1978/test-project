@@ -3,9 +3,10 @@
 FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
-# Copy only parent pom and backend pom (for dependency caching)
+# Copy parent pom and both module poms (for dependency caching)
 COPY pom.xml ./
 COPY backend/pom.xml ./backend/
+COPY restassured-tests/pom.xml ./restassured-tests/
 
 # Download dependencies for backend module only
 RUN mvn dependency:resolve -pl backend -q 2>/dev/null || true
