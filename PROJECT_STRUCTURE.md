@@ -178,6 +178,8 @@
 ### Test Files
 - `tests/e2e/profile.spec.ts` - User Profile Page Flow (23 tests); happy-path tests use real API calls (no mocks); mocks kept only for error scenarios (404, 500) and the no-avatar edge case
 - `tests/e2e/forum.spec.ts` - Forum E2E tests: index page (public + auth), thread detail, create thread flow, reply flow, search; all happy-path tests use real API calls via backend on port 8080
+- `tests/e2e/auth.spec.ts` - Auth E2E tests (11 tests): login wrong credentials, nonexistent user, empty fields, register-to-login link, full registration happy path, mismatched passwords, invalid email, duplicate username, short password, login link, logout from dashboard
+- `tests/e2e/user-journey.spec.ts` - End-to-end user journeys (12 tests): full register→login→forum→create thread→reply→vote journey, forum navigation from dashboard, category filter flow, thread upvote/downvote/toggle, profile update journey, public thread access, forum search→detail navigation, reply constraint (content > 2000 chars errors on submit, counter)
 
 ### Test Strategy
 - **Happy path tests** — real GET/PUT/POST/DELETE calls to backend on port 8080; catches integration mismatches (e.g. multipart field names)
@@ -188,6 +190,7 @@
 ### Page Objects (`tests/e2e/pages/`)
 All page objects use `getByTestId("…")` as the **primary** locator, with `.or()` semantic fallbacks (role, text, CSS).
 - `LoginPage.ts` - Login form navigation; locators: `username-input`, `password-input`, `login-button`, `login-error`
+- `RegisterPage.ts` - Registration form navigation; locators: `register-heading`, `email-input`, `username-input`, `password-input`, `confirm-password-input`, `register-button`, `register-error`, `login-link`
 - `DashboardPage.ts` - Dashboard heading, profile link, logout button; locators: `welcome-heading`, `profile-link`, `logout-button`
 - `ProfilePage.ts` - Profile display fields, edit form inputs, alert banner, avatar upload, logout; locators: `profile-heading`, `profile-username`, `profile-email`, `display-name-input`, `bio-input`, `location-input`, `save-button`, `profile-alert`, `avatar-image`, `avatar-upload-input`, `logout-button`
 - `ForumPage.ts` - Forum index page; locators: `forum-heading`, `forum-link`, `new-thread-button`, `category-filter`, `category-option-{id}`, `sort-select`, `search-input`, `thread-list`, `thread-item-{id}`, `thread-title-{id}`, `thread-score-{id}`, `load-more-button`
