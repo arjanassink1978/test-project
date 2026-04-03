@@ -304,14 +304,14 @@ jobs:
           cache: maven
 
       - name: Build all modules
-        run: mvn clean install -q -DskipTests
+        run: mvn install -q -DskipTests
 
       - name: Run backend unit mutation tests
-        run: mvn pitest:mutationCoverage -pl backend -q
+        run: mvn pitest:mutationCoverage -pl backend -am -q
         continue-on-error: true
 
       - name: Run RestAssured integration mutation tests
-        run: mvn pitest:mutationCoverage -pl restassured-tests -q
+        run: mvn pitest:mutationCoverage -pl restassured-tests -am -q
         continue-on-error: true
 
       - name: Setup Node.js for frontend mutation testing
@@ -359,6 +359,8 @@ jobs:
           path: |
             backend/target/pit-reports/
             restassured-tests/target/pit-reports/
+            frontend/reports/mutation/
+            frontend/stryker-report.json
           retention-days: 30
 
   generate-report:
