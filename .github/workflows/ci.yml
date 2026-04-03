@@ -231,7 +231,7 @@ jobs:
           docker tag test-project-frontend:${{ github.sha }} test-project-frontend:latest
 
       - name: Start Docker Compose stack
-        run: docker-compose up -d
+        run: docker compose up -d
         env:
           COMPOSE_PROJECT_NAME: ci-test
 
@@ -273,7 +273,7 @@ jobs:
 
       - name: Collect Docker logs
         if: always()
-        run: docker-compose logs > docker-compose.log
+        run: docker compose logs > docker-compose.log
 
       - name: Upload Docker logs
         if: always()
@@ -285,7 +285,7 @@ jobs:
 
       - name: Stop Docker Compose stack
         if: always()
-        run: docker-compose down -v
+        run: docker compose down -v
 
   mutation-testing:
     needs: [ test-backend, test-restassured ]
