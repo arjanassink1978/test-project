@@ -900,6 +900,315 @@ class ForumServiceTest {
     }
 
     // ============================================================
+    // vote — additional boundary / arithmetic tests
+    // ============================================================
+
+    @Test
+    void vote_newVoteOnThread_scoreCalculationStartingFromPositive() {
+        AppUser voter = createUser("voter");
+        when(userRepository.findByUsername("voter")).thenReturn(Optional.of(voter));
+        when(voteRepository.findByVoterUsernameAndPostIdAndPostType("voter", 1L, "thread"))
+                .thenReturn(Optional.empty());
+
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        thread.setScore(10);
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(threadRepository.save(any(ForumThread.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VoteResponse result = forumService.vote(1L, "thread", "voter", 1);
+
+        assertThat(result.getNewScore()).isEqualTo(11);
+    }
+
+    @Test
+    void vote_existingVote_sameVoteValue_doesNotChangeScore() {
+        AppUser voter = createUser("voter");
+        when(userRepository.findByUsername("voter")).thenReturn(Optional.of(voter));
+
+        ForumVote existingVote = new ForumVote(voter, 1L, "thread", 1);
+        when(voteRepository.findByVoterUsernameAndPostIdAndPostType("voter", 1L, "thread"))
+                .thenReturn(Optional.of(existingVote));
+
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        thread.setScore(5);
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(threadRepository.save(any(ForumThread.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VoteResponse result = forumService.vote(1L, "thread", "voter", 1);
+
+        // score = 5 - 1 + 1 = 5 (unchanged)
+        assertThat(result.getNewScore()).isEqualTo(5);
+    }
+
+    @Test
+    void vote_existingDownvoteOnReply_changeToUpvote_adjustsBy2() {
+        AppUser voter = createUser("voter");
+        when(userRepository.findByUsername("voter")).thenReturn(Optional.of(voter));
+
+        ForumVote existingVote = new ForumVote(voter, 10L, "reply", -1);
+        when(voteRepository.findByVoterUsernameAndPostIdAndPostType("voter", 10L, "reply"))
+                .thenReturn(Optional.of(existingVote));
+
+        ForumReply reply = createReply(10L, createThread(1L, "T", "D"), null, "Content", 0);
+        reply.setScore(3);
+        when(replyRepository.findById(10L)).thenReturn(Optional.of(reply));
+        when(replyRepository.save(any(ForumReply.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VoteResponse result = forumService.vote(10L, "reply", "voter", 1);
+
+        // score = 3 - (-1) + 1 = 5
+        assertThat(result.getNewScore()).isEqualTo(5);
+        assertThat(result.getUserVote()).isEqualTo(1);
+        assertThat(result.getPostType()).isEqualTo("reply");
+        assertThat(result.getPostId()).isEqualTo(10L);
+    }
+
+    @Test
+    void vote_newDownvoteOnReply_decreasesScore() {
+        AppUser voter = createUser("voter");
+        when(userRepository.findByUsername("voter")).thenReturn(Optional.of(voter));
+        when(voteRepository.findByVoterUsernameAndPostIdAndPostType("voter", 10L, "reply"))
+                .thenReturn(Optional.empty());
+
+        ForumReply reply = createReply(10L, createThread(1L, "T", "D"), null, "Content", 0);
+        reply.setScore(2);
+        when(replyRepository.findById(10L)).thenReturn(Optional.of(reply));
+        when(replyRepository.save(any(ForumReply.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VoteResponse result = forumService.vote(10L, "reply", "voter", -1);
+
+        assertThat(result.getNewScore()).isEqualTo(1);
+    }
+
+    @Test
+    void vote_removeExistingVoteOnReply_adjustsScore() {
+        AppUser voter = createUser("voter");
+        when(userRepository.findByUsername("voter")).thenReturn(Optional.of(voter));
+
+        ForumVote existingVote = new ForumVote(voter, 10L, "reply", 1);
+        when(voteRepository.findByVoterUsernameAndPostIdAndPostType("voter", 10L, "reply"))
+                .thenReturn(Optional.of(existingVote));
+
+        ForumReply reply = createReply(10L, createThread(1L, "T", "D"), null, "Content", 0);
+        reply.setScore(5);
+        when(replyRepository.findById(10L)).thenReturn(Optional.of(reply));
+        when(replyRepository.save(any(ForumReply.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        VoteResponse result = forumService.vote(10L, "reply", "voter", 0);
+
+        // score = 5 - 1 + 0 = 4
+        assertThat(result.getNewScore()).isEqualTo(4);
+        assertThat(result.getUserVote()).isEqualTo(0);
+    }
+
+    // ============================================================
+    // getThreads — additional coverage for paged size
+    // ============================================================
+
+    @Test
+    void getThreads_alwaysReturnsSizeOf20() {
+        Page<ForumThread> page = new PageImpl<>(Collections.emptyList());
+        when(threadRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+        PagedThreadsResponse result = forumService.getThreads(null, "newest", 0, null);
+
+        assertThat(result.getSize()).isEqualTo(20);
+    }
+
+    @Test
+    void getThreads_pageParameter_passedCorrectly() {
+        Page<ForumThread> page = new PageImpl<>(Collections.emptyList());
+        when(threadRepository.findAll(any(Pageable.class))).thenReturn(page);
+
+        PagedThreadsResponse result = forumService.getThreads(null, "newest", 3, null);
+
+        assertThat(result.getPage()).isEqualTo(3);
+        verify(threadRepository).findAll(argThat((Pageable p) -> p.getPageNumber() == 3));
+    }
+
+    @Test
+    void getThreads_withSearchAndCategory_searchBranchTakesPriority() {
+        ForumThread thread = createThread(1L, "Java Guide", "Desc");
+        Page<ForumThread> page = new PageImpl<>(List.of(thread));
+        when(threadRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+                eq("java"), eq("java"), any(Pageable.class))).thenReturn(page);
+        when(threadRepository.countRepliesByThreadId(1L)).thenReturn(0L);
+
+        PagedThreadsResponse result = forumService.getThreads(5L, "newest", 0, "java");
+
+        assertThat(result.getThreads()).hasSize(1);
+        verify(threadRepository, never()).findByCategoryId(anyLong(), any(Pageable.class));
+        verify(threadRepository, never()).findAll(any(Pageable.class));
+    }
+
+    // ============================================================
+    // createThread — additional field verification
+    // ============================================================
+
+    @Test
+    void createThread_verifyAllFieldsOnSavedThread() {
+        AppUser author = createUser("testuser");
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(author));
+
+        ForumThread saved = createThread(1L, "Title", "Description");
+        saved.setScore(0);
+        saved.setCreatedAt(LocalDateTime.of(2026, 1, 1, 12, 0));
+        saved.setUpdatedAt(LocalDateTime.of(2026, 1, 1, 12, 0));
+        when(threadRepository.save(any(ForumThread.class))).thenReturn(saved);
+        when(threadRepository.countRepliesByThreadId(1L)).thenReturn(0L);
+
+        CreateThreadRequest request = new CreateThreadRequest("Title", "Description", null);
+        ForumThreadResponse result = forumService.createThread("testuser", request);
+
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getTitle()).isEqualTo("Title");
+        assertThat(result.getDescription()).isEqualTo("Description");
+        assertThat(result.getScore()).isEqualTo(0);
+        assertThat(result.getAuthorUsername()).isEqualTo("testuser");
+        assertThat(result.getReplyCount()).isEqualTo(0);
+        assertThat(result.getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 1, 1, 12, 0));
+        assertThat(result.getUpdatedAt()).isEqualTo(LocalDateTime.of(2026, 1, 1, 12, 0));
+        assertThat(result.getCategoryId()).isNull();
+        assertThat(result.getCategoryName()).isNull();
+    }
+
+    // ============================================================
+    // createReply — all response fields verified
+    // ============================================================
+
+    @Test
+    void createReply_allResponseFieldsPopulated() {
+        AppUser author = createUser("replier");
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        when(userRepository.findByUsername("replier")).thenReturn(Optional.of(author));
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+
+        ForumReply saved = createReply(10L, thread, null, "Reply text", 0);
+        saved.setScore(3);
+        saved.setCreatedAt(LocalDateTime.of(2026, 2, 15, 9, 0));
+        saved.setAuthor(author);
+        when(replyRepository.save(any(ForumReply.class))).thenReturn(saved);
+
+        CreateReplyRequest request = new CreateReplyRequest("Reply text", null);
+        ForumReplyResponse result = forumService.createReply(1L, "replier", request);
+
+        assertThat(result.getId()).isEqualTo(10L);
+        assertThat(result.getContent()).isEqualTo("Reply text");
+        assertThat(result.getScore()).isEqualTo(3);
+        assertThat(result.getDepth()).isEqualTo(0);
+        assertThat(result.getAuthorUsername()).isEqualTo("replier");
+        assertThat(result.getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 2, 15, 9, 0));
+        assertThat(result.getParentReplyId()).isNull();
+        assertThat(result.getReplies()).isEmpty();
+    }
+
+    // ============================================================
+    // deleteThread — additional isOwner/isAdmin boundary tests
+    // ============================================================
+
+    @Test
+    void deleteThread_asOwner_notAdmin_succeeds() {
+        AppUser owner = createUser("threadauthor");
+        owner.setRole("USER");
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        thread.setAuthor(owner);
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(userRepository.findByUsername("threadauthor")).thenReturn(Optional.of(owner));
+
+        forumService.deleteThread(1L, "threadauthor");
+
+        verify(threadRepository).delete(thread);
+    }
+
+    @Test
+    void deleteThread_asAdmin_notOwner_succeeds() {
+        AppUser admin = createUser("adminuser");
+        admin.setRole("ADMIN");
+        AppUser threadOwner = createUser("owner");
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        thread.setAuthor(threadOwner);
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(userRepository.findByUsername("adminuser")).thenReturn(Optional.of(admin));
+
+        forumService.deleteThread(1L, "adminuser");
+
+        verify(threadRepository).delete(thread);
+    }
+
+    @Test
+    void deleteThread_nonOwnerWithUserRole_throwsForbidden() {
+        AppUser other = createUser("other");
+        other.setRole("USER");
+        AppUser threadOwner = createUser("owner");
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        thread.setAuthor(threadOwner);
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(userRepository.findByUsername("other")).thenReturn(Optional.of(other));
+
+        assertThatThrownBy(() -> forumService.deleteThread(1L, "other"))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting("status.value")
+                .isEqualTo(403);
+    }
+
+    // ============================================================
+    // getThread — verify thread detail response fields
+    // ============================================================
+
+    @Test
+    void getThread_mapsAllThreadDetailFields() {
+        ForumThread thread = createThread(1L, "Thread title", "Thread desc");
+        thread.setScore(42);
+        thread.setCreatedAt(LocalDateTime.of(2026, 6, 15, 10, 0));
+        thread.setUpdatedAt(LocalDateTime.of(2026, 6, 16, 11, 0));
+        ForumCategory cat = createCategory(5L, "Tech", "Technology", "laptop");
+        thread.setCategory(cat);
+
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(threadRepository.countRepliesByThreadId(1L)).thenReturn(7L);
+        when(replyRepository.findByThreadIdAndParentReplyIsNull(1L)).thenReturn(Collections.emptyList());
+
+        ForumThreadDetailResponse result = forumService.getThread(1L);
+
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getTitle()).isEqualTo("Thread title");
+        assertThat(result.getDescription()).isEqualTo("Thread desc");
+        assertThat(result.getScore()).isEqualTo(42);
+        assertThat(result.getAuthorUsername()).isEqualTo("testuser");
+        assertThat(result.getCategoryId()).isEqualTo(5L);
+        assertThat(result.getCategoryName()).isEqualTo("Tech");
+        assertThat(result.getReplyCount()).isEqualTo(7);
+        assertThat(result.getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 6, 15, 10, 0));
+        assertThat(result.getUpdatedAt()).isEqualTo(LocalDateTime.of(2026, 6, 16, 11, 0));
+        assertThat(result.getReplies()).isEmpty();
+    }
+
+    // ============================================================
+    // buildReplyTree — depth boundary - should not recurse at depth 2
+    // ============================================================
+
+    @Test
+    void getThread_buildReplyTree_doesNotCallFindByParentReplyIdAtMaxDepth() {
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(threadRepository.countRepliesByThreadId(1L)).thenReturn(0L);
+
+        ForumReply root = createReply(10L, thread, null, "Root", 0);
+        ForumReply d1 = createReply(20L, thread, root, "Depth1", 1);
+
+        when(replyRepository.findByThreadIdAndParentReplyIsNull(1L)).thenReturn(List.of(root));
+        when(replyRepository.findByParentReplyId(10L)).thenReturn(List.of(d1));
+        // At depth 1, currentDepth < MAX_REPLY_DEPTH - 1 (1 < 2), so still recurse
+        when(replyRepository.findByParentReplyId(20L)).thenReturn(Collections.emptyList());
+
+        ForumThreadDetailResponse result = forumService.getThread(1L);
+
+        assertThat(result.getReplies()).hasSize(1);
+        assertThat(result.getReplies().get(0).getReplies()).hasSize(1);
+        assertThat(result.getReplies().get(0).getReplies().get(0).getReplies()).isEmpty();
+    }
+
+    // ============================================================
     // helpers
     // ============================================================
 

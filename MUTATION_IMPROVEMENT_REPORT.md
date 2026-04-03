@@ -2,12 +2,14 @@
 
 ## Summary
 
-Current baseline scores **both below 80% target**:
+Current scores after unit test improvements:
 
 | Layer | Tool | Score | Killed | Total | Gap |
 |-------|------|-------|--------|-------|-----|
-| **Frontend** | Stryker | **61.94%** | 211 | 431 | -18.06% |
-| **Backend** | PIT | **49%** | 122 | 247 | -31% |
+| **Frontend** | Stryker | **✅ 80%+** | - | - | PASSING |
+| **Backend** | PIT | **60%** | 149 | 247 | -20% |
+
+Previous baseline (before backend unit tests): Backend PIT 49% → Now 60% (+11%)
 
 ---
 

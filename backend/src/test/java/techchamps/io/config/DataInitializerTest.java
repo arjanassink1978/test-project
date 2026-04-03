@@ -15,7 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -119,5 +119,27 @@ class DataInitializerTest {
 
         verify(userRepository, never()).save(any());
         verify(passwordEncoder, never()).encode(any());
+    }
+
+    // --- forum category seeding ---
+
+    @Test
+    void run_whenNoCategoriesExist_seedsCategories() throws Exception {
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(new AppUser("user", "pass", "USER")));
+        when(forumCategoryRepository.count()).thenReturn(0L);
+
+        dataInitializer.run(applicationArguments);
+
+        verify(forumCategoryRepository).saveAll(anyList());
+    }
+
+    @Test
+    void run_whenCategoriesExist_doesNotSeedAgain() throws Exception {
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(new AppUser("user", "pass", "USER")));
+        when(forumCategoryRepository.count()).thenReturn(3L);
+
+        dataInitializer.run(applicationArguments);
+
+        verify(forumCategoryRepository, never()).saveAll(anyList());
     }
 }
