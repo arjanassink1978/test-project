@@ -68,6 +68,52 @@
                     </includes>
                 </configuration>
             </plugin>
+            <!-- Add backend src/main/java as compile source root so PIT NonEmptyProjectCheck passes -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>add-backend-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/../backend/src/main/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Unpack backend classes into target/classes so PIT can find and mutate production code -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-backend-classes</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>techchamps.io</groupId>
+                                    <artifactId>backend</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                    <includes>techchamps/io/**/*.class</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.pitest</groupId>
                 <artifactId>pitest-maven</artifactId>
@@ -91,10 +137,10 @@
                     <targetTests>
                         <param>techchamps.io.*</param>
                     </targetTests>
-                    <excludedMutators>
-                        <excludedMutator>CONSTRUCTOR_CALLS</excludedMutator>
-                        <excludedMutator>NON_VOID_METHOD_CALLS</excludedMutator>
-                    </excludedMutators>
+                    <!-- Exclude backend JAR so PIT's instrumented classes in target/classes take precedence -->
+                    <classpathDependencyExcludes>
+                        <classpathDependencyExclude>techchamps.io:backend</classpathDependencyExclude>
+                    </classpathDependencyExcludes>
                     <outputFormats>
                         <outputFormat>XML</outputFormat>
                         <outputFormat>HTML</outputFormat>
@@ -102,6 +148,8 @@
                     <timeoutFactor>4.0</timeoutFactor>
                     <threads>2</threads>
                     <verbose>false</verbose>
+                    <!-- Enable Testcontainers reuse during PIT runs for speed -->
+                    <argLine>-Dtestcontainers.reuse.enable=true</argLine>
                 </configuration>
             </plugin>
         </plugins>
