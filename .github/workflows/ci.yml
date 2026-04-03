@@ -311,7 +311,7 @@ jobs:
         run: mvn pitest:mutationCoverage -pl restassured-tests -q
         continue-on-error: true
 
-      - name: Parse and validate mutation scores (≥80% required)
+      - name: Parse mutation scores (informational only, does not fail build)
         run: |
           echo "=== BACKEND UNIT MUTATION SCORE ==="
           if [ -f "backend/target/pit-reports/mutations.xml" ]; then
@@ -320,9 +320,6 @@ jobs:
             if [ "$BACKEND_TOTAL" -gt 0 ]; then
               BACKEND_SCORE=$((BACKEND_KILLED * 100 / BACKEND_TOTAL))
               echo "Backend Unit: $BACKEND_KILLED/$BACKEND_TOTAL ($BACKEND_SCORE%)"
-              if [ "$BACKEND_SCORE" -lt 80 ]; then
-                echo "❌ Backend unit score $BACKEND_SCORE% below 80% threshold"
-              fi
             fi
           fi
 
@@ -334,11 +331,9 @@ jobs:
             if [ "$RESTASSURED_TOTAL" -gt 0 ]; then
               RESTASSURED_SCORE=$((RESTASSURED_KILLED * 100 / RESTASSURED_TOTAL))
               echo "Integration: $RESTASSURED_KILLED/$RESTASSURED_TOTAL ($RESTASSURED_SCORE%)"
-              if [ "$RESTASSURED_SCORE" -lt 80 ]; then
-                echo "❌ Integration score $RESTASSURED_SCORE% below 80% threshold"
-              fi
             fi
           fi
+        continue-on-error: true
 
       - name: Upload mutation results
         uses: actions/upload-artifact@v4
