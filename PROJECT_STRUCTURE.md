@@ -119,11 +119,12 @@
 - *(Add new components here)*
 
 ### Component Unit Tests
-- `components/LoginForm.test.tsx` - 8 tests: render, data-testid, interactions, error states, loading state
+- `components/LoginForm.test.tsx` - 22 tests: render, data-testid, onChange handlers, fetch URL/method/body, localStorage, redirect, error states, loading state
 - `components/RegisterForm.test.tsx` - 9 tests: render, data-testid, validation, error states, loading state
 - `components/LogoutButton.test.tsx` - 5 tests: render, data-testid, navigation, localStorage
 - `components/ProfileLink.test.tsx` - 4 tests: render, data-testid, href construction
-- `components/ProfileForm.test.tsx` - 13 tests: loading, profile data, data-testid, save/delete/upload avatar flows
+- `components/ProfileForm.test.tsx` - 40 tests: loading, profile data, onChange handlers, boundary validation, save/delete/upload avatar flows, error paths, alert styling
+- `components/ForumCategoryFilter.test.tsx` - 15 tests: render, All button, category buttons, onChange with exact values, className for selected/unselected, rerender
 - `components/VoteButtons.test.tsx` - 9 tests: render, data-testid, score colors, click handlers, disabled state, badge layout
 - `components/ReplyItem.test.tsx` - 19 tests: render, data-testid, author header, avatar initials, vote badge, reply toggle, collapse/expand, nesting border, hidden score threshold
 
