@@ -315,9 +315,9 @@ jobs:
         run: |
           echo "=== BACKEND UNIT MUTATION SCORE ==="
           if [ -f "backend/target/pit-reports/mutations.xml" ]; then
-            BACKEND_KILLED=$(grep -oP 'numberOfMutations="\K[0-9]+' backend/target/pit-reports/mutations.xml | head -1)
-            BACKEND_TOTAL=$(grep -oP 'numberKilled="\K[0-9]+' backend/target/pit-reports/mutations.xml | head -1)
-            if [ -n "$BACKEND_TOTAL" ] && [ "$BACKEND_TOTAL" -gt 0 ]; then
+            BACKEND_KILLED=$(grep -c "status='KILLED'" backend/target/pit-reports/mutations.xml)
+            BACKEND_TOTAL=$(grep -c '<mutation' backend/target/pit-reports/mutations.xml)
+            if [ "$BACKEND_TOTAL" -gt 0 ]; then
               BACKEND_SCORE=$((BACKEND_KILLED * 100 / BACKEND_TOTAL))
               echo "Backend Unit: $BACKEND_KILLED/$BACKEND_TOTAL ($BACKEND_SCORE%)"
               if [ "$BACKEND_SCORE" -lt 80 ]; then
@@ -329,9 +329,9 @@ jobs:
           echo ""
           echo "=== RESTASSURED INTEGRATION MUTATION SCORE ==="
           if [ -f "restassured-tests/target/pit-reports/mutations.xml" ]; then
-            RESTASSURED_KILLED=$(grep -oP 'numberOfMutations="\K[0-9]+' restassured-tests/target/pit-reports/mutations.xml | head -1)
-            RESTASSURED_TOTAL=$(grep -oP 'numberKilled="\K[0-9]+' restassured-tests/target/pit-reports/mutations.xml | head -1)
-            if [ -n "$RESTASSURED_TOTAL" ] && [ "$RESTASSURED_TOTAL" -gt 0 ]; then
+            RESTASSURED_KILLED=$(grep -c "status='KILLED'" restassured-tests/target/pit-reports/mutations.xml)
+            RESTASSURED_TOTAL=$(grep -c '<mutation' restassured-tests/target/pit-reports/mutations.xml)
+            if [ "$RESTASSURED_TOTAL" -gt 0 ]; then
               RESTASSURED_SCORE=$((RESTASSURED_KILLED * 100 / RESTASSURED_TOTAL))
               echo "Integration: $RESTASSURED_KILLED/$RESTASSURED_TOTAL ($RESTASSURED_SCORE%)"
               if [ "$RESTASSURED_SCORE" -lt 80 ]; then
@@ -408,9 +408,9 @@ jobs:
 
           if [ -f "mutation-reports/backend/target/pit-reports/mutations.xml" ]; then
             echo "📊 BACKEND UNIT MUTATION SCORE:"
-            BACKEND_KILLED=$(grep -oP 'numberOfMutations="\K[0-9]+' mutation-reports/backend/target/pit-reports/mutations.xml | head -1)
-            BACKEND_TOTAL=$(grep -oP 'numberKilled="\K[0-9]+' mutation-reports/backend/target/pit-reports/mutations.xml | head -1)
-            if [ -n "$BACKEND_TOTAL" ] && [ "$BACKEND_TOTAL" -gt 0 ]; then
+            BACKEND_KILLED=$(grep -c "status='KILLED'" mutation-reports/backend/target/pit-reports/mutations.xml)
+            BACKEND_TOTAL=$(grep -c '<mutation' mutation-reports/backend/target/pit-reports/mutations.xml)
+            if [ "$BACKEND_TOTAL" -gt 0 ]; then
               BACKEND_SCORE=$((BACKEND_KILLED * 100 / BACKEND_TOTAL))
               if [ "$BACKEND_SCORE" -ge 80 ]; then
                 echo "   ✅ $BACKEND_KILLED/$BACKEND_TOTAL ($BACKEND_SCORE%)"
@@ -423,9 +423,9 @@ jobs:
           if [ -f "mutation-reports/restassured-tests/target/pit-reports/mutations.xml" ]; then
             echo ""
             echo "📊 INTEGRATION MUTATION SCORE:"
-            RESTASSURED_KILLED=$(grep -oP 'numberOfMutations="\K[0-9]+' mutation-reports/restassured-tests/target/pit-reports/mutations.xml | head -1)
-            RESTASSURED_TOTAL=$(grep -oP 'numberKilled="\K[0-9]+' mutation-reports/restassured-tests/target/pit-reports/mutations.xml | head -1)
-            if [ -n "$RESTASSURED_TOTAL" ] && [ "$RESTASSURED_TOTAL" -gt 0 ]; then
+            RESTASSURED_KILLED=$(grep -c "status='KILLED'" mutation-reports/restassured-tests/target/pit-reports/mutations.xml)
+            RESTASSURED_TOTAL=$(grep -c '<mutation' mutation-reports/restassured-tests/target/pit-reports/mutations.xml)
+            if [ "$RESTASSURED_TOTAL" -gt 0 ]; then
               RESTASSURED_SCORE=$((RESTASSURED_KILLED * 100 / RESTASSURED_TOTAL))
               if [ "$RESTASSURED_SCORE" -ge 80 ]; then
                 echo "   ✅ $RESTASSURED_KILLED/$RESTASSURED_TOTAL ($RESTASSURED_SCORE%)"
