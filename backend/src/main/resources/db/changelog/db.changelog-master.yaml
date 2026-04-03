@@ -5,3 +5,5 @@ databaseChangeLog:
       file: classpath:db/migration/V002__create_forum_tables.sql
   - include:
       file: classpath:db/migration/V003__seed_test_data.sql
+  - include:
+      file: classpath:db/migration/V004__add_role_and_thread_closed.sql

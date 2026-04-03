@@ -83,6 +83,22 @@ public class ForumController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @PostMapping("/threads/{id}/close")
+    @Operation(summary = "Close or reopen a thread", description = "Requires MODERATOR or ADMIN role")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Thread closed/reopened",
+            content = @Content(schema = @Schema(implementation = ForumThreadResponse.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden — requires MODERATOR or ADMIN"),
+        @ApiResponse(responseCode = "404", description = "Thread not found")
+    })
+    public ResponseEntity<ForumThreadResponse> closeThread(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "true") boolean closed,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        ForumThreadResponse response = forumService.setThreadClosed(id, userDetails.getUsername(), closed);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/threads/{threadId}/replies")
     @Operation(summary = "Create a reply on a thread", description = "Requires authentication")
     @ApiResponses({
@@ -90,6 +106,7 @@ public class ForumController {
             content = @Content(schema = @Schema(implementation = ForumReplyResponse.class))),
         @ApiResponse(responseCode = "400", description = "Validation error or max depth exceeded"),
         @ApiResponse(responseCode = "401", description = "Unauthenticated"),
+        @ApiResponse(responseCode = "403", description = "Thread is closed"),
         @ApiResponse(responseCode = "404", description = "Thread not found")
     })
     public ResponseEntity<ForumReplyResponse> createThreadReply(
@@ -118,6 +135,20 @@ public class ForumController {
         ForumReplyResponse response = forumService.createReply(
                 parentReply.getThread().getId(), userDetails.getUsername(), nestedRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @DeleteMapping("/replies/{id}")
+    @Operation(summary = "Delete a reply", description = "Requires MODERATOR or ADMIN role")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Reply deleted"),
+        @ApiResponse(responseCode = "403", description = "Forbidden — requires MODERATOR or ADMIN"),
+        @ApiResponse(responseCode = "404", description = "Reply not found")
+    })
+    public ResponseEntity<Void> deleteReply(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        forumService.deleteReply(id, userDetails.getUsername());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/posts/{postId}/vote")

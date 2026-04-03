@@ -97,6 +97,7 @@ export interface ForumThreadResponse {
   categoryId: number;
   categoryName: string;
   replyCount: number;
+  closed: boolean;
 }
 
 export interface ForumReplyResponse {
@@ -232,4 +233,46 @@ export async function voteOnPost(
     throw new Error(body.message ?? `Failed to vote: ${response.status}`);
   }
   return response.json() as Promise<VoteResponse>;
+}
+
+export async function closeThread(
+  threadId: number,
+  closed: boolean,
+  credentials: { username: string; password: string }
+): Promise<ForumThreadResponse> {
+  const response = await fetch(
+    `${API_BASE}/api/forum/threads/${threadId}/close?closed=${closed}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: basicAuth(credentials.username, credentials.password),
+      },
+    }
+  );
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { message?: string };
+    if (response.status === 403) {
+      throw new Error("You don't have permission to close threads");
+    }
+    throw new Error(body.message ?? `Failed to close thread: ${response.status}`);
+  }
+  return response.json() as Promise<ForumThreadResponse>;
+}
+
+export async function deleteReply(
+  replyId: number,
+  credentials: { username: string; password: string }
+): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/forum/replies/${replyId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: basicAuth(credentials.username, credentials.password),
+    },
+  });
+  if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error("You don't have permission to delete replies");
+    }
+    throw new Error(`Failed to delete reply: ${response.status}`);
+  }
 }

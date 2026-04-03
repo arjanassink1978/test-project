@@ -1,6 +1,6 @@
 # Project Structure Index
 
-**Last Updated:** 2026-04-02 (Forum layout update: vote badge, reply header, nesting border, collapse toggle)
+**Last Updated:** 2026-04-03 (Role-based access control: USER, MODERATOR, ADMIN roles; close thread, delete reply, list users endpoints)
 **Important:** When agents add new files/components, they MUST update this file.
 
 ---
@@ -21,6 +21,10 @@
   - `POST /api/forum/replies/{replyId}/replies` — create nested reply (auth, max depth 3)
   - `POST /api/forum/posts/{postId}/vote?postType=thread` — vote (auth)
   - `DELETE /api/forum/threads/{id}` — delete own thread or admin (auth)
+  - `POST /api/forum/threads/{id}/close?closed=true` — close/reopen thread (MODERATOR/ADMIN)
+  - `DELETE /api/forum/replies/{id}` — delete reply (MODERATOR/ADMIN)
+- `UserController.java` - Admin user management:
+  - `GET /api/users` — list all users (ADMIN only)
 - `ProfileController.java` - User profile management:
   - `GET /api/profile/{username}` - Get profile (200 / 404)
   - `PUT /api/profile/{username}` - Update profile fields (200 / 404)
@@ -51,6 +55,8 @@
   - `dto/response/ForumReplyResponse.java` - id, content, score, createdAt, authorUsername, depth, parentReplyId, replies (nested)
   - `dto/response/PagedThreadsResponse.java` - threads, page, size, hasMore
   - `dto/response/VoteResponse.java` - postId, postType, newScore, userVote
+  - `dto/response/UserSummaryResponse.java` - id, username, email, role (admin user listing)
+  - `dto/response/LoginResponse.java` now includes `role` field (USER/MODERATOR/ADMIN)
   - *(Add new response DTOs here)*
 
 ### Models (JPA Entities)
@@ -58,6 +64,7 @@
 - `model/ForumCategory.java` - id, name (unique), description, icon
 - `model/ForumThread.java` - id, author (AppUser), title (max 200), description (max 5000), category (ForumCategory), createdAt, updatedAt, score
 - `model/ForumReply.java` - id, thread, parentReply (nullable), author, content (max 2000), createdAt, score, depth
+- `model/Role.java` - Role enum: USER, MODERATOR, ADMIN
 - `model/ForumVote.java` - id, voter (AppUser), postId, postType, voteValue; unique on (voter, postId, postType)
 
 ### Repositories
@@ -152,6 +159,7 @@
 - `SecurityConfigIT.java` - Security tests
 - `controller/AuthControllerIntegrationTest.java` - Extended auth tests
 - `RegistrationIT.java` - Integration tests for registration endpoint
+- `RoleBasedAccessControlIT.java` - 14 integration tests for RBAC: close thread (user=403, mod=200, admin=200), closed thread rejects replies, delete reply (user=403, mod=204), list users (user=403, mod=403, admin=200)
 - `ForumThreadIT.java` - 21 integration tests for forum: categories, threads CRUD, boundary tests (title 200/201, desc 5000/5001, reply 2000/2001), depth boundary (depth 2 passes, depth 3 rejected), voting, delete 204/403
 
 ### Test Builders
@@ -179,6 +187,7 @@
 - `tests/e2e/profile.spec.ts` - User Profile Page Flow (23 tests); happy-path tests use real API calls (no mocks); mocks kept only for error scenarios (404, 500) and the no-avatar edge case
 - `tests/e2e/forum.spec.ts` - Forum E2E tests: index page (public + auth), thread detail, create thread flow, reply flow, search; all happy-path tests use real API calls via backend on port 8080
 - `tests/e2e/auth.spec.ts` - Auth E2E tests (11 tests): login wrong credentials, nonexistent user, empty fields, register-to-login link, full registration happy path, mismatched passwords, invalid email, duplicate username, short password, login link, logout from dashboard
+- `tests/e2e/rbac.spec.ts` - RBAC E2E tests: moderator close thread flow, delete reply visibility, closed thread UI
 - `tests/e2e/user-journey.spec.ts` - End-to-end user journeys (12 tests): full register→login→forum→create thread→reply→vote journey, forum navigation from dashboard, category filter flow, thread upvote/downvote/toggle, profile update journey, public thread access, forum search→detail navigation, reply constraint (content > 2000 chars errors on submit, counter)
 
 ### Test Strategy

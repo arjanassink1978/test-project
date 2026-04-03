@@ -6,40 +6,33 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AppUserTest {
 
-    // --- getRole() (kills EMPTY_RETURN on line 33) ---
-
     @Test
     void getRole_returnsCorrectRole() {
-        AppUser user = new AppUser("alice", "secret", "USER");
-        assertThat(user.getRole()).isEqualTo("USER");
+        AppUser user = new AppUser("alice", "secret", Role.USER);
+        assertThat(user.getRole()).isEqualTo(Role.USER);
     }
 
     @Test
     void getRole_returnsAdminRole() {
-        AppUser user = new AppUser("admin", "secret", "ADMIN");
-        assertThat(user.getRole()).isEqualTo("ADMIN");
+        AppUser user = new AppUser("admin", "secret", Role.ADMIN);
+        assertThat(user.getRole()).isEqualTo(Role.ADMIN);
     }
 
     @Test
-    void getRole_isNotEmpty() {
-        AppUser user = new AppUser("bob", "pass", "USER");
-        assertThat(user.getRole()).isNotEmpty();
+    void getRole_isNotNull() {
+        AppUser user = new AppUser("bob", "pass", Role.USER);
+        assertThat(user.getRole()).isNotNull();
     }
-
-    // --- getId() (kills LONG_RETURN 0L on line 30) ---
 
     @Test
     void getId_returnsNullBeforePersistence() {
-        AppUser user = new AppUser("charlie", "pass", "USER");
-        // Before JPA assigns an id, getId() returns null — not 0L
+        AppUser user = new AppUser("charlie", "pass", Role.USER);
         assertThat(user.getId()).isNull();
     }
 
-    // --- getUsername / getPassword sanity (supports DatabaseUserDetailsService coverage) ---
-
     @Test
     void getUsername_returnsCorrectUsername() {
-        AppUser user = new AppUser("diana", "pass", "USER");
+        AppUser user = new AppUser("diana", "pass", Role.USER);
         assertThat(user.getUsername()).isEqualTo("diana");
     }
 }

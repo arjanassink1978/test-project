@@ -12,6 +12,7 @@ interface ReplyItemProps {
   depth: number;
   onVote: (replyId: number, value: number) => void;
   onReply: (threadId: number, content: string, parentReplyId: number) => Promise<void>;
+  onDelete?: (replyId: number) => Promise<void>;
   threadId: number;
   isLoggedIn: boolean;
 }
@@ -21,14 +22,15 @@ export default function ReplyItem({
   depth,
   onVote,
   onReply,
+  onDelete,
   threadId,
   isLoggedIn,
 }: ReplyItemProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyLoading, setReplyLoading] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // CONSTRAINT: score < -5 renders collapsed/gray style
   const isHidden = reply.score < FORUM_CONSTRAINTS.HIDDEN_SCORE_THRESHOLD;
   const canReply = depth < FORUM_CONSTRAINTS.MAX_REPLY_DEPTH - 1;
   const hasChildren = reply.replies && reply.replies.length > 0;
@@ -43,7 +45,16 @@ export default function ReplyItem({
     }
   }
 
-  // Get initials for avatar placeholder from author username
+  async function handleDelete() {
+    if (!onDelete) return;
+    setDeleteLoading(true);
+    try {
+      await onDelete(reply.id);
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
   const initials = reply.authorUsername
     ? reply.authorUsername.slice(0, 2).toUpperCase()
     : "?";
@@ -54,7 +65,6 @@ export default function ReplyItem({
       data-testid={`reply-item-${reply.id}`}
     >
       <div className={`flex gap-2 ${depth > 0 ? "pl-4 border-l-2 border-gray-200" : ""}`}>
-        {/* Collapse toggle in left gutter for nested replies */}
         {depth > 0 && hasChildren && (
           <button
             type="button"
@@ -67,10 +77,8 @@ export default function ReplyItem({
         )}
 
         <div className={`flex-1 ${card.padded} ${isHidden ? "opacity-50 grayscale" : ""}`}>
-          {/* Reply header: avatar + username + date + vote badge */}
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2" data-testid={`reply-author-${reply.id}`}>
-              {/* Avatar placeholder circle */}
               <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600">
                 {initials}
               </div>
@@ -81,17 +89,28 @@ export default function ReplyItem({
               <span className={typography.helperText}>depth {reply.depth}</span>
             </div>
 
-            {/* Vote badge top-right */}
-            <VoteButtons
-              score={reply.score}
-              postId={reply.id}
-              postType="reply"
-              onVote={(value) => onVote(reply.id, value)}
-              disabled={!isLoggedIn}
-            />
+            <div className="flex items-center gap-2">
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleteLoading}
+                  className="text-xs text-red-600 hover:text-red-500 disabled:opacity-50"
+                  data-testid={`delete-reply-${reply.id}`}
+                >
+                  {deleteLoading ? "Deleting…" : "Delete"}
+                </button>
+              )}
+              <VoteButtons
+                score={reply.score}
+                postId={reply.id}
+                postType="reply"
+                onVote={(value) => onVote(reply.id, value)}
+                disabled={!isLoggedIn}
+              />
+            </div>
           </div>
 
-          {/* Reply body */}
           <p
             className={typography.bodyText}
             data-testid={`reply-content-${reply.id}`}
@@ -122,7 +141,6 @@ export default function ReplyItem({
         </div>
       </div>
 
-      {/* Nested children */}
       {!collapsed && hasChildren && (
         <div className="ml-4">
           {reply.replies!.map((child) => (
@@ -132,6 +150,7 @@ export default function ReplyItem({
               depth={depth + 1}
               onVote={onVote}
               onReply={onReply}
+              onDelete={onDelete}
               threadId={threadId}
               isLoggedIn={isLoggedIn}
             />

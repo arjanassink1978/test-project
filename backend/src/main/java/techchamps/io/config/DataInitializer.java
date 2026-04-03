@@ -2,6 +2,7 @@ package techchamps.io.config;
 
 import techchamps.io.model.AppUser;
 import techchamps.io.model.ForumCategory;
+import techchamps.io.model.Role;
 import techchamps.io.repository.ForumCategoryRepository;
 import java.util.List;
 
@@ -27,13 +28,34 @@ public class DataInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        // Seed user (USER role)
         if (userRepository.findByUsername("user").isEmpty()) {
-            AppUser user = new AppUser("user@example.com", "user", passwordEncoder.encode("user1234"), "USER");
+            AppUser user = new AppUser("user@example.com", "user", passwordEncoder.encode("user1234"), Role.USER);
             user.setDisplayName("Demo User");
             user.setBio("Software developer and coffee enthusiast");
             user.setLocation("Amsterdam, Netherlands");
             user.setAvatarUrl("https://api.dicebear.com/7.x/avataaars/svg?seed=user");
             userRepository.save(user);
+        }
+
+        // Seed moderator (MODERATOR role)
+        if (userRepository.findByUsername("moderator").isEmpty()) {
+            AppUser moderator = new AppUser("moderator@example.com", "moderator", passwordEncoder.encode("moderator1234"), Role.MODERATOR);
+            moderator.setDisplayName("Forum Moderator");
+            moderator.setBio("Keeping the forum clean and organized");
+            moderator.setLocation("Amsterdam, Netherlands");
+            moderator.setAvatarUrl("https://api.dicebear.com/7.x/avataaars/svg?seed=moderator");
+            userRepository.save(moderator);
+        }
+
+        // Seed admin (ADMIN role)
+        if (userRepository.findByUsername("admin").isEmpty()) {
+            AppUser admin = new AppUser("admin@example.com", "admin", passwordEncoder.encode("admin1234"), Role.ADMIN);
+            admin.setDisplayName("Forum Admin");
+            admin.setBio("Full control over the forum");
+            admin.setLocation("Amsterdam, Netherlands");
+            admin.setAvatarUrl("https://api.dicebear.com/7.x/avataaars/svg?seed=admin");
+            userRepository.save(admin);
         }
 
         // Seed forum categories

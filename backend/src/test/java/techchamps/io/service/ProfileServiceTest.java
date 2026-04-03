@@ -4,6 +4,7 @@ import techchamps.io.dto.request.UpdateProfileRequest;
 import techchamps.io.dto.response.AvatarUploadResponse;
 import techchamps.io.dto.response.ProfileResponse;
 import techchamps.io.model.AppUser;
+import techchamps.io.model.Role;
 import techchamps.io.repository.AppUserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -200,7 +201,7 @@ class ProfileServiceTest {
     // --- helper ---
 
     private AppUser createSampleUser() {
-        AppUser user = new AppUser("user@example.com", "user", "encodedPassword", "USER");
+        AppUser user = new AppUser("user@example.com", "user", "encodedPassword", Role.USER);
         user.setDisplayName("Demo User");
         user.setBio("A short bio");
         user.setLocation("Amsterdam");

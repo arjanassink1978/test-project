@@ -16,6 +16,10 @@ public class LoginResponse {
     @Schema(description = "Username of the authenticated user (null when login fails)", example = "user", nullable = true)
     private String username;
 
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @Schema(description = "Role of the authenticated user (null when login fails)", example = "USER", nullable = true)
+    private String role;
+
     public LoginResponse() {}
 
     public LoginResponse(boolean success, String message) {
@@ -29,27 +33,22 @@ public class LoginResponse {
         this.username = username;
     }
 
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public void setSuccess(boolean success) {
+    public LoginResponse(boolean success, String message, String username, String role) {
         this.success = success;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
         this.message = message;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
         this.username = username;
+        this.role = role;
     }
+
+    public boolean isSuccess() { return success; }
+    public void setSuccess(boolean success) { this.success = success; }
+
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 }

@@ -1,6 +1,7 @@
 package techchamps.io.security;
 
 import techchamps.io.model.AppUser;
+import techchamps.io.model.Role;
 import techchamps.io.repository.AppUserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,11 +26,9 @@ class DatabaseUserDetailsServiceTest {
     @InjectMocks
     private DatabaseUserDetailsService service;
 
-    // --- happy path: user found ---
-
     @Test
     void loadUserByUsername_withExistingUser_returnsUserDetails() {
-        AppUser user = new AppUser("alice", "encodedPass", "USER");
+        AppUser user = new AppUser("alice", "encodedPass", Role.USER);
         when(userRepository.findByUsername("alice")).thenReturn(Optional.of(user));
 
         UserDetails details = service.loadUserByUsername("alice");
@@ -38,11 +37,9 @@ class DatabaseUserDetailsServiceTest {
         assertThat(details.getPassword()).isEqualTo("encodedPass");
     }
 
-    // --- happy path: role mapped with ROLE_ prefix ---
-
     @Test
     void loadUserByUsername_mapsRoleWithPrefix() {
-        AppUser user = new AppUser("alice", "encodedPass", "USER");
+        AppUser user = new AppUser("alice", "encodedPass", Role.USER);
         when(userRepository.findByUsername("alice")).thenReturn(Optional.of(user));
 
         UserDetails details = service.loadUserByUsername("alice");
@@ -54,7 +51,7 @@ class DatabaseUserDetailsServiceTest {
 
     @Test
     void loadUserByUsername_adminRole_mapsCorrectly() {
-        AppUser admin = new AppUser("admin", "encodedPass", "ADMIN");
+        AppUser admin = new AppUser("admin", "encodedPass", Role.ADMIN);
         when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
 
         UserDetails details = service.loadUserByUsername("admin");
@@ -63,8 +60,6 @@ class DatabaseUserDetailsServiceTest {
                 .extracting(a -> a.getAuthority())
                 .containsExactly("ROLE_ADMIN");
     }
-
-    // --- expected exception: user not found ---
 
     @Test
     void loadUserByUsername_withUnknownUser_throwsUsernameNotFoundException() {
@@ -75,11 +70,9 @@ class DatabaseUserDetailsServiceTest {
                 .hasMessageContaining("nobody");
     }
 
-    // --- edge case: single authority only ---
-
     @Test
     void loadUserByUsername_returnsExactlyOneAuthority() {
-        AppUser user = new AppUser("bob", "pass", "USER");
+        AppUser user = new AppUser("bob", "pass", Role.USER);
         when(userRepository.findByUsername("bob")).thenReturn(Optional.of(user));
 
         UserDetails details = service.loadUserByUsername("bob");

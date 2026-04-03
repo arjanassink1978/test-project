@@ -235,4 +235,23 @@ describe("ReplyItem", () => {
     fireEvent.click(screen.getByTestId("downvote-button"));
     expect(onVote).toHaveBeenCalledWith(1, -1);
   });
+
+  it("does not show delete button when onDelete is not provided", () => {
+    render(<ReplyItem {...defaultProps} />);
+    expect(screen.queryByTestId("delete-reply-1")).not.toBeInTheDocument();
+  });
+
+  it("shows delete button when onDelete is provided", () => {
+    const onDelete = jest.fn().mockResolvedValue(undefined);
+    render(<ReplyItem {...defaultProps} onDelete={onDelete} />);
+    expect(screen.getByTestId("delete-reply-1")).toBeInTheDocument();
+  });
+
+  it("calls onDelete with reply id when delete button clicked", async () => {
+    const onDelete = jest.fn().mockResolvedValue(undefined);
+    render(<ReplyItem {...defaultProps} onDelete={onDelete} />);
+
+    fireEvent.click(screen.getByTestId("delete-reply-1"));
+    await waitFor(() => expect(onDelete).toHaveBeenCalledWith(1));
+  });
 });

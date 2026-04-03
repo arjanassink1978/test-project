@@ -8,6 +8,7 @@ export default function LogoutButton() {
 
   function handleLogout() {
     localStorage.removeItem("username");
+    localStorage.removeItem("role");
     router.push("/");
   }
 

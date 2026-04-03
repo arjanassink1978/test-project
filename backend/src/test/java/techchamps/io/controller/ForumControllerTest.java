@@ -841,4 +841,97 @@ class ForumControllerTest {
                 .andExpect(jsonPath("$[1].description").value("Technology"))
                 .andExpect(jsonPath("$[1].icon").value("laptop"));
     }
+    // ============================================================
+    // POST /api/forum/threads/{id}/close — close/reopen thread
+    // ============================================================
+
+    @Test
+    @WithMockUser(username = "moderator")
+    void closeThread_asModerator_returns200() throws Exception {
+        ForumThreadResponse closed = new ForumThreadResponse();
+        closed.setId(1L);
+        closed.setTitle("Test Thread");
+        closed.setIsClosed(true);
+        when(forumService.setThreadClosed(1L, "moderator", true)).thenReturn(closed);
+
+        mockMvc.perform(post("/api/forum/threads/1/close")
+                        .param("closed", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.closed").value(true));
+
+        verify(forumService).setThreadClosed(1L, "moderator", true);
+    }
+
+    @Test
+    @WithMockUser(username = "user")
+    void closeThread_asRegularUser_returns403() throws Exception {
+        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Requires MODERATOR or ADMIN role"))
+                .when(forumService).setThreadClosed(1L, "user", true);
+
+        mockMvc.perform(post("/api/forum/threads/1/close")
+                        .param("closed", "true"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void closeThread_unauthenticated_returns401() throws Exception {
+        mockMvc.perform(post("/api/forum/threads/1/close"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "moderator")
+    void reopenThread_asModerator_returns200() throws Exception {
+        ForumThreadResponse reopened = new ForumThreadResponse();
+        reopened.setId(1L);
+        reopened.setIsClosed(false);
+        when(forumService.setThreadClosed(1L, "moderator", false)).thenReturn(reopened);
+
+        mockMvc.perform(post("/api/forum/threads/1/close")
+                        .param("closed", "false"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.closed").value(false));
+    }
+
+    // ============================================================
+    // DELETE /api/forum/replies/{id} — delete reply
+    // ============================================================
+
+    @Test
+    @WithMockUser(username = "moderator")
+    void deleteReply_asModerator_returns204() throws Exception {
+        doNothing().when(forumService).deleteReply(5L, "moderator");
+
+        mockMvc.perform(delete("/api/forum/replies/5"))
+                .andExpect(status().isNoContent());
+
+        verify(forumService).deleteReply(5L, "moderator");
+    }
+
+    @Test
+    @WithMockUser(username = "user")
+    void deleteReply_asRegularUser_returns403() throws Exception {
+        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Requires MODERATOR or ADMIN role"))
+                .when(forumService).deleteReply(5L, "user");
+
+        mockMvc.perform(delete("/api/forum/replies/5"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deleteReply_unauthenticated_returns401() throws Exception {
+        mockMvc.perform(delete("/api/forum/replies/5"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "moderator")
+    void deleteReply_notFound_returns404() throws Exception {
+        doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND, "Reply not found"))
+                .when(forumService).deleteReply(999L, "moderator");
+
+        mockMvc.perform(delete("/api/forum/replies/999"))
+                .andExpect(status().isNotFound());
+    }
 }

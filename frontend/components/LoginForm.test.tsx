@@ -354,4 +354,35 @@ describe("LoginForm", () => {
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/dashboard"));
     expect(screen.queryByTestId("login-error")).not.toBeInTheDocument();
   });
+
+  it("stores the role in localStorage on successful login", async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValueOnce({ username: "moderator", role: "MODERATOR" }),
+    });
+
+    render(<LoginForm />);
+    fillAndSubmit("moderator", "moderator1234");
+
+    await waitFor(() => {
+      expect(localStorage.getItem("role")).toBe("MODERATOR");
+    });
+  });
+
+  it("does not store role in localStorage when role is absent in response", async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValueOnce({ username: "user" }),
+    });
+
+    render(<LoginForm />);
+    fillAndSubmit("user", "user1234");
+
+    await waitFor(() => {
+      expect(localStorage.getItem("username")).toBe("user");
+    });
+    expect(localStorage.getItem("role")).toBeNull();
+  });
 });

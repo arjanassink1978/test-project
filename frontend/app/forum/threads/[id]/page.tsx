@@ -10,6 +10,8 @@ import {
   getForumThread,
   createForumReply,
   voteOnPost,
+  closeThread,
+  deleteReply,
   type ForumThreadDetailResponse,
   type ForumReplyResponse,
 } from "@/lib/api";
@@ -24,10 +26,14 @@ export default function ThreadDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [replyLoading, setReplyLoading] = useState(false);
+  const [replyError, setReplyError] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const [closeLoading, setCloseLoading] = useState(false);
 
   useEffect(() => {
     setUsername(localStorage.getItem("username"));
+    setRole(localStorage.getItem("role"));
   }, []);
 
   useEffect(() => {
@@ -38,6 +44,8 @@ export default function ThreadDetailPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [threadId]);
+
+  const isModerator = role === "MODERATOR" || role === "ADMIN";
 
   async function handleVoteThread(value: number) {
     if (!thread || !username) return;
@@ -58,7 +66,6 @@ export default function ThreadDetailPage() {
     const password = localStorage.getItem("password") ?? "";
     try {
       await voteOnPost(replyId, "reply", value, { username, password });
-      // Reload thread to reflect updated reply score
       const updated = await getForumThread(threadId);
       setThread(updated);
     } catch (err) {
@@ -70,6 +77,7 @@ export default function ThreadDetailPage() {
     if (!username || !thread) return;
     const password = localStorage.getItem("password") ?? "";
     setReplyLoading(true);
+    setReplyError(null);
     try {
       await createForumReply(
         thread.id,
@@ -78,6 +86,8 @@ export default function ThreadDetailPage() {
       );
       const updated = await getForumThread(threadId);
       setThread(updated);
+    } catch (err) {
+      setReplyError((err as Error).message ?? "Failed to post reply");
     } finally {
       setReplyLoading(false);
     }
@@ -97,6 +107,32 @@ export default function ThreadDetailPage() {
     );
     const updated = await getForumThread(threadId);
     setThread(updated);
+  }
+
+  async function handleDeleteReply(replyId: number) {
+    if (!username) return;
+    const password = localStorage.getItem("password") ?? "";
+    try {
+      await deleteReply(replyId, { username, password });
+      const updated = await getForumThread(threadId);
+      setThread(updated);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function handleCloseThread(closed: boolean) {
+    if (!username || !thread) return;
+    const password = localStorage.getItem("password") ?? "";
+    setCloseLoading(true);
+    try {
+      const updated = await closeThread(thread.id, closed, { username, password });
+      setThread((prev) => (prev ? { ...prev, closed: updated.closed } : prev));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCloseLoading(false);
+    }
   }
 
   if (loading) {
@@ -127,16 +163,25 @@ export default function ThreadDetailPage() {
       </nav>
 
       <main className="mx-auto max-w-3xl px-4 py-8">
-        {/* Thread header */}
         <div className={card.paddedLg}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <h1
-                className={typography.pageHeading}
-                data-testid="thread-detail-title"
-              >
-                {thread.title}
-              </h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1
+                  className={typography.pageHeading}
+                  data-testid="thread-detail-title"
+                >
+                  {thread.title}
+                </h1>
+                {thread.closed && (
+                  <span
+                    className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700"
+                    data-testid="thread-closed-badge"
+                  >
+                    CLOSED
+                  </span>
+                )}
+              </div>
               <p
                 className={`${typography.helperText} mt-1`}
                 data-testid="thread-detail-author"
@@ -159,17 +204,28 @@ export default function ThreadDetailPage() {
                 Score: {thread.score}
               </p>
             </div>
-            <VoteButtons
-              score={thread.score}
-              postId={thread.id}
-              postType="thread"
-              onVote={handleVoteThread}
-              disabled={!username}
-            />
+            <div className="flex flex-col items-end gap-2">
+              <VoteButtons
+                score={thread.score}
+                postId={thread.id}
+                postType="thread"
+                onVote={handleVoteThread}
+                disabled={!username}
+              />
+              {isModerator && (
+                <button
+                  onClick={() => handleCloseThread(!thread.closed)}
+                  disabled={closeLoading}
+                  className="text-sm px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+                  data-testid="close-thread-button"
+                >
+                  {thread.closed ? "Reopen Thread" : "Close Thread"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Replies section */}
         <div className="mt-8" data-testid="replies-section">
           <h2 className={typography.sectionHeading}>
             {thread.replies?.length ?? 0} Replies
@@ -182,14 +238,20 @@ export default function ThreadDetailPage() {
               depth={0}
               onVote={handleVoteReply}
               onReply={handleNestedReply}
+              onDelete={isModerator ? handleDeleteReply : undefined}
               threadId={thread.id}
               isLoggedIn={Boolean(username)}
             />
           ))}
 
-          {username && (
+          {username && !thread.closed && (
             <div className="mt-6">
               <h3 className={typography.sectionHeading}>Add a Reply</h3>
+              {replyError && (
+                <div className={`${alert.error} mt-2`} data-testid="reply-thread-error">
+                  {replyError}
+                </div>
+              )}
               <div className="mt-2">
                 <ReplyForm
                   onSubmit={handleDirectReply}
@@ -197,6 +259,12 @@ export default function ThreadDetailPage() {
                   depth={0}
                 />
               </div>
+            </div>
+          )}
+
+          {username && thread.closed && (
+            <div className={`${alert.error} mt-6`} data-testid="thread-closed-message">
+              This thread is closed. No new replies can be posted.
             </div>
           )}
         </div>
