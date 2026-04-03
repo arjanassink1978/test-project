@@ -100,6 +100,25 @@ echo ""
 
 cd "$ROOT"
 
+# Check if any services are already running
+RUNNING_CONTAINERS=$(docker compose ps -q 2>/dev/null)
+if [ -n "$RUNNING_CONTAINERS" ]; then
+    echo "⚠️  Found running containers from a previous session"
+    read -p "Stop them now? (y/n) [default: y]: " STOP_CHOICE
+    STOP_CHOICE=${STOP_CHOICE:-y}
+    if [ "$STOP_CHOICE" = "y" ] || [ "$STOP_CHOICE" = "Y" ]; then
+        echo "Stopping existing containers..."
+        docker compose down -v >/dev/null 2>&1
+        sleep 2
+        echo "✅ Cleaned up previous session"
+        echo ""
+    else
+        echo "❌ Cannot start services while containers are running"
+        echo "Please run 'docker-compose down -v' first"
+        exit 1
+    fi
+fi
+
 # Start services in foreground (shows only essential info)
 # Suppress verbose initialization messages but keep errors and status
-docker-compose up 2>&1 | grep -E "^\[.*\]|\s(error|ERROR|exited|WARN)" || docker-compose up
+docker compose up 2>&1 | grep -E "^\[.*\]|\s(error|ERROR|exited|WARN)" || docker compose up
