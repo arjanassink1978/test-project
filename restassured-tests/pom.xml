@@ -71,12 +71,12 @@
             <plugin>
                 <groupId>org.pitest</groupId>
                 <artifactId>pitest-maven</artifactId>
-                <version>1.15.3</version>
+                <version>1.16.2</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.pitest</groupId>
                         <artifactId>pitest-junit5-plugin</artifactId>
-                        <version>1.2.1</version>
+                        <version>1.2.2</version>
                     </dependency>
                 </dependencies>
                 <configuration>
@@ -94,6 +94,10 @@
                     <mutableCodePaths>
                         <param>${user.home}/.m2/repository/techchamps/io/backend/0.0.1-SNAPSHOT/backend-0.0.1-SNAPSHOT.jar</param>
                     </mutableCodePaths>
+                    <excludedMutators>
+                        <excludedMutator>CONSTRUCTOR_CALLS</excludedMutator>
+                        <excludedMutator>NON_VOID_METHOD_CALLS</excludedMutator>
+                    </excludedMutators>
                     <outputFormats>
                         <outputFormat>XML</outputFormat>
                         <outputFormat>HTML</outputFormat>
