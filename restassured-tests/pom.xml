@@ -57,6 +57,8 @@
     </dependencies>
 
     <build>
+        <outputDirectory>${project.basedir}/../backend/target/classes</outputDirectory>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

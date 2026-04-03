@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "packageManager": "npm",
+  "reporters": ["html", "clear-text", "progress", "json"],
+  "testRunner": "jest",
+  "jest": {
+    "projectType": "custom",
+    "configFile": "jest.config.js",
+    "enableFindRelatedTests": true
+  },
+  "checkers": ["typescript"],
+  "tsconfigFile": "tsconfig.json",
+  "mutate": [
+    "components/LoginForm.tsx",
+    "components/RegisterForm.tsx",
+    "components/ProfileForm.tsx",
+    "components/ReplyItem.tsx",
+    "components/VoteButtons.tsx",
+    "components/ThreadList.tsx"
+  ],
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 0
+  },
+  "timeoutMS": 10000,
+  "concurrency": 2,
+  "tempDirName": ".stryker-tmp",
+  "coverageAnalysis": "perTest"
+}
