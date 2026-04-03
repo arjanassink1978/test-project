@@ -61,21 +61,31 @@ Backend and frontend agents read constraints from issue and implement them. See 
 2. **Backend agent:** Implement changes + tests (on feature branch)
    - Check constraints from issue
    - Implement server-side validation
+   - Write unit + RestAssured integration tests
 3. **Frontend agent:** Implement changes (on feature branch)
    - Check constraints from issue
    - Implement client-side validation
+   - Write Jest unit tests for components
 4. **RestAssured/Playwright agents:** Add integration/E2E tests
    - Write boundary tests for constraints
-5. **Mutation testing:** Run PIT mutation tests (target: ≥80% score)
+5. **Mutation testing:** Run tests and mutation scoring
+   - Backend: PIT mutation tests (target: ≥80% score)
+   - Frontend: Stryker mutation tests (target: ≥80% score)
+   - Up to 2 improvement rounds per layer if needed
 6. **ALL agents:** Update PROJECT_STRUCTURE.md when adding files
 
 **PHASE 3: Review & Merge** (after all tests pass)
 1. **Feature-analysis:** Create PR to main
-2. Comment on GitHub issue with test results + mutation score
+2. Comment on GitHub issue with:
+   - Test results (unit + E2E)
+   - Backend mutation score (PIT)
+   - Frontend mutation score (Stryker)
 3. **ASK USER FOR APPROVAL** before merging PR
 4. **Only merge after user confirms**
 
 **IMPORTANT:**
 - Never commit directly to main — always use feature branches
 - A passing build ≠ working feature — constraints must be tested across layers
-- Mutation score ≥80% required before merging
+- **Both backend AND frontend** mutation scores ≥80% required before merging
+- Frontend mutations tested with Stryker on Jest unit tests
+- Backend mutations tested with PIT on unit + RestAssured tests
