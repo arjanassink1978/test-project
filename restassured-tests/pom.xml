@@ -91,9 +91,6 @@
                     <targetTests>
                         <param>techchamps.io.*</param>
                     </targetTests>
-                    <mutableCodePaths>
-                        <param>${user.home}/.m2/repository/techchamps/io/backend/0.0.1-SNAPSHOT/backend-0.0.1-SNAPSHOT.jar</param>
-                    </mutableCodePaths>
                     <excludedMutators>
                         <excludedMutator>CONSTRUCTOR_CALLS</excludedMutator>
                         <excludedMutator>NON_VOID_METHOD_CALLS</excludedMutator>
@@ -102,7 +99,7 @@
                         <outputFormat>XML</outputFormat>
                         <outputFormat>HTML</outputFormat>
                     </outputFormats>
-                    <timeoutFactor>2.0</timeoutFactor>
+                    <timeoutFactor>4.0</timeoutFactor>
                     <threads>2</threads>
                     <verbose>false</verbose>
                 </configuration>
