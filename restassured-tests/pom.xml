@@ -80,9 +80,6 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <mutableCodePaths>
-                        <mutableCodePath>${project.basedir}/../backend/target/classes</mutableCodePath>
-                    </mutableCodePaths>
                     <targetClasses>
                         <param>techchamps.io.controller.*</param>
                         <param>techchamps.io.service.*</param>
