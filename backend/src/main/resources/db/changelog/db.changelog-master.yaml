@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: classpath:db/migration/V001__create_users_table.sql
+  - include:
+      file: classpath:db/migration/V002__create_forum_tables.sql
+  - include:
+      file: classpath:db/migration/V003__seed_test_data.sql

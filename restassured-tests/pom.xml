@@ -36,6 +36,24 @@
             <version>5.5.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.19.7</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>1.19.7</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>1.19.7</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -53,12 +71,12 @@
             <plugin>
                 <groupId>org.pitest</groupId>
                 <artifactId>pitest-maven</artifactId>
-                <version>1.15.3</version>
+                <version>1.16.2</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.pitest</groupId>
                         <artifactId>pitest-junit5-plugin</artifactId>
-                        <version>1.2.1</version>
+                        <version>1.2.2</version>
                     </dependency>
                 </dependencies>
                 <configuration>
@@ -73,14 +91,11 @@
                     <targetTests>
                         <param>techchamps.io.*</param>
                     </targetTests>
-                    <mutableCodePaths>
-                        <param>${user.home}/.m2/repository/techchamps/io/backend/0.0.1-SNAPSHOT/backend-0.0.1-SNAPSHOT.jar</param>
-                    </mutableCodePaths>
                     <outputFormats>
                         <outputFormat>XML</outputFormat>
                         <outputFormat>HTML</outputFormat>
                     </outputFormats>
-                    <timeoutFactor>2.0</timeoutFactor>
+                    <timeoutFactor>4.0</timeoutFactor>
                     <threads>2</threads>
                     <verbose>false</verbose>
                 </configuration>
