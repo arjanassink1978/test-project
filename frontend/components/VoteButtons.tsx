@@ -25,13 +25,13 @@ export default function VoteButtons({
         onClick={() => onVote(1)}
         disabled={disabled}
         aria-label="Upvote"
-        className="rounded p-0.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="rounded p-0.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         data-testid="upvote-button"
       >
         ▲
       </button>
       <span
-        className={`${typography.bodyText} min-w-[1.25rem] text-center font-semibold ${score >= 0 ? "text-indigo-600" : "text-red-600"}`}
+        className={`${typography.bodyText} min-w-[1.25rem] text-center font-semibold ${score >= 0 ? "text-emerald-600" : "text-red-600"}`}
         data-testid="vote-score"
       >
         {score}

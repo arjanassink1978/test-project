@@ -53,7 +53,7 @@ export default function ThreadList({
             </div>
             <div className="flex-1 min-w-0">
               <h3
-                className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors"
+                className="text-sm font-medium text-gray-900 group-hover:text-emerald-600 transition-colors"
                 data-testid={`thread-title-${thread.id}`}
               >
                 {isHidden ? "[Hidden due to low score]" : thread.title}

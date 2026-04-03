@@ -79,7 +79,7 @@ export default function ReplyItem({
         <div className={`flex-1 ${card.padded} ${isHidden ? "opacity-50 grayscale" : ""}`}>
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2" data-testid={`reply-author-${reply.id}`}>
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600">
+              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-600">
                 {initials}
               </div>
               <span className={`${typography.bodyText} font-medium text-gray-900`}>
@@ -121,7 +121,7 @@ export default function ReplyItem({
           {isLoggedIn && canReply && (
             <button
               type="button"
-              className="mt-2 text-xs text-indigo-600 hover:text-indigo-500"
+              className="mt-2 text-xs text-emerald-600 hover:text-emerald-500"
               onClick={() => setShowReplyForm((v) => !v)}
               data-testid={`reply-toggle-${reply.id}`}
             >

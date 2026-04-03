@@ -21,18 +21,18 @@
 // ---------------------------------------------------------------------------
 
 export const colors = {
-  // Primary: Green (links, primary actions, accents)
+  // Primary: Soft Green (links, primary actions, accents)
   green: {
-    50: "bg-green-50",
-    100: "bg-green-100",
-    500: "bg-green-500",
-    600: "bg-green-600",
-    700: "bg-green-700",
-    text600: "text-green-600",
-    text700: "text-green-700",
-    border200: "border-green-200",
-    hoverBg50: "hover:bg-green-50",
-    focusRing: "focus:ring-green-500",
+    50: "bg-emerald-50",
+    100: "bg-emerald-100",
+    500: "bg-emerald-500",
+    600: "bg-emerald-600",
+    700: "bg-emerald-700",
+    text600: "text-emerald-600",
+    text700: "text-emerald-700",
+    border200: "border-emerald-200",
+    hoverBg50: "hover:bg-emerald-50",
+    focusRing: "focus:ring-emerald-500",
   },
 
   // Secondary: Warm Gray (UI elements, borders, subtle accents)
