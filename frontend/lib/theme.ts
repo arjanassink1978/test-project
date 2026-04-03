@@ -1,10 +1,10 @@
 /**
- * CLEAN & MINIMAL FORUM DESIGN THEME
+ * WARM & MINIMAL FORUM DESIGN THEME
  *
- * Reference: Classic, timeless forum aesthetic
- * Color palette: Light gray/white + green accents + blue links
+ * Green-primary with warm neutrals & excellent contrast
+ * Color palette: Off-white backgrounds + warm gray UI + green accents + charcoal text
  * Typography: Clean, readable sans-serif
- * Vibe: Professional, functional, not trendy
+ * Vibe: Professional, warm, timeless
  *
  * Sections:
  *  1. Colors & palette
@@ -21,21 +21,7 @@
 // ---------------------------------------------------------------------------
 
 export const colors = {
-  // Primary: Blue (links, primary actions)
-  blue: {
-    50: "bg-blue-50",
-    100: "bg-blue-100",
-    500: "bg-blue-500",
-    600: "bg-blue-600",
-    700: "bg-blue-700",
-    text600: "text-blue-600",
-    text700: "text-blue-700",
-    border300: "border-blue-300",
-    hoverBg50: "hover:bg-blue-50",
-    focusRing: "focus:ring-blue-500",
-  },
-
-  // Success: Green (positive votes, +1 reactions)
+  // Primary: Green (links, primary actions, accents)
   green: {
     50: "bg-green-50",
     100: "bg-green-100",
@@ -46,9 +32,21 @@ export const colors = {
     text700: "text-green-700",
     border200: "border-green-200",
     hoverBg50: "hover:bg-green-50",
+    focusRing: "focus:ring-green-500",
   },
 
-  // Neutral: Grays (clean, professional)
+  // Secondary: Warm Gray (UI elements, borders, subtle accents)
+  warmGray: {
+    50: "bg-amber-50",
+    100: "bg-amber-100",
+    200: "bg-amber-200",
+    300: "bg-amber-300",
+    text500: "text-amber-600",
+    border200: "border-amber-200",
+    border300: "border-amber-300",
+  },
+
+  // Neutral: Cool Grays for text & hierarchy
   gray: {
     50: "bg-gray-50",
     100: "bg-gray-100",
@@ -56,7 +54,6 @@ export const colors = {
     300: "bg-gray-300",
     400: "bg-gray-400",
     500: "bg-gray-500",
-    text400: "text-gray-400",
     text500: "text-gray-500",
     text600: "text-gray-600",
     text700: "text-gray-700",
@@ -64,7 +61,12 @@ export const colors = {
     text900: "text-gray-900",
     border200: "border-gray-200",
     border300: "border-gray-300",
-    border400: "border-gray-400",
+  },
+
+  // Background: Off-white/Cream for main surfaces
+  background: {
+    50: "bg-slate-50",
+    100: "bg-slate-100",
   },
 
   // Error/Danger: Red
@@ -83,7 +85,7 @@ export const colors = {
 // ---------------------------------------------------------------------------
 
 export const typography = {
-  // Page heading - bold, clear
+  // Page heading - bold, dark charcoal
   pageHeading: "text-3xl font-bold text-gray-900",
 
   // Large heading
@@ -96,10 +98,10 @@ export const typography = {
   dashboardHeading: "text-2xl font-bold text-gray-900",
 
   // Labels
-  label: "block text-sm font-semibold text-gray-700 mb-2",
-  metaLabel: "text-xs font-semibold uppercase tracking-wider text-gray-500",
+  label: "block text-sm font-semibold text-gray-800 mb-2",
+  metaLabel: "text-xs font-semibold uppercase tracking-wider text-gray-600",
 
-  // Body text - excellent readability
+  // Body text - excellent readability with dark charcoal
   bodyText: "text-sm leading-relaxed text-gray-700",
   bodyTextLg: "text-base leading-relaxed text-gray-700",
   bodyValue: "text-sm font-medium text-gray-900",
@@ -152,10 +154,10 @@ export const borders = {
   inputBorderDefault: "border border-gray-300",
   inputBorderError: "border border-red-300",
 
-  // Card styling
-  cardRing: "border border-gray-200",
-  avatarRing: "ring-2 ring-gray-300",
-  navRing: "border-b border-gray-200",
+  // Card styling - warm gray borders
+  cardRing: "border border-amber-200",
+  avatarRing: "ring-2 ring-amber-200",
+  navRing: "border-b border-amber-200",
 
   // Radius options
   radiusLg: "rounded-lg",
@@ -181,9 +183,9 @@ export const shadows = {
 // ---------------------------------------------------------------------------
 
 export const states = {
-  // Focus ring - blue accent
-  focusRing: "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-  focusVisible: "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600",
+  // Focus ring - green accent
+  focusRing: "focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2",
+  focusVisible: "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600",
 
   // Disabled state
   disabled: "disabled:opacity-50 disabled:cursor-not-allowed",
@@ -205,43 +207,43 @@ export const alert = {
   base: "rounded-md border px-3 py-2 text-sm font-medium",
   error: "rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm font-medium text-red-700",
   success: "rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700",
-  info: "rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700",
+  info: "rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm font-medium text-amber-700",
 } as const;
 
 /**
- * Card - clean panel
+ * Card - clean panel with warm gray borders
  */
 export const card = {
-  base: "bg-white border border-gray-200 rounded-lg",
-  padded: "bg-white border border-gray-200 rounded-lg px-4 py-4",
-  paddedLg: "bg-white border border-gray-200 rounded-lg px-6 py-6",
-  interactive: "bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-all duration-150",
+  base: "bg-white border border-amber-200 rounded-lg",
+  padded: "bg-white border border-amber-200 rounded-lg px-4 py-4",
+  paddedLg: "bg-white border border-amber-200 rounded-lg px-6 py-6",
+  interactive: "bg-white border border-amber-200 rounded-lg hover:border-amber-300 hover:shadow-sm transition-all duration-150",
 } as const;
 
 /**
  * Text input / textarea
  */
 export const input = {
-  base: "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed",
+  base: "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed",
   error: "w-full rounded-md border border-red-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed",
-  textarea: "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+  textarea: "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
 } as const;
 
 /**
- * Buttons - Primary (blue), Secondary (gray), Danger (red)
+ * Buttons - Primary (green), Secondary (gray), Danger (red)
  */
 export const button = {
-  // Primary action
+  // Primary action - green
   primary:
-    "flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
+    "flex w-full items-center justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
 
   // Primary action - larger
   primaryLg:
-    "flex w-full items-center justify-center rounded-md bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors",
+    "flex w-full items-center justify-center rounded-md bg-green-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors",
 
   // Outline large
   outlineLg:
-    "flex w-full items-center justify-center rounded-md bg-white border-2 border-blue-600 px-5 py-2.5 text-base font-semibold text-blue-600 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors",
+    "flex w-full items-center justify-center rounded-md bg-white border-2 border-green-600 px-5 py-2.5 text-base font-semibold text-green-600 hover:bg-green-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors",
 
   // Secondary - inline (gray)
   secondary:
@@ -249,7 +251,7 @@ export const button = {
 
   // Secondary - nav variant
   secondaryNav:
-    "inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors",
+    "inline-flex items-center justify-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors",
 
   // Danger - red
   danger:
@@ -263,23 +265,23 @@ export const button = {
  * Navigation bar
  */
 export const nav = {
-  bar: "w-full bg-white border-b border-gray-200 sticky top-0 z-40",
+  bar: "w-full bg-white border-b border-amber-200 sticky top-0 z-40",
   inner: "mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4",
 } as const;
 
 /**
- * Profile link
+ * Profile link - green-tinted
  */
 export const profileLink = {
   base:
-    "inline-flex items-center justify-center gap-2 rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors",
+    "inline-flex items-center justify-center gap-2 rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors",
 } as const;
 
 /**
- * Text links - blue
+ * Text links - green
  */
 export const link = {
-  primary: "font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors",
+  primary: "font-medium text-green-600 hover:text-green-700 hover:underline transition-colors",
 } as const;
 
 /**
@@ -287,6 +289,6 @@ export const link = {
  */
 export const avatar = {
   image: "h-10 w-10 rounded-md object-cover bg-gray-100",
-  placeholder: "flex h-10 w-10 items-center justify-center rounded-md bg-gray-200",
-  initial: "text-xs font-bold text-gray-700",
+  placeholder: "flex h-10 w-10 items-center justify-center rounded-md bg-amber-100",
+  initial: "text-xs font-bold text-amber-700",
 } as const;

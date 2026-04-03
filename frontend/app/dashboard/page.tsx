@@ -11,7 +11,7 @@ export default function DashboardPage() {
           <ProfileLink />
           <Link
             href="/forum"
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors"
             data-testid="forum-link"
           >
             Forum
@@ -25,14 +25,14 @@ export default function DashboardPage() {
           <h1 className={typography.largeHeading} data-testid="welcome-heading">
             Welkom
           </h1>
-          <p className="mt-3 text-gray-600">
+          <p className="mt-3 text-gray-700">
             Ontdek interessante discussies en deel je mening in onze community forum.
           </p>
           <Link
             href="/forum"
             className={`${button.primaryLg} mt-6 inline-block w-auto px-8`}
           >
-            Ga naar het Forum
+            Ga naar het Forum →
           </Link>
         </div>
       </main>
