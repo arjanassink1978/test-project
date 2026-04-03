@@ -830,7 +830,7 @@ class ForumServiceTest {
     @Test
     void deleteThread_asAdmin_deletesSuccessfully() {
         AppUser admin = createUser("admin");
-        admin.setRole("ADMIN");
+        admin.setRole(Role.ADMIN);
         ForumThread thread = createThread(1L, "Title", "Desc");
         // Thread owned by testuser, not admin
         when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
@@ -1109,7 +1109,7 @@ class ForumServiceTest {
     @Test
     void deleteThread_asOwner_notAdmin_succeeds() {
         AppUser owner = createUser("threadauthor");
-        owner.setRole("USER");
+        owner.setRole(Role.USER);
         ForumThread thread = createThread(1L, "Title", "Desc");
         thread.setAuthor(owner);
         when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
@@ -1123,7 +1123,7 @@ class ForumServiceTest {
     @Test
     void deleteThread_asAdmin_notOwner_succeeds() {
         AppUser admin = createUser("adminuser");
-        admin.setRole("ADMIN");
+        admin.setRole(Role.ADMIN);
         AppUser threadOwner = createUser("owner");
         ForumThread thread = createThread(1L, "Title", "Desc");
         thread.setAuthor(threadOwner);
@@ -1138,7 +1138,7 @@ class ForumServiceTest {
     @Test
     void deleteThread_nonOwnerWithUserRole_throwsForbidden() {
         AppUser other = createUser("other");
-        other.setRole("USER");
+        other.setRole(Role.USER);
         AppUser threadOwner = createUser("owner");
         ForumThread thread = createThread(1L, "Title", "Desc");
         thread.setAuthor(threadOwner);
@@ -1427,7 +1427,7 @@ class ForumServiceTest {
     // ============================================================
 
     private AppUser createUser(String username) {
-        AppUser user = new AppUser("user@example.com", username, "encoded", "USER");
+        AppUser user = new AppUser("user@example.com", username, "encoded", Role.USER);
         return user;
     }
 
@@ -1458,4 +1458,220 @@ class ForumServiceTest {
         reply.setAuthor(createUser("testuser"));
         return reply;
     }
+
+    // ============================================================
+    // setThreadClosed — moderator/admin close/reopen thread
+    // ============================================================
+
+    @Test
+    void setThreadClosed_asModerator_closesThread() {
+        AppUser mod = createUser("mod");
+        mod.setRole(Role.MODERATOR);
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        when(userRepository.findByUsername("mod")).thenReturn(Optional.of(mod));
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(threadRepository.save(any(ForumThread.class))).thenReturn(thread);
+        when(threadRepository.countRepliesByThreadId(1L)).thenReturn(0L);
+
+        ForumThreadResponse result = forumService.setThreadClosed(1L, "mod", true);
+
+        assertThat(result).isNotNull();
+        verify(threadRepository).save(thread);
+    }
+
+    @Test
+    void setThreadClosed_asAdmin_closesThread() {
+        AppUser admin = createUser("admin");
+        admin.setRole(Role.ADMIN);
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(threadRepository.save(any(ForumThread.class))).thenReturn(thread);
+        when(threadRepository.countRepliesByThreadId(1L)).thenReturn(0L);
+
+        ForumThreadResponse result = forumService.setThreadClosed(1L, "admin", true);
+
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    void setThreadClosed_asRegularUser_throwsForbidden() {
+        AppUser user = createUser("user");
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> forumService.setThreadClosed(1L, "user", true))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting("status.value")
+                .isEqualTo(403);
+    }
+
+    @Test
+    void setThreadClosed_userNotFound_throws404() {
+        when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> forumService.setThreadClosed(1L, "ghost", true))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("User not found");
+    }
+
+    @Test
+    void setThreadClosed_threadNotFound_throws404() {
+        AppUser mod = createUser("mod");
+        mod.setRole(Role.MODERATOR);
+        when(userRepository.findByUsername("mod")).thenReturn(Optional.of(mod));
+        when(threadRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> forumService.setThreadClosed(999L, "mod", true))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Thread not found");
+    }
+
+    // ============================================================
+    // deleteReply — moderator/admin delete reply
+    // ============================================================
+
+    @Test
+    void deleteReply_asModerator_deletesReply() {
+        AppUser mod = createUser("mod");
+        mod.setRole(Role.MODERATOR);
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        ForumReply reply = createReply(10L, thread, null, "content", 0);
+        when(userRepository.findByUsername("mod")).thenReturn(Optional.of(mod));
+        when(replyRepository.findById(10L)).thenReturn(Optional.of(reply));
+
+        forumService.deleteReply(10L, "mod");
+
+        verify(replyRepository).delete(reply);
+    }
+
+    @Test
+    void deleteReply_asAdmin_deletesReply() {
+        AppUser admin = createUser("admin");
+        admin.setRole(Role.ADMIN);
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        ForumReply reply = createReply(10L, thread, null, "content", 0);
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
+        when(replyRepository.findById(10L)).thenReturn(Optional.of(reply));
+
+        forumService.deleteReply(10L, "admin");
+
+        verify(replyRepository).delete(reply);
+    }
+
+    @Test
+    void deleteReply_asRegularUser_throwsForbidden() {
+        AppUser user = createUser("user");
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> forumService.deleteReply(10L, "user"))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting("status.value")
+                .isEqualTo(403);
+    }
+
+    @Test
+    void deleteReply_userNotFound_throws404() {
+        when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> forumService.deleteReply(10L, "ghost"))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("User not found");
+    }
+
+    @Test
+    void deleteReply_replyNotFound_throws404() {
+        AppUser mod = createUser("mod");
+        mod.setRole(Role.MODERATOR);
+        when(userRepository.findByUsername("mod")).thenReturn(Optional.of(mod));
+        when(replyRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> forumService.deleteReply(999L, "mod"))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Reply not found");
+    }
+
+    // ============================================================
+    // listUsers — admin list all users
+    // ============================================================
+
+    @Test
+    void listUsers_asAdmin_returnsAllUsers() {
+        AppUser admin = createUser("admin");
+        admin.setRole(Role.ADMIN);
+        AppUser user1 = createUser("alice");
+        AppUser user2 = createUser("bob");
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
+        when(userRepository.findAll()).thenReturn(List.of(admin, user1, user2));
+
+        List<UserSummaryResponse> result = forumService.listUsers("admin");
+
+        assertThat(result).hasSize(3);
+        assertThat(result).extracting(UserSummaryResponse::getUsername)
+                .contains("admin", "alice", "bob");
+    }
+
+    @Test
+    void listUsers_roleNameInResponse() {
+        AppUser admin = createUser("admin");
+        admin.setRole(Role.ADMIN);
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.of(admin));
+        when(userRepository.findAll()).thenReturn(List.of(admin));
+
+        List<UserSummaryResponse> result = forumService.listUsers("admin");
+
+        assertThat(result.get(0).getRole()).isEqualTo("ADMIN");
+    }
+
+    @Test
+    void listUsers_asRegularUser_throwsForbidden() {
+        AppUser user = createUser("user");
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> forumService.listUsers("user"))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting("status.value")
+                .isEqualTo(403);
+    }
+
+    @Test
+    void listUsers_asModerator_throwsForbidden() {
+        AppUser mod = createUser("mod");
+        mod.setRole(Role.MODERATOR);
+        when(userRepository.findByUsername("mod")).thenReturn(Optional.of(mod));
+
+        assertThatThrownBy(() -> forumService.listUsers("mod"))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting("status.value")
+                .isEqualTo(403);
+    }
+
+    @Test
+    void listUsers_userNotFound_throws404() {
+        when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> forumService.listUsers("ghost"))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("User not found");
+    }
+
+    // ============================================================
+    // createReply — closed thread rejection
+    // ============================================================
+
+    @Test
+    void createReply_closedThread_throwsForbidden() {
+        AppUser author = createUser("author");
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        thread.setIsClosed(true);
+        when(userRepository.findByUsername("author")).thenReturn(Optional.of(author));
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+
+        CreateReplyRequest request = new CreateReplyRequest("content", null);
+
+        assertThatThrownBy(() -> forumService.createReply(1L, "author", request))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting("status.value")
+                .isEqualTo(403);
+    }
+
 }

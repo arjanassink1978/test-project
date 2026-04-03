@@ -21,7 +21,7 @@ class UserProfileTest {
 
     @Test
     void constructorWithUser_setsUser() {
-        AppUser user = new AppUser("test@example.com", "testuser", "password", "USER");
+        AppUser user = new AppUser("test@example.com", "testuser", "password", Role.USER);
         UserProfile profile = new UserProfile(user);
 
         assertThat(profile.getUser()).isEqualTo(user);
@@ -31,7 +31,7 @@ class UserProfileTest {
     @Test
     void settersAndGetters_workCorrectly() {
         UserProfile profile = new UserProfile();
-        AppUser user = new AppUser("test@example.com", "testuser", "password", "USER");
+        AppUser user = new AppUser("test@example.com", "testuser", "password", Role.USER);
 
         profile.setUser(user);
         profile.setDisplayName("Test User");

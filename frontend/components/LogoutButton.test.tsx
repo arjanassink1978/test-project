@@ -50,4 +50,11 @@ describe("LogoutButton", () => {
     ).not.toThrow();
     expect(mockPush).toHaveBeenCalledWith("/");
   });
+
+  it("removes role from localStorage on click", () => {
+    localStorage.setItem("role", "MODERATOR");
+    render(<LogoutButton />);
+    fireEvent.click(screen.getByRole("button", { name: /uitloggen/i }));
+    expect(localStorage.getItem("role")).toBeNull();
+  });
 });

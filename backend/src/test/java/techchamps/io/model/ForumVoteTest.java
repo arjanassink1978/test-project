@@ -8,7 +8,7 @@ class ForumVoteTest {
 
     @Test
     void constructorAndGetters_returnCorrectValues() {
-        AppUser voter = new AppUser("voter@test.com", "voter", "pass", "USER");
+        AppUser voter = new AppUser("voter@test.com", "voter", "pass", Role.USER);
         ForumVote vote = new ForumVote(voter, 42L, "thread", 1);
 
         assertThat(vote.getVoter()).isSameAs(voter);
@@ -26,8 +26,8 @@ class ForumVoteTest {
 
     @Test
     void setters_overrideConstructorValues() {
-        AppUser voter1 = new AppUser("v1@test.com", "v1", "pass", "USER");
-        AppUser voter2 = new AppUser("v2@test.com", "v2", "pass", "USER");
+        AppUser voter1 = new AppUser("v1@test.com", "v1", "pass", Role.USER);
+        AppUser voter2 = new AppUser("v2@test.com", "v2", "pass", Role.USER);
         ForumVote vote = new ForumVote(voter1, 1L, "thread", 1);
 
         vote.setVoter(voter2);

@@ -28,6 +28,9 @@ export default function LoginForm() {
         const data = await response.json();
         // Store the username from the response (server-confirmed)
         if (data.username) {
+          if (data.role) {
+            localStorage.setItem("role", data.role);
+          }
           localStorage.setItem("username", data.username);
         }
         // Store password for HTTP Basic auth in subsequent requests

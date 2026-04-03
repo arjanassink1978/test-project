@@ -5,6 +5,7 @@ import techchamps.io.dto.request.CreateThreadRequest;
 import techchamps.io.dto.response.*;
 import techchamps.io.model.*;
 import techchamps.io.repository.*;
+import techchamps.io.model.Role;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -120,6 +121,10 @@ public class ForumService {
         ForumThread thread = threadRepository.findById(threadId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Thread not found"));
 
+        if (thread.isClosed()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Thread is closed");
+        }
+
         int depth = 0;
         ForumReply parentReply = null;
 
@@ -193,9 +198,10 @@ public class ForumService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         boolean isOwner = thread.getAuthor().getUsername().equals(username);
-        boolean isAdmin = "ADMIN".equals(user.getRole());
+        boolean isAdmin = user.getRole() == Role.ADMIN;
+        boolean isModerator = user.getRole() == Role.MODERATOR;
 
-        if (!isOwner && !isAdmin) {
+        if (!isOwner && !isAdmin && !isModerator) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only delete your own threads");
         }
 
@@ -246,6 +252,7 @@ public class ForumService {
             r.setCategoryName(thread.getCategory().getName());
         }
         r.setReplyCount((int) threadRepository.countRepliesByThreadId(thread.getId()));
+        r.setIsClosed(thread.isClosed());
     }
 
     private ForumReplyResponse toReplyResponse(ForumReply reply, List<ForumReplyResponse> children) {
@@ -264,6 +271,49 @@ public class ForumService {
     public ForumReply getReplyById(Long id) {
         return replyRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reply not found"));
+    }
+
+    public ForumThreadResponse setThreadClosed(Long id, String username, boolean closed) {
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.getRole() != Role.MODERATOR && user.getRole() != Role.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Requires MODERATOR or ADMIN role");
+        }
+
+        ForumThread thread = threadRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Thread not found"));
+
+        thread.setIsClosed(closed);
+        ForumThread saved = threadRepository.save(thread);
+        return toThreadResponse(saved);
+    }
+
+    public void deleteReply(Long id, String username) {
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.getRole() != Role.MODERATOR && user.getRole() != Role.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Requires MODERATOR or ADMIN role");
+        }
+
+        ForumReply reply = replyRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reply not found"));
+
+        replyRepository.delete(reply);
+    }
+
+    public List<UserSummaryResponse> listUsers(String username) {
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.getRole() != Role.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Requires ADMIN role");
+        }
+
+        return userRepository.findAll().stream()
+                .map(u -> new UserSummaryResponse(u.getId(), u.getUsername(), u.getEmail(), u.getRole().name()))
+                .collect(Collectors.toList());
     }
 
 }

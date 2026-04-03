@@ -5,6 +5,7 @@ import techchamps.io.dto.request.RegisterRequest;
 import techchamps.io.dto.response.LoginResponse;
 import techchamps.io.dto.response.RegisterResponse;
 import techchamps.io.model.AppUser;
+import techchamps.io.model.Role;
 import techchamps.io.repository.AppUserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -55,7 +56,12 @@ public class AuthController {
                 )
             );
 
-            return ResponseEntity.ok(new LoginResponse(true, "Login successful", loginRequest.getUsername()));
+            String role = appUserRepository.findByUsername(loginRequest.getUsername())
+                    .map(u -> u.getRole().name())
+                    .orElse(Role.USER.name());
+
+            return ResponseEntity.ok(new LoginResponse(true, "Login successful",
+                    loginRequest.getUsername(), role));
 
         } catch (BadCredentialsException e) {
             return ResponseEntity
@@ -64,13 +70,6 @@ public class AuthController {
         }
     }
 
-    /**
-     * Register a new user account.
-     * Validates input, checks for duplicate email/username, hashes the password, and persists the user.
-     *
-     * @param registerRequest the registration payload with email, username, and password
-     * @return 200 with RegisterResponse on success, 409 on duplicate email/username
-     */
     @PostMapping("/register")
     @Operation(summary = "Register", description = "Create a new user account with email, username, and password")
     @ApiResponses({
@@ -100,7 +99,7 @@ public class AuthController {
             registerRequest.getEmail(),
             registerRequest.getUsername(),
             passwordEncoder.encode(registerRequest.getPassword()),
-            "USER"
+            Role.USER
         );
 
         AppUser savedUser = appUserRepository.save(newUser);

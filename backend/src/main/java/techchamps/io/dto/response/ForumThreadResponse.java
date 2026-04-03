@@ -36,6 +36,9 @@ public class ForumThreadResponse {
     @Schema(description = "Total number of replies")
     private int replyCount;
 
+    @Schema(description = "Whether the thread is closed for new replies")
+    private boolean isClosed;
+
     public ForumThreadResponse() {}
 
     public Long getId() { return id; }
@@ -48,6 +51,7 @@ public class ForumThreadResponse {
     public Long getCategoryId() { return categoryId; }
     public String getCategoryName() { return categoryName; }
     public int getReplyCount() { return replyCount; }
+    public boolean isClosed() { return isClosed; }
 
     public void setId(Long id) { this.id = id; }
     public void setTitle(String title) { this.title = title; }
@@ -59,4 +63,5 @@ public class ForumThreadResponse {
     public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
     public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
     public void setReplyCount(int replyCount) { this.replyCount = replyCount; }
+    public void setIsClosed(boolean isClosed) { this.isClosed = isClosed; }
 }

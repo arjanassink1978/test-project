@@ -35,6 +35,9 @@ public class ForumThread {
 
     private int score = 0;
 
+    @Column(name = "is_closed", nullable = false)
+    private boolean isClosed = false;
+
     public ForumThread() {}
 
     @PrePersist
@@ -56,6 +59,7 @@ public class ForumThread {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public int getScore() { return score; }
+    public boolean isClosed() { return isClosed; }
 
     public void setId(Long id) { this.id = id; }
     public void setAuthor(AppUser author) { this.author = author; }
@@ -65,4 +69,5 @@ public class ForumThread {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public void setScore(int score) { this.score = score; }
+    public void setIsClosed(boolean isClosed) { this.isClosed = isClosed; }
 }

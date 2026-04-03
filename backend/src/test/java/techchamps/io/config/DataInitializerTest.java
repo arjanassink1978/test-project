@@ -1,8 +1,10 @@
 package techchamps.io.config;
 
 import techchamps.io.model.AppUser;
+import techchamps.io.model.Role;
 import techchamps.io.repository.AppUserRepository;
 import techchamps.io.repository.ForumCategoryRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -12,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,96 +39,111 @@ class DataInitializerTest {
     @InjectMocks
     private DataInitializer dataInitializer;
 
-    // --- happy path: user does not exist yet, should be created ---
-
-    @Test
-    void run_whenUserDoesNotExist_savesNewUser() throws Exception {
+    @BeforeEach
+    void setupDefaultMocks() {
         when(userRepository.findByUsername("user")).thenReturn(Optional.empty());
-        when(passwordEncoder.encode("user1234")).thenReturn("encodedPassword");
-
-        dataInitializer.run(applicationArguments);
-
-        verify(userRepository, times(1)).save(any(AppUser.class));
+        when(userRepository.findByUsername("moderator")).thenReturn(Optional.empty());
+        when(userRepository.findByUsername("admin")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(forumCategoryRepository.count()).thenReturn(3L);
     }
 
-    // --- happy path: saved user has correct username ---
+    @Test
+    void run_whenNoUsersExist_savesAllThreeUsers() throws Exception {
+        dataInitializer.run(applicationArguments);
+
+        verify(userRepository, times(3)).save(any(AppUser.class));
+    }
 
     @Test
     void run_whenUserDoesNotExist_savesUserWithCorrectUsername() throws Exception {
-        when(userRepository.findByUsername("user")).thenReturn(Optional.empty());
-        when(passwordEncoder.encode("user1234")).thenReturn("encodedPassword");
-
         dataInitializer.run(applicationArguments);
 
         ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
-        verify(userRepository).save(captor.capture());
-        assertThat(captor.getValue().getUsername()).isEqualTo("user");
+        verify(userRepository, times(3)).save(captor.capture());
+        List<AppUser> saved = captor.getAllValues();
+        assertThat(saved).extracting(AppUser::getUsername)
+                .contains("user", "moderator", "admin");
     }
-
-    // --- happy path: saved user has encoded password ---
 
     @Test
     void run_whenUserDoesNotExist_savesUserWithEncodedPassword() throws Exception {
-        when(userRepository.findByUsername("user")).thenReturn(Optional.empty());
-        when(passwordEncoder.encode("user1234")).thenReturn("encodedPassword");
-
         dataInitializer.run(applicationArguments);
 
         ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
-        verify(userRepository).save(captor.capture());
-        assertThat(captor.getValue().getPassword()).isEqualTo("encodedPassword");
+        verify(userRepository, times(3)).save(captor.capture());
+        AppUser regularUser = captor.getAllValues().stream()
+                .filter(u -> "user".equals(u.getUsername()))
+                .findFirst().orElseThrow();
+        assertThat(regularUser.getPassword()).isEqualTo("encodedPassword");
     }
-
-    // --- happy path: saved user has correct role ---
 
     @Test
-    void run_whenUserDoesNotExist_savesUserWithUserRole() throws Exception {
-        when(userRepository.findByUsername("user")).thenReturn(Optional.empty());
-        when(passwordEncoder.encode("user1234")).thenReturn("encodedPassword");
-
+    void run_seedsUserWithUserRole() throws Exception {
         dataInitializer.run(applicationArguments);
 
         ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
-        verify(userRepository).save(captor.capture());
-        assertThat(captor.getValue().getRole()).isEqualTo("USER");
+        verify(userRepository, times(3)).save(captor.capture());
+        AppUser regularUser = captor.getAllValues().stream()
+                .filter(u -> "user".equals(u.getUsername()))
+                .findFirst().orElseThrow();
+        assertThat(regularUser.getRole()).isEqualTo(Role.USER);
     }
 
-    // --- happy path: saved user has correct profile fields ---
+    @Test
+    void run_seedsModeratorWithModeratorRole() throws Exception {
+        dataInitializer.run(applicationArguments);
+
+        ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
+        verify(userRepository, times(3)).save(captor.capture());
+        AppUser mod = captor.getAllValues().stream()
+                .filter(u -> "moderator".equals(u.getUsername()))
+                .findFirst().orElseThrow();
+        assertThat(mod.getRole()).isEqualTo(Role.MODERATOR);
+    }
+
+    @Test
+    void run_seedsAdminWithAdminRole() throws Exception {
+        dataInitializer.run(applicationArguments);
+
+        ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
+        verify(userRepository, times(3)).save(captor.capture());
+        AppUser admin = captor.getAllValues().stream()
+                .filter(u -> "admin".equals(u.getUsername()))
+                .findFirst().orElseThrow();
+        assertThat(admin.getRole()).isEqualTo(Role.ADMIN);
+    }
 
     @Test
     void run_whenUserDoesNotExist_savesUserWithProfileFields() throws Exception {
-        when(userRepository.findByUsername("user")).thenReturn(Optional.empty());
-        when(passwordEncoder.encode("user1234")).thenReturn("encodedPassword");
-
         dataInitializer.run(applicationArguments);
 
         ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
-        verify(userRepository).save(captor.capture());
-        AppUser saved = captor.getValue();
+        verify(userRepository, times(3)).save(captor.capture());
+        AppUser saved = captor.getAllValues().stream()
+                .filter(u -> "user".equals(u.getUsername()))
+                .findFirst().orElseThrow();
         assertThat(saved.getDisplayName()).isEqualTo("Demo User");
         assertThat(saved.getBio()).isEqualTo("Software developer and coffee enthusiast");
         assertThat(saved.getLocation()).isEqualTo("Amsterdam, Netherlands");
         assertThat(saved.getAvatarUrl()).isEqualTo("https://api.dicebear.com/7.x/avataaars/svg?seed=user");
     }
 
-    // --- edge case: user already exists, no save should happen ---
-
     @Test
-    void run_whenUserAlreadyExists_doesNotSaveAgain() throws Exception {
-        AppUser existing = new AppUser("user", "alreadyEncoded", "USER");
+    void run_whenUserAlreadyExists_doesNotSaveUser() throws Exception {
+        AppUser existing = new AppUser("user", "alreadyEncoded", Role.USER);
         when(userRepository.findByUsername("user")).thenReturn(Optional.of(existing));
 
         dataInitializer.run(applicationArguments);
 
-        verify(userRepository, never()).save(any());
-        verify(passwordEncoder, never()).encode(any());
+        ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
+        verify(userRepository, atMost(2)).save(captor.capture());
+        assertThat(captor.getAllValues()).extracting(AppUser::getUsername)
+                .doesNotContain("user");
     }
-
-    // --- forum category seeding ---
 
     @Test
     void run_whenNoCategoriesExist_seedsCategories() throws Exception {
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(new AppUser("user", "pass", "USER")));
         when(forumCategoryRepository.count()).thenReturn(0L);
 
         dataInitializer.run(applicationArguments);
@@ -135,7 +153,6 @@ class DataInitializerTest {
 
     @Test
     void run_whenCategoriesExist_doesNotSeedAgain() throws Exception {
-        when(userRepository.findByUsername("user")).thenReturn(Optional.of(new AppUser("user", "pass", "USER")));
         when(forumCategoryRepository.count()).thenReturn(3L);
 
         dataInitializer.run(applicationArguments);

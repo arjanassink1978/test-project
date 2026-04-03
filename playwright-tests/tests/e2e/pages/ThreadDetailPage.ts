@@ -160,4 +160,20 @@ export class ThreadDetailPage {
       .getByRole("button", { name: /collapse replies|expand replies/i })
       .first();
   }
+
+  getClosedBadge(): Locator {
+    return this.page.getByTestId("thread-closed-badge");
+  }
+
+  getCloseThreadButton(): Locator {
+    return this.page.getByTestId("close-thread-button");
+  }
+
+  getThreadClosedMessage(): Locator {
+    return this.page.getByTestId("thread-closed-message");
+  }
+
+  getDeleteReplyButton(replyId: number): Locator {
+    return this.page.getByTestId(`delete-reply-${replyId}`);
+  }
 }
