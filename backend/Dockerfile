@@ -1,6 +1,6 @@
 # Multi-stage build for Spring Boot backend
 # Stage 1: Build
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
 # Copy only pom.xml first (for better caching)
@@ -9,13 +9,13 @@ COPY backend/pom.xml ./backend/
 COPY restassured-tests/pom.xml ./restassured-tests/
 
 # Download dependencies
-RUN mvn dependency:resolve
+RUN mvn dependency:resolve -q
 
 # Copy source code
 COPY . .
 
 # Build backend module only
-RUN mvn clean package -pl backend -DskipTests
+RUN mvn clean package -pl backend -am -q -DskipTests
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine
