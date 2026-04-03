@@ -3,19 +3,18 @@
 FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
-# Copy only pom.xml first (for better caching)
+# Copy only parent pom and backend pom (for dependency caching)
 COPY pom.xml ./
 COPY backend/pom.xml ./backend/
-COPY restassured-tests/pom.xml ./restassured-tests/
 
-# Download dependencies
-RUN mvn dependency:resolve -q
+# Download dependencies for backend module only
+RUN mvn dependency:resolve -pl backend -q 2>/dev/null || true
 
 # Copy source code
 COPY . .
 
-# Build backend module only
-RUN mvn clean package -pl backend -am -q -DskipTests
+# Build backend module only (skip tests)
+RUN mvn clean package -pl backend -q -DskipTests
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine
