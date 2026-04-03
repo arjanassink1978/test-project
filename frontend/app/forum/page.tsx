@@ -70,7 +70,7 @@ export default function ForumPage() {
           <ProfileLink />
           <Link
             href="/forum"
-            className="inline-flex w-32 items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 shadow-sm hover:bg-indigo-100 transition-colors"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors"
             data-testid="forum-link"
           >
             Forum
@@ -79,7 +79,7 @@ export default function ForumPage() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto max-w-3xl px-4 py-8 md:px-6 md:py-12">
         <div className="flex items-center justify-between mb-6">
           <h1 className={typography.pageHeading} data-testid="forum-heading">
             Forum
@@ -87,16 +87,17 @@ export default function ForumPage() {
           {isLoggedIn && (
             <button
               type="button"
-              className={button.secondary}
+              className={button.primary}
               onClick={() => router.push("/forum/new")}
               data-testid="new-thread-button"
+              style={{ width: "auto" }}
             >
-              + New Thread
+              New Thread
             </button>
           )}
         </div>
 
-        <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col gap-3 mb-6">
           <ForumCategoryFilter
             categories={categories}
             selectedId={selectedCategory}
@@ -107,7 +108,7 @@ export default function ForumPage() {
 
           <div className="flex gap-3">
             <select
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={sort}
               onChange={(e) => setSort(e.target.value)}
               data-testid="sort-select"
@@ -119,7 +120,7 @@ export default function ForumPage() {
             <input
               type="search"
               className={input.base}
-              placeholder="Search threads…"
+              placeholder="Search…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               data-testid="search-input"

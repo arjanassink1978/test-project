@@ -1,70 +1,80 @@
 /**
- * Centralized design token file.
+ * CLEAN & MINIMAL FORUM DESIGN THEME
  *
- * All Tailwind class strings used across components live here. Components
- * import the tokens they need so there is a single place to adjust the
- * visual language of the application.
+ * Reference: Classic, timeless forum aesthetic
+ * Color palette: Light gray/white + green accents + blue links
+ * Typography: Clean, readable sans-serif
+ * Vibe: Professional, functional, not trendy
  *
  * Sections:
- *  1. Colors
+ *  1. Colors & palette
  *  2. Typography
- *  3. Spacing / layout
+ *  3. Spacing & layout
  *  4. Borders & radius
- *  5. Shadows
- *  6. Interactive states (focus, disabled, hover)
- *  7. Composite patterns  (alert, card, input, button, label, link, nav)
+ *  5. Shadows & depth
+ *  6. Interactive states
+ *  7. Composite patterns
  */
 
 // ---------------------------------------------------------------------------
-// 1. Colors
+// 1. Colors & Palette
 // ---------------------------------------------------------------------------
 
 export const colors = {
-  // Indigo palette (primary brand color)
-  indigo: {
-    50:  "bg-indigo-50",
-    100: "bg-indigo-100",
-    600: "bg-indigo-600",
-    text600: "text-indigo-600",
-    text700: "text-indigo-700",
-    border200: "border-indigo-200",
-    hoverBg100: "hover:bg-indigo-100",
-    hoverBg500: "hover:bg-indigo-500",
-    hoverText500: "hover:text-indigo-500",
-    focusOutline600: "focus-visible:outline-indigo-600",
-    ring2: "focus:ring-indigo-500",
-    borderFocus: "focus:border-indigo-500",
+  // Primary: Blue (links, primary actions)
+  blue: {
+    50: "bg-blue-50",
+    100: "bg-blue-100",
+    500: "bg-blue-500",
+    600: "bg-blue-600",
+    700: "bg-blue-700",
+    text600: "text-blue-600",
+    text700: "text-blue-700",
+    border300: "border-blue-300",
+    hoverBg50: "hover:bg-blue-50",
+    focusRing: "focus:ring-blue-500",
   },
 
-  // Gray palette (neutral)
+  // Success: Green (positive votes, +1 reactions)
+  green: {
+    50: "bg-green-50",
+    100: "bg-green-100",
+    500: "bg-green-500",
+    600: "bg-green-600",
+    700: "bg-green-700",
+    text600: "text-green-600",
+    text700: "text-green-700",
+    border200: "border-green-200",
+    hoverBg50: "hover:bg-green-50",
+  },
+
+  // Neutral: Grays (clean, professional)
   gray: {
     50: "bg-gray-50",
+    100: "bg-gray-100",
+    200: "bg-gray-200",
+    300: "bg-gray-300",
+    400: "bg-gray-400",
+    500: "bg-gray-500",
     text400: "text-gray-400",
     text500: "text-gray-500",
     text600: "text-gray-600",
     text700: "text-gray-700",
+    text800: "text-gray-800",
     text900: "text-gray-900",
+    border200: "border-gray-200",
     border300: "border-gray-300",
-    hoverBg50: "hover:bg-gray-50",
-    ring5: "ring-gray-900/5",
-    bg200: "ring-gray-200",
+    border400: "border-gray-400",
   },
 
-  // Red palette (errors / destructive)
+  // Error/Danger: Red
   red: {
-    50:  "bg-red-50",
-    border200: "border-red-200",
+    50: "bg-red-50",
+    600: "bg-red-600",
+    700: "bg-red-700",
     text600: "text-red-600",
     text700: "text-red-700",
-    border300: "border-red-300",
-    hoverBg50: "hover:bg-red-50",
-  },
-
-  // Green palette (success)
-  green: {
-    50:  "bg-green-50",
-    border200: "border-green-200",
-    text700: "text-green-700",
+    border200: "border-red-200",
   },
 } as const;
 
@@ -73,171 +83,210 @@ export const colors = {
 // ---------------------------------------------------------------------------
 
 export const typography = {
-  pageHeading:   "text-2xl font-bold tracking-tight text-gray-900",
-  largeHeading:  "text-4xl font-bold tracking-tight text-gray-900",
-  sectionHeading:"text-base font-semibold text-gray-900",
-  dashboardHeading: "text-2xl font-semibold text-gray-900",
-  label:         "block text-sm font-medium text-gray-700 mb-1",
-  metaLabel:     "text-xs font-medium uppercase tracking-wide text-gray-500",
-  bodyText:      "text-sm text-gray-600",
-  bodyTextLg:    "text-lg text-gray-600",
-  bodyValue:     "mt-1 text-sm text-gray-900",
-  helperText:    "text-xs text-gray-400",
-  errorText:     "mt-1 text-sm text-red-600",
-  charCounter:   "mt-1 text-xs text-gray-400 text-right",
+  // Page heading - bold, clear
+  pageHeading: "text-3xl font-bold text-gray-900",
+
+  // Large heading
+  largeHeading: "text-2xl font-bold text-gray-900",
+
+  // Section heading
+  sectionHeading: "text-lg font-semibold text-gray-900",
+
+  // Dashboard/page heading
+  dashboardHeading: "text-2xl font-bold text-gray-900",
+
+  // Labels
+  label: "block text-sm font-semibold text-gray-700 mb-2",
+  metaLabel: "text-xs font-semibold uppercase tracking-wider text-gray-500",
+
+  // Body text - excellent readability
+  bodyText: "text-sm leading-relaxed text-gray-700",
+  bodyTextLg: "text-base leading-relaxed text-gray-700",
+  bodyValue: "text-sm font-medium text-gray-900",
+
+  // Helper/secondary text
+  helperText: "text-xs text-gray-500",
+
+  // Error text
+  errorText: "text-sm font-medium text-red-700",
+
+  // Character counter
+  charCounter: "text-xs text-gray-500 text-right mt-1",
 } as const;
 
 // ---------------------------------------------------------------------------
-// 3. Spacing / layout
+// 3. Spacing & Layout
 // ---------------------------------------------------------------------------
 
 export const spacing = {
-  pagePadding:   "px-4 py-12",
-  pageCenter:    "flex min-h-screen flex-col items-center justify-center",
-  formSpacing:   "space-y-5",
-  sectionSpacing:"space-y-6",
-  cardPadding:   "px-6 py-6",
-  cardPaddingLg: "px-8 py-8",
-  navPadding:    "px-6 py-3",
-  inputPadding:  "px-3 py-2",
-  buttonPadding: "px-4 py-2.5",
-  buttonPaddingLg:"px-4 py-3",
+  // Page padding
+  pagePadding: "px-4 py-8 md:px-6 md:py-12",
+  pageCenter: "flex min-h-screen flex-col items-center justify-center",
+
+  // Sections
+  formSpacing: "space-y-4",
+  sectionSpacing: "space-y-6",
+
+  // Cards & containers
+  cardPadding: "px-4 py-4",
+  cardPaddingLg: "px-6 py-6",
+
+  // Navigation
+  navPadding: "px-4 py-3",
+
+  // Inputs
+  inputPadding: "px-3 py-2",
+
+  // Buttons
+  buttonPadding: "px-4 py-2",
+  buttonPaddingLg: "px-5 py-2.5",
   buttonPaddingIcon: "px-3 py-2",
 } as const;
 
 // ---------------------------------------------------------------------------
-// 4. Borders & radius
+// 4. Borders & Radius
 // ---------------------------------------------------------------------------
 
 export const borders = {
+  // Input borders
   inputBorderDefault: "border border-gray-300",
-  inputBorderError:   "border border-red-300",
-  cardRing:           "ring-1 ring-gray-900/5",
-  avatarRing:         "ring-2 ring-gray-200",
-  navRing:            "ring-1 ring-gray-900/5",
-  radiusLg:           "rounded-lg",
-  radiusMd:           "rounded-md",
-  radiusXl:           "rounded-xl",
-  radiusFull:         "rounded-full",
+  inputBorderError: "border border-red-300",
+
+  // Card styling
+  cardRing: "border border-gray-200",
+  avatarRing: "ring-2 ring-gray-300",
+  navRing: "border-b border-gray-200",
+
+  // Radius options
+  radiusLg: "rounded-lg",
+  radiusMd: "rounded-md",
+  radiusSm: "rounded-sm",
+  radiusXl: "rounded-xl",
+  radiusFull: "rounded-full",
 } as const;
 
 // ---------------------------------------------------------------------------
-// 5. Shadows
+// 5. Shadows & Depth
 // ---------------------------------------------------------------------------
 
 export const shadows = {
-  sm:   "shadow-sm",
-  md:   "shadow-md",
+  // Subtle, minimal shadows
+  sm: "shadow-sm",
+  md: "shadow-md",
   none: "",
 } as const;
 
 // ---------------------------------------------------------------------------
-// 6. Interactive states
+// 6. Interactive States
 // ---------------------------------------------------------------------------
 
 export const states = {
-  focusRing:      "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500",
-  focusVisible:   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600",
-  disabled:       "disabled:opacity-50 disabled:cursor-not-allowed",
+  // Focus ring - blue accent
+  focusRing: "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+  focusVisible: "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600",
+
+  // Disabled state
+  disabled: "disabled:opacity-50 disabled:cursor-not-allowed",
   disabledInline: "cursor-not-allowed opacity-50",
-  transition:     "transition-colors",
+
+  // Transitions
+  transition: "transition-all duration-150",
+  transitionFast: "transition-all duration-100",
 } as const;
 
 // ---------------------------------------------------------------------------
-// 7. Composite patterns
+// 7. Composite Patterns
 // ---------------------------------------------------------------------------
 
 /**
- * Alert banners — used in LoginForm, RegisterForm, ProfileForm.
+ * Alert banners
  */
 export const alert = {
-  base:    "rounded-md border px-4 py-3 text-sm",
-  error:   "rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700",
-  success: "rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700",
+  base: "rounded-md border px-3 py-2 text-sm font-medium",
+  error: "rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm font-medium text-red-700",
+  success: "rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700",
+  info: "rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700",
 } as const;
 
 /**
- * Card / panel — white box with subtle shadow and ring.
+ * Card - clean panel
  */
 export const card = {
-  base:   "rounded-xl bg-white shadow-md ring-1 ring-gray-900/5",
-  padded: "rounded-xl bg-white px-6 py-6 shadow-md ring-1 ring-gray-900/5",
-  paddedLg: "rounded-xl bg-white px-8 py-8 shadow-md ring-1 ring-gray-900/5",
+  base: "bg-white border border-gray-200 rounded-lg",
+  padded: "bg-white border border-gray-200 rounded-lg px-4 py-4",
+  paddedLg: "bg-white border border-gray-200 rounded-lg px-6 py-6",
+  interactive: "bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:shadow-sm transition-all duration-150",
 } as const;
 
 /**
- * Text input / textarea.
- *
- * Use `input.base` for normal state and `input.error` when a field has a
- * validation error (swaps the border color).
+ * Text input / textarea
  */
 export const input = {
-  base:  "block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm",
-  error: "block w-full rounded-lg border border-red-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed sm:text-sm",
-  textarea: "block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm resize-none",
+  base: "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed",
+  error: "w-full rounded-md border border-red-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed",
+  textarea: "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
 } as const;
 
 /**
- * Buttons — primary (indigo filled), secondary (white/gray outlined),
- * danger (red outlined), and their loading-spinner wrapper.
+ * Buttons - Primary (blue), Secondary (gray), Danger (red)
  */
 export const button = {
-  /** Full-width primary action (submit / save). */
+  // Primary action
   primary:
-    "flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
+    "flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
 
-  /** Full-width primary action — larger padding (home page links). */
+  // Primary action - larger
   primaryLg:
-    "flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors",
+    "flex w-full items-center justify-center rounded-md bg-blue-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors",
 
-  /** Full-width secondary / outline link button (home page). */
+  // Outline large
   outlineLg:
-    "flex w-full items-center justify-center rounded-lg bg-white border-2 border-indigo-600 px-4 py-3 text-base font-semibold text-indigo-600 shadow-sm hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors",
+    "flex w-full items-center justify-center rounded-md bg-white border-2 border-blue-600 px-5 py-2.5 text-base font-semibold text-blue-600 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors",
 
-  /** Inline secondary (e.g. avatar upload label, logout). */
+  // Secondary - inline (gray)
   secondary:
-    "inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors",
+    "inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors",
 
-  /** Inline secondary — fixed width, with gap for icon (logout, profile link). */
+  // Secondary - nav variant
   secondaryNav:
-    "inline-flex w-32 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors",
+    "inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors",
 
-  /** Inline danger (e.g. delete avatar). */
+  // Danger - red
   danger:
-    "inline-flex items-center justify-center rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
+    "inline-flex items-center justify-center rounded-md border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
 
-  /** Spinner class used inside loading buttons. */
+  // Spinner
   spinner: "mr-2 h-4 w-4 animate-spin",
 } as const;
 
 /**
- * Navigation bar — dashboard top nav.
+ * Navigation bar
  */
 export const nav = {
-  bar:     "w-full bg-white shadow-sm ring-1 ring-gray-900/5",
-  inner:   "mx-auto flex max-w-5xl items-center justify-start gap-3 px-6 py-3",
+  bar: "w-full bg-white border-b border-gray-200 sticky top-0 z-40",
+  inner: "mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4",
 } as const;
 
 /**
- * Profile link (indigo tinted, nav variant).
+ * Profile link
  */
 export const profileLink = {
   base:
-    "inline-flex w-32 items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 shadow-sm hover:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-colors",
+    "inline-flex items-center justify-center gap-2 rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors",
 } as const;
 
 /**
- * Inline text links (e.g. "Register here" / "Login here").
+ * Text links - blue
  */
 export const link = {
-  primary: "font-medium text-indigo-600 hover:text-indigo-500",
+  primary: "font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors",
 } as const;
 
 /**
- * Avatar placeholder circle.
+ * Avatar styling
  */
 export const avatar = {
-  image:       "h-24 w-24 rounded-full object-cover ring-2 ring-gray-200",
-  placeholder: "flex h-24 w-24 items-center justify-center rounded-full bg-indigo-100 ring-2 ring-gray-200",
-  initial:     "text-2xl font-bold text-indigo-600",
+  image: "h-10 w-10 rounded-md object-cover bg-gray-100",
+  placeholder: "flex h-10 w-10 items-center justify-center rounded-md bg-gray-200",
+  initial: "text-xs font-bold text-gray-700",
 } as const;

@@ -1,7 +1,7 @@
 import LogoutButton from "@/components/LogoutButton";
 import Link from "next/link";
 import ProfileLink from "@/components/ProfileLink";
-import { nav, typography } from "@/lib/theme";
+import { nav, typography, button } from "@/lib/theme";
 
 export default function DashboardPage() {
   return (
@@ -11,7 +11,7 @@ export default function DashboardPage() {
           <ProfileLink />
           <Link
             href="/forum"
-            className="inline-flex w-32 items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 shadow-sm hover:bg-indigo-100 transition-colors"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-colors"
             data-testid="forum-link"
           >
             Forum
@@ -20,10 +20,21 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      <main className="flex flex-col items-center justify-center px-4 py-24">
-        <h1 className={typography.dashboardHeading} data-testid="welcome-heading">
-          Welkom op deze site
-        </h1>
+      <main className="mx-auto max-w-2xl px-4 py-12 md:px-6 md:py-16">
+        <div className="text-center">
+          <h1 className={typography.largeHeading} data-testid="welcome-heading">
+            Welkom
+          </h1>
+          <p className="mt-3 text-gray-600">
+            Ontdek interessante discussies en deel je mening in onze community forum.
+          </p>
+          <Link
+            href="/forum"
+            className={`${button.primaryLg} mt-6 inline-block w-auto px-8`}
+          >
+            Ga naar het Forum
+          </Link>
+        </div>
       </main>
     </div>
   );
