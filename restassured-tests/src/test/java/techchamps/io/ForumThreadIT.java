@@ -564,43 +564,50 @@ class ForumThreadIT extends BaseIntegrationTest {
     @DisplayName("POST /api/forum/posts/{id}/vote → cancel upvote by sending 0, score returns to 0")
     void vote_cancelExistingUpvote_sendZero_returns200WithScoreZero() {
         Long threadId = createThreadAndGetId();
+        String token = userToken();
 
         // Upvote: score 0 → 1
-        given()
+        VoteResponse upvoteResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
-            .auth().preemptive().basic(USER, PASSWORD)
+            .header("Authorization", "Bearer " + token)
             .queryParam("postType", "thread")
             .body(new VoteRequest(1))
         .when()
             .post("/api/forum/posts/" + threadId + "/vote")
         .then()
             .statusCode(200)
-            .body("newScore", equalTo(1))
-            .body("userVote", equalTo(1));
+            .extract().as(VoteResponse.class);
+
+        assertThat(upvoteResponse.getNewScore()).isEqualTo(1);
+        assertThat(upvoteResponse.getUserVote()).isEqualTo(1);
 
         // Cancel: send 0, score 1 → 0
-        given()
+        VoteResponse cancelResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
-            .auth().preemptive().basic(USER, PASSWORD)
+            .header("Authorization", "Bearer " + token)
             .queryParam("postType", "thread")
             .body(new VoteRequest(0))
         .when()
             .post("/api/forum/posts/" + threadId + "/vote")
         .then()
             .statusCode(200)
-            .body("newScore", equalTo(0))
-            .body("userVote", equalTo(0));
+            .extract().as(VoteResponse.class);
+
+        assertThat(cancelResponse.getNewScore()).isEqualTo(0);
+        assertThat(cancelResponse.getUserVote()).isEqualTo(0);
 
         // Verify persisted via GET
-        given()
+        ForumThreadDetailResponse thread = given()
             .port(port)
         .when()
-            .get("/api/forum/threads/" + threadId)
+            .get("/api/forum/threads/{id}", threadId)
         .then()
             .statusCode(200)
-            .body("score", equalTo(0));
+            .extract().as(ForumThreadDetailResponse.class);
+
+        assertThat(thread.getScore()).isEqualTo(0);
     }
 
     @Test
@@ -608,34 +615,39 @@ class ForumThreadIT extends BaseIntegrationTest {
     @DisplayName("POST /api/forum/posts/{id}/vote → cancel downvote by sending 0, score returns to 0")
     void vote_cancelExistingDownvote_sendZero_returns200WithScoreZero() {
         Long threadId = createThreadAndGetId();
+        String token = userToken();
 
         // Downvote: score 0 → -1
-        given()
+        VoteResponse downvoteResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
-            .auth().preemptive().basic(USER, PASSWORD)
+            .header("Authorization", "Bearer " + token)
             .queryParam("postType", "thread")
             .body(new VoteRequest(-1))
         .when()
             .post("/api/forum/posts/" + threadId + "/vote")
         .then()
             .statusCode(200)
-            .body("newScore", equalTo(-1))
-            .body("userVote", equalTo(-1));
+            .extract().as(VoteResponse.class);
+
+        assertThat(downvoteResponse.getNewScore()).isEqualTo(-1);
+        assertThat(downvoteResponse.getUserVote()).isEqualTo(-1);
 
         // Cancel: send 0, score -1 → 0
-        given()
+        VoteResponse cancelResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
-            .auth().preemptive().basic(USER, PASSWORD)
+            .header("Authorization", "Bearer " + token)
             .queryParam("postType", "thread")
             .body(new VoteRequest(0))
         .when()
             .post("/api/forum/posts/" + threadId + "/vote")
         .then()
             .statusCode(200)
-            .body("newScore", equalTo(0))
-            .body("userVote", equalTo(0));
+            .extract().as(VoteResponse.class);
+
+        assertThat(cancelResponse.getNewScore()).isEqualTo(0);
+        assertThat(cancelResponse.getUserVote()).isEqualTo(0);
     }
 
     // -------------------------------------------------------------------------

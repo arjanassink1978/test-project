@@ -276,3 +276,116 @@ export async function deleteReply(
     throw new Error(`Failed to delete reply: ${response.status}`);
   }
 }
+
+// -------------------------------------------------------------------------
+// Admin API — types
+// -------------------------------------------------------------------------
+
+export interface UserSummary {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+}
+
+export interface AdminCategoryResponse {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+}
+
+// -------------------------------------------------------------------------
+// Admin API — functions
+// -------------------------------------------------------------------------
+
+export async function searchUsers(
+  query: string,
+  token: string
+): Promise<UserSummary[]> {
+  const params = new URLSearchParams();
+  if (query) params.set("search", query);
+  const response = await fetch(`${API_BASE}/api/admin/users?${params}`, {
+    headers: { Authorization: bearerAuth(token) },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch users: ${response.status}`);
+  }
+  const data = (await response.json()) as UserSummary[] | { content: UserSummary[] };
+  return Array.isArray(data) ? data : data.content;
+}
+
+export async function updateUserRole(
+  userId: number,
+  role: string,
+  token: string
+): Promise<UserSummary> {
+  const response = await fetch(`${API_BASE}/api/admin/users/${userId}/role`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: bearerAuth(token),
+    },
+    body: JSON.stringify({ role }),
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { message?: string };
+    throw new Error(body.message ?? `Failed to update role: ${response.status}`);
+  }
+  return response.json() as Promise<UserSummary>;
+}
+
+export async function createCategory(
+  data: { name: string; description: string; icon: string },
+  token: string
+): Promise<AdminCategoryResponse> {
+  const response = await fetch(`${API_BASE}/api/admin/categories`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: bearerAuth(token),
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { message?: string };
+    throw new Error(body.message ?? `Failed to create category: ${response.status}`);
+  }
+  return response.json() as Promise<AdminCategoryResponse>;
+}
+
+export async function updateCategory(
+  categoryId: number,
+  data: { name: string; description: string; icon: string },
+  token: string
+): Promise<AdminCategoryResponse> {
+  const response = await fetch(`${API_BASE}/api/admin/categories/${categoryId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: bearerAuth(token),
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { message?: string };
+    throw new Error(body.message ?? `Failed to update category: ${response.status}`);
+  }
+  return response.json() as Promise<AdminCategoryResponse>;
+}
+
+export async function deleteCategory(
+  categoryId: number,
+  token: string
+): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/admin/categories/${categoryId}`, {
+    method: "DELETE",
+    headers: { Authorization: bearerAuth(token) },
+  });
+  if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error("You don't have permission to delete categories");
+    }
+    throw new Error(`Failed to delete category: ${response.status}`);
+  }
+}

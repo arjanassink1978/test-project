@@ -2,6 +2,7 @@ import LogoutButton from "@/components/LogoutButton";
 import Link from "next/link";
 import ProfileLink from "@/components/ProfileLink";
 import ForumLink from "@/components/ForumLink";
+import AdminLink from "@/components/AdminLink";
 import { nav, typography, button, layout } from "@/lib/theme";
 
 export default function DashboardPage() {
@@ -11,6 +12,7 @@ export default function DashboardPage() {
         <div className={nav.inner}>
           <ProfileLink />
           <ForumLink />
+          <AdminLink />
           <div className="ml-auto">
             <LogoutButton />
           </div>
