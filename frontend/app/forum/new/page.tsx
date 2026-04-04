@@ -52,7 +52,9 @@ export default function NewThreadPage() {
       <nav className={nav.bar}>
         <div className={nav.inner}>
           <ProfileLink />
-          <LogoutButton />
+          <div className="ml-auto">
+            <LogoutButton />
+          </div>
         </div>
       </nav>
 

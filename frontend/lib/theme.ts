@@ -314,7 +314,7 @@ export const button = {
  */
 export const nav = {
   bar: "w-full bg-white border-b border-green-200 sticky top-0 z-40",
-  inner: "mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4",
+  inner: "mx-auto flex max-w-6xl items-center justify-start gap-4 px-4 py-3 md:px-6 md:py-4",
 } as const;
 
 /**
