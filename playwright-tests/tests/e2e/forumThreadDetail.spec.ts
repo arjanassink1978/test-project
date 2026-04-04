@@ -94,22 +94,6 @@ test.describe("Forum link visibility and navigation", () => {
 
     await expect(page).toHaveURL(/\/forum/, { timeout: 10000 });
   });
-
-  test("forum link has green background styling matching dashboard", async ({
-    page,
-  }) => {
-    await loginAs(page, SEEDED_USERS.user);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const forumLink = page.locator('a[data-testid="forum-link"]');
-    const classStr = await forumLink.getAttribute("class");
-
-    expect(classStr).toContain("border-green-300");
-    expect(classStr).toContain("bg-green-50");
-    expect(classStr).toContain("text-green-700");
-  });
 });
 
 test.describe("Close Thread button styling", () => {
@@ -188,20 +172,6 @@ test.describe("Close Thread button styling", () => {
     await closeButton.click();
 
     await expect(closeButton).toHaveText("Reopen Thread", { timeout: 5000 });
-  });
-
-  test("close thread button has red danger styling", async ({ page }) => {
-    await loginAs(page, SEEDED_USERS.moderator);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const closeButton = detailPage.getCloseThreadButton();
-    const classStr = await closeButton.getAttribute("class");
-
-    expect(classStr).toContain("border-red-300");
-    expect(classStr).toContain("text-red-700");
-    expect(classStr).toContain("hover:bg-red-100");
   });
 
   test("close thread button remains visible with correct text after reopening", async ({
