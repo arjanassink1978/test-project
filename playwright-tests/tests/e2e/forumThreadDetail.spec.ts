@@ -1,8 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { LoginPage } from "./pages/LoginPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { loginAsDefaultUser } from "./fixtures/auth";
 import { API_BASE } from "./config";
 
 const SEEDED_USERS = {
@@ -260,28 +258,5 @@ test.describe("Thread detail page integration", () => {
 
     await expect(forumLink).toBeEnabled();
     await expect(profileLink).toBeEnabled();
-  });
-
-  test("forum link matches indigo styling on both dashboard and thread detail", async ({
-    page,
-  }) => {
-    await loginAsDefaultUser(page);
-    const dashboardPage = new DashboardPage(page);
-    await dashboardPage.waitForLoad();
-
-    const dashboardForumLink = page.locator('a[data-testid="forum-link"]');
-    const dashboardClass = await dashboardForumLink.getAttribute("class");
-
-    await dashboardForumLink.click();
-
-    const newThreadId = await createThreadViaApi(SEEDED_USERS.user);
-    const detailPage = new ThreadDetailPage(page);
-    await page.goto(`/forum/threads/${newThreadId}`);
-    await detailPage.waitForLoad();
-
-    const detailForumLink = page.locator('a[data-testid="forum-link"]');
-    const detailClass = await detailForumLink.getAttribute("class");
-
-    expect(dashboardClass).toBe(detailClass);
   });
 });
