@@ -489,9 +489,15 @@ jobs:
         run: |
           mkdir -p docs/reports
 
-          # Copy test report
+          # Create dashboard first (will be main index if test report missing)
+          # Dashboard HTML will be created later in the script
+
+          # Copy test report if it exists
           if [ -f "test-report/test-report.html" ]; then
             cp test-report/test-report.html docs/index.html
+            echo "✅ Test report copied"
+          else
+            echo "⚠️  test-report/test-report.html not found"
           fi
 
           # Copy Playwright report
@@ -609,6 +615,12 @@ jobs:
           </body>
           </html>
           EOF
+
+          # If no test report exists, use dashboard as index
+          if [ ! -f "docs/index.html" ]; then
+            cp docs/reports.html docs/index.html
+            echo "✅ Using dashboard as index.html fallback"
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
