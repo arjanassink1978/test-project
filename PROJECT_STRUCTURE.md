@@ -1,6 +1,6 @@
 # Project Structure Index
 
-**Last Updated:** 2026-04-04 (Issue #41: Test suite deduplication — removed duplicate E2E layout tests from forum.spec.ts and forumThreadDetail.spec.ts, removed duplicate profile journey from user-journey.spec.ts; added 5 profile boundary tests (displayName/bio/location @Size) to ProfileControllerIT; added maxLength assertions to ProfileForm.test.tsx)
+**Last Updated:** 2026-04-04 (Issue #46: Admin panel frontend — AdminLink, AdminPanel, UserManagementTab, CategoryManagementTab, CategoryForm components; /admin page with ADMIN-only guard; adminConstants.ts (CATEGORY_NAME_MAX=50, CATEGORY_DESCRIPTION_MAX=200); admin API functions in lib/api.ts; AdminLink in dashboard nav; 57 new unit tests)
 **Important:** When agents add new files/components, they MUST update this file.
 
 ---
@@ -25,6 +25,12 @@
   - `DELETE /api/forum/replies/{id}` — delete reply (MODERATOR/ADMIN)
 - `UserController.java` - Admin user management:
   - `GET /api/users` — list all users (ADMIN only)
+- `AdminController.java` - Admin panel endpoints at `/api/admin` (all require ADMIN role via `@PreAuthorize`):
+  - `GET /api/admin/users?query=&page=0&size=20` — search users by username/email (paginated)
+  - `PUT /api/admin/users/{userId}/role` — update user role (400 if self or last admin, 404 if not found)
+  - `POST /api/admin/categories` — create forum category (201, name max 50, description max 200)
+  - `PUT /api/admin/categories/{id}` — update forum category (200, 400 on validation, 404 if not found)
+  - `DELETE /api/admin/categories/{id}` — delete forum category (204, 409 if has threads, 404 if not found)
 - `ProfileController.java` - User profile management:
   - `GET /api/profile/{username}` - Get profile (200 / 404)
   - `PUT /api/profile/{username}` - Update profile fields (200 / 404)
@@ -34,6 +40,7 @@
 ### Services
 - `service/ProfileService.java` - Business logic for profile CRUD and avatar upload/delete
 - `service/ForumService.java` - Forum business logic: threads, replies (max depth 3), voting (upsert), categories
+- `service/AdminService.java` - Admin business logic: user search, role updates, category CRUD
 
 ### DTOs
 - **Request:**
@@ -43,6 +50,9 @@
   - `dto/request/CreateThreadRequest.java` - title (max 200), description (max 5000), categoryId
   - `dto/request/CreateReplyRequest.java` - content (max 2000), parentReplyId (nullable)
   - `dto/request/VoteRequest.java` - voteValue (-1, 0, or 1)
+  - `dto/request/UpdateUserRoleRequest.java` - role (Role enum, required)
+  - `dto/request/CreateCategoryRequest.java` - name (required, max 50), description (optional, max 200), icon (optional)
+  - `dto/request/UpdateCategoryRequest.java` - name (required, max 50), description (optional, max 200), icon (optional)
   - *(Add new request DTOs here)*
 - **Response:**
   - `dto/response/LoginResponse.java` - success, message, username, role, token (JWT string, null on failure) (nullable; populated on successful login)
@@ -68,9 +78,9 @@
 - `model/ForumVote.java` - id, voter (AppUser), postId, postType, voteValue; unique on (voter, postId, postType)
 
 ### Repositories
-- `repository/AppUserRepository.java` - JPA repository for AppUser
+- `repository/AppUserRepository.java` - JPA repository for AppUser; includes findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase (paginated search), findByRole
 - `repository/ForumCategoryRepository.java` - JPA repository for ForumCategory
-- `repository/ForumThreadRepository.java` - includes findByCategoryId, search by title/description, countRepliesByThreadId
+- `repository/ForumThreadRepository.java` - includes findByCategoryId, search by title/description, countRepliesByThreadId, countByCategoryId
 - `repository/ForumReplyRepository.java` - includes findByThreadIdAndParentReplyIsNull, findByParentReplyId
 - `repository/ForumVoteRepository.java` - includes findByVoterUsernameAndPostIdAndPostType
 
@@ -78,7 +88,7 @@
 - `security/DatabaseUserDetailsService.java` - Spring Security user details loader
 - `security/JwtService.java` - Generates signed JWTs containing userId, username, role; configured via `jwt.secret` and `jwt.expiration-ms`
 - `security/JwtAuthenticationFilter.java` - `OncePerRequestFilter` that reads `Authorization: Bearer <token>`, validates the JWT, loads full `UserDetails` via `UserDetailsService`, and populates `SecurityContext`; catches `JwtException` and `UsernameNotFoundException`
-- `config/SecurityConfig.java` - Security config: JWT filter + HTTP Basic auth fallback; GET /api/forum/** is public, POST/DELETE require JWT Bearer token auth
+- `config/SecurityConfig.java` - Security config: JWT filter + HTTP Basic auth fallback; GET /api/forum/** is public, POST/DELETE require JWT Bearer token auth; `@EnableMethodSecurity` enables `@PreAuthorize`
 - `config/CorsConfig.java` - CORS configuration
 
 ### Config
@@ -96,6 +106,8 @@
   - `security/JwtServiceTest.java` - JwtService tests (11 tests): token subject, role/userId claims, expiration, distinct tokens per user
   - `security/JwtAuthenticationFilterTest.java` - JwtAuthenticationFilter tests (10 tests): valid Bearer token sets auth, correct role from UserDetails, expired/tampered/missing token skips auth, user not found skips auth, always calls filter chain
   - `model/AppUserTest.java` - AppUser model tests
+  - `service/AdminServiceTest.java` - AdminService tests (15 tests): searchUsers, updateUserRole (self-change/last-admin/not-found guards), createCategory, updateCategory, deleteCategory (with-threads 409/not-found guards)
+  - `controller/AdminControllerTest.java` - AdminController tests (21 tests): RBAC enforcement, user search, role update guards, category CRUD, validation boundary tests
 
 ---
 
@@ -113,7 +125,7 @@
 - `app/forum/page.tsx` - Forum index: thread list with category filter, sort, search; New Thread button; `data-testid`: `forum-page`, `forum-heading`, `new-thread-button`, `sort-select`, `search-input`
 - `app/forum/new/page.tsx` - Create thread page (requires login); `data-testid`: `new-thread-page`, `new-thread-heading`
 - `app/forum/threads/[id]/page.tsx` - Thread detail with replies and voting; `data-testid`: `thread-detail-page`, `thread-detail-title`, `thread-detail-desc`, `thread-detail-score`, `thread-detail-author`, `replies-section`
-- *(Add new pages here)*
+- `app/admin/page.tsx` - Admin panel (ADMIN only): tabs for User Management and Category Management; `data-testid`: `admin-panel`, `user-management-tab`, `category-management-tab`
 
 ### Components
 - `components/LoginForm.tsx` - Login form component; `data-testid`: `login-form`, `username-input`, `password-input`, `login-button`, `login-error`, `register-link`
@@ -127,7 +139,10 @@
 - `components/ThreadForm.tsx` - Thread creation form with char counters; `data-testid`: `thread-form`, `thread-title-input`, `thread-desc-input`, `thread-category-select`, `thread-submit-button`, `thread-form-error`, `thread-title-counter`, `thread-desc-counter`
 - `components/ReplyForm.tsx` - Reply composer (disabled at max depth 3); `data-testid`: `reply-form`, `reply-content-input`, `reply-submit-button`, `reply-form-error`, `reply-content-counter`
 - `components/ReplyItem.tsx` - Recursive reply renderer with nested voting and reply; `data-testid`: `reply-item-{id}`, `reply-content-{id}`, `reply-author-{id}`, `reply-toggle-{id}`
-- *(Add new components here)*
+- `components/AdminLink.tsx` - Navigation link to admin panel (visible only for ADMIN role); `data-testid`: `admin-link`
+- `components/UserManagementTab.tsx` - Admin user search and role management; `data-testid`: `user-management-tab`, `user-search-input`, `user-list`, `user-row-{id}`, `change-role-user-{id}`, `change-role-moderator-{id}`, `change-role-admin-{id}`, `role-confirm-dialog`
+- `components/CategoryManagementTab.tsx` - Admin category CRUD (create, read, update, delete); `data-testid`: `category-management-tab`, `add-category-button`, `category-list`, `category-item-{id}`, `edit-category-{id}`, `delete-category-{id}`
+- `components/CategoryForm.tsx` - Reusable form for creating/editing categories with validation; `data-testid`: `category-form`, `category-name-input`, `category-description-input`, `category-icon-input`, `category-form-submit`, `category-form-cancel`
 
 ### Component Unit Tests
 - `components/LoginForm.test.tsx` - 22 tests: render, data-testid, onChange handlers, fetch URL/method/body, localStorage, redirect, error states, loading state
@@ -140,7 +155,8 @@
 - `components/ReplyItem.test.tsx` - 19 tests: render, data-testid, author header, avatar initials, vote badge, reply toggle, collapse/expand, nesting border, hidden score threshold
 
 ### Libraries
-- `lib/api.ts` - All API calls (auth, profile, avatar, forum: getForumCategories, getForumThreads, getForumThread, createForumThread, createForumReply, voteOnPost, closeThread, deleteReply); auth functions accept JWT Bearer `token` string instead of credentials
+- `lib/api.ts` - All API calls (auth, profile, avatar, forum: getForumCategories, getForumThreads, getForumThread, createForumThread, createForumReply, voteOnPost, closeThread, deleteReply, admin: searchUsers, updateUserRole, createCategory, updateCategory, deleteCategory); auth functions accept JWT Bearer `token` string instead of credentials
+- `lib/adminConstants.ts` - Admin panel cross-layer constraints: CATEGORY_NAME_MAX=50, CATEGORY_DESCRIPTION_MAX=200 (must match backend validation)
 - `lib/forumConstants.ts` - Cross-layer forum constraints: THREAD_TITLE_MAX=200, THREAD_DESC_MAX=5000, REPLY_CONTENT_MAX=2000, MAX_REPLY_DEPTH=3, PAGE_SIZE=20, HIDDEN_SCORE_THRESHOLD=-5
 - `lib/theme.ts` - Centralized design tokens: colors, typography, spacing, borders, shadows, and composite className patterns (alert, card, input, button, nav, avatar, link, profileLink). Import named exports (`alert`, `button`, `card`, `input`, `typography`, `nav`, `avatar`, `link`, `profileLink`, `colors`, `spacing`, `borders`, `shadows`, `states`) in components instead of writing Tailwind strings inline.
 
@@ -165,13 +181,16 @@
 - `RegistrationIT.java` - Integration tests for registration endpoint
 - `RoleBasedAccessControlIT.java` - 14 integration tests for RBAC: close thread (user=403, mod=200, admin=200), closed thread rejects replies, delete reply (user=403, mod=204), list users (user=403, mod=403, admin=200)
 - `ProfileControllerIT.java` - 17 integration tests for profile: GET (200/404), PUT (200), boundary tests (displayName 100/101, bio 500/501, location 100/101 → 200/400), partial update, nonexistent user (404), avatar upload/delete flows
-- `ForumThreadIT.java` - 21 integration tests for forum: categories, threads CRUD, boundary tests (title 200/201, desc 5000/5001, reply 2000/2001), depth boundary (depth 2 passes, depth 3 rejected), voting, delete 204/403
+- `ForumThreadIT.java` - 24 integration tests for forum: categories, threads CRUD, boundary tests (title 200/201, desc 5000/5001, reply 2000/2001), depth boundary (depth 2 passes, depth 3 rejected), voting, delete 204/403, vote cancel (issue #44)
+- `AdminControllerIT.java` - 21 integration tests for admin endpoints: user search (RBAC: admin=200, mod=403, anon=401), role update with guards (cannot change own, cannot demote last admin), category CRUD with RBAC, boundary tests (name 50/51 chars, desc 200/201 chars), category deletion guard (cannot delete if has threads → 409)
 
 ### Test Builders
 - `builder/LoginRequestBuilder.java` - Builder for LoginRequest
 - `builder/RegisterRequestBuilder.java` - Builder for RegisterRequest
 - `builder/CreateThreadRequestBuilder.java` - Builder for CreateThreadRequest
 - `builder/CreateReplyRequestBuilder.java` - Builder for CreateReplyRequest
+- `builder/UpdateUserRoleRequestBuilder.java` - Builder for UpdateUserRoleRequest
+- `builder/CreateCategoryRequestBuilder.java` - Builder for CreateCategoryRequest
 
 ### Testing
 - Uses `@SpringBootTest(webEnvironment = RANDOM_PORT)`
@@ -196,6 +215,7 @@
 - `tests/e2e/rbac.spec.ts` - RBAC E2E tests: moderator close thread flow, delete reply visibility, closed thread UI
 - `tests/e2e/user-journey.spec.ts` - End-to-end user journeys (11 tests): full register→login→forum→create thread→reply→vote journey, forum navigation from dashboard, category filter flow, thread upvote/downvote/toggle, public thread access, forum search→detail navigation, reply constraint (content > 2000 chars errors on submit, counter)
 - `tests/e2e/forumThreadDetail.spec.ts` - Forum thread detail unique journeys (2 tests): forum link navigation from thread detail to /forum, moderator close/reopen thread journey (button state changes)
+- `tests/e2e/admin.spec.ts` - Admin panel E2E tests (11 tests): admin link visibility, access control, user search/role change with confirmation dialog, role buttons disabled for own user, category CRUD, error handling for category with threads
 
 ### Test Strategy
 - **Happy path tests** — real GET/PUT/POST/DELETE calls to backend on port 8080; catches integration mismatches (e.g. multipart field names)
@@ -207,10 +227,11 @@
 All page objects use `getByTestId("…")` as the **primary** locator, with `.or()` semantic fallbacks (role, text, CSS).
 - `LoginPage.ts` - Login form navigation; locators: `username-input`, `password-input`, `login-button`, `login-error`
 - `RegisterPage.ts` - Registration form navigation; locators: `register-heading`, `email-input`, `username-input`, `password-input`, `confirm-password-input`, `register-button`, `register-error`, `login-link`
-- `DashboardPage.ts` - Dashboard heading, profile link, logout button; locators: `welcome-heading`, `profile-link`, `logout-button`
+- `DashboardPage.ts` - Dashboard heading, profile link, admin link, logout button; locators: `welcome-heading`, `profile-link`, `admin-link`, `logout-button`
 - `ProfilePage.ts` - Profile display fields, edit form inputs, alert banner, avatar upload, logout; locators: `profile-heading`, `profile-username`, `profile-email`, `display-name-input`, `bio-input`, `location-input`, `save-button`, `profile-alert`, `avatar-image`, `avatar-upload-input`, `logout-button`
 - `ForumPage.ts` - Forum index page; locators: `forum-heading`, `forum-link`, `new-thread-button`, `category-filter`, `category-option-{id}`, `sort-select`, `search-input`, `thread-list`, `thread-item-{id}`, `thread-title-{id}`, `thread-score-{id}`, `load-more-button`
 - `ThreadDetailPage.ts` - Thread detail page; locators: `thread-detail-title`, `thread-detail-desc`, `thread-detail-score`, `thread-detail-author`, `replies-section`, `upvote-button`, `downvote-button`, `vote-score`, `reply-form`, `reply-content-input`, `reply-submit-button`, `reply-item-{id}`, `reply-content-{id}`, `reply-toggle-{id}`
+- `AdminPage.ts` - Admin panel with user and category management; locators: `admin-panel`, `user-management-tab`, `category-management-tab`, `user-search-input`, `user-list`, `user-row-{id}`, `change-role-user-{id}`, `change-role-moderator-{id}`, `change-role-admin-{id}`, `role-confirm-dialog`, `category-list`, `category-item-{id}`, `add-category-button`, `edit-category-{id}`, `delete-category-{id}`, `category-form`, `category-name-input`, `category-form-submit`, `category-form-cancel`
 
 ### Fixtures (`tests/e2e/fixtures/`)
 - `forum.ts` - `createThreadViaApi`, `createReplyViaApi`, `closeThreadViaApi`, `deleteThreadViaApi` helpers using JWT Bearer tokens for API-based test setup

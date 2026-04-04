@@ -15,4 +15,6 @@ public interface ForumThreadRepository extends JpaRepository<ForumThread, Long> 
 
     @Query("SELECT COUNT(r) FROM ForumReply r WHERE r.thread.id = :threadId")
     long countRepliesByThreadId(Long threadId);
+
+    long countByCategoryId(Long categoryId);
 }

@@ -41,6 +41,21 @@ export class DashboardPage {
   }
 
   /**
+   * Expected data-testid: "admin-link"
+   * Fallback: href-based then text-based link selectors
+   */
+  getAdminLink(): Locator {
+    return this.page
+      .getByTestId("admin-link")
+      .or(this.page.locator('a[href*="/admin"]'))
+      .or(this.page.getByRole("link", { name: /admin/i }));
+  }
+
+  async clickAdminLink() {
+    await this.getAdminLink().click();
+  }
+
+  /**
    * Expected data-testid: "logout-button"
    * Fallback: button with logout text
    */
