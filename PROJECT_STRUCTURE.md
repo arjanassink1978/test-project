@@ -1,6 +1,6 @@
 # Project Structure Index
 
-**Last Updated:** 2026-04-03 (Role-based access control: USER, MODERATOR, ADMIN roles; close thread, delete reply, list users endpoints)
+**Last Updated:** 2026-04-04 (Issue #38: JWT token support — all layers migrated to Bearer token auth; 81/81 Playwright tests passing, 85/85 RestAssured tests passing)
 **Important:** When agents add new files/components, they MUST update this file.
 
 ---
@@ -16,7 +16,7 @@
   - `GET /api/forum/categories` — list all categories (public)
   - `GET /api/forum/threads?category=&sort=newest&page=0&search=` — paginated threads (public)
   - `GET /api/forum/threads/{id}` — thread detail with replies (public)
-  - `POST /api/forum/threads` — create thread (auth required, HTTP Basic)
+  - `POST /api/forum/threads` — create thread (auth required, JWT Bearer)
   - `POST /api/forum/threads/{threadId}/replies` — create reply (auth)
   - `POST /api/forum/replies/{replyId}/replies` — create nested reply (auth, max depth 3)
   - `POST /api/forum/posts/{postId}/vote?postType=thread` — vote (auth)
@@ -78,7 +78,7 @@
 - `security/DatabaseUserDetailsService.java` - Spring Security user details loader
 - `security/JwtService.java` - Generates signed JWTs containing userId, username, role; configured via `jwt.secret` and `jwt.expiration-ms`
 - `security/JwtAuthenticationFilter.java` - `OncePerRequestFilter` that reads `Authorization: Bearer <token>`, validates the JWT, loads full `UserDetails` via `UserDetailsService`, and populates `SecurityContext`; catches `JwtException` and `UsernameNotFoundException`
-- `config/SecurityConfig.java` - Security config: JWT filter + HTTP Basic auth; GET /api/forum/** is public, POST/DELETE require auth
+- `config/SecurityConfig.java` - Security config: JWT filter + HTTP Basic auth fallback; GET /api/forum/** is public, POST/DELETE require JWT Bearer token auth
 - `config/CorsConfig.java` - CORS configuration
 
 ### Config
@@ -213,7 +213,7 @@ All page objects use `getByTestId("…")` as the **primary** locator, with `.or(
 
 ### Fixtures (`tests/e2e/fixtures/`)
 - `forum.ts` - `createThreadViaApi`, `createReplyViaApi`, `closeThreadViaApi`, `deleteThreadViaApi` helpers using JWT Bearer tokens for API-based test setup
-- `auth.ts` - `setupAuthViaAPI(page, credentials)` sets JWT token via API (stores `authToken`, `username`, `role` in localStorage); `loginAsDefaultUser(page)` for UI login; `setupDefaultUserAuth(page)` for API-based auth
+- `auth.ts` - `setupAuthViaAPI(page, credentials)` navigates to `/` first (to allow localStorage access), then sets JWT token via API (stores `authToken`, `username`, `role` in localStorage); `loginAsDefaultUser(page)` for UI login; `setupDefaultUserAuth(page)` for API-based auth
 
 ---
 

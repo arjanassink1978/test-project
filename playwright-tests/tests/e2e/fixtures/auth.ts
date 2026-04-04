@@ -10,6 +10,9 @@ export const DEFAULT_USER = {
 /**
  * Sets up authentication by calling /api/auth/login with JSON credentials.
  * Stores both 'authToken' and 'username' in localStorage for frontend access.
+ *
+ * Navigates to "/" first to ensure the page context allows localStorage access
+ * (page.evaluate() fails on about:blank with a SecurityError).
  */
 export async function setupAuthViaAPI(page: Page, credentials: { username: string; password: string }): Promise<void> {
   const response = await fetch(`${API_BASE}/api/auth/login`, {
@@ -33,6 +36,9 @@ export async function setupAuthViaAPI(page: Page, credentials: { username: strin
   if (!token) {
     throw new Error("No token returned from auth API");
   }
+
+  // Navigate to the frontend root so localStorage is accessible (about:blank blocks it).
+  await page.goto("/");
 
   await page.evaluate(({ t, u, r }) => {
     localStorage.setItem("authToken", t);
