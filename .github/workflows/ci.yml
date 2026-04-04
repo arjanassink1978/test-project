@@ -255,6 +255,9 @@ jobs:
       - name: Install Playwright dependencies
         run: cd playwright-tests && npm install
 
+      - name: Install Playwright browsers
+        run: cd playwright-tests && npx playwright install
+
       - name: Run Playwright E2E tests
         run: cd playwright-tests && npm test
 
@@ -314,11 +317,11 @@ jobs:
         run: mvn install -q -DskipTests
 
       - name: Run backend unit mutation tests
-        run: mvn pitest:mutationCoverage -pl backend -am -q
+        run: mvn org.pitest:pitest-maven:mutationCoverage -pl backend -am -q
         continue-on-error: true
 
       - name: Run RestAssured integration mutation tests
-        run: mvn pitest:mutationCoverage -pl restassured-tests -am -q
+        run: mvn org.pitest:pitest-maven:mutationCoverage -pl restassured-tests -am -q
         continue-on-error: true
 
       - name: Setup Node.js for frontend mutation testing
