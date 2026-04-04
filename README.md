@@ -70,8 +70,20 @@ Services will be available at:
 - **Frontend:** http://localhost:3000
 - **Backend:** http://localhost:8080
 - **Swagger UI:** http://localhost:8080/swagger-ui/index.html
+- **pgAdmin:** http://localhost:5050
 
 Docker Compose handles database initialization automatically with Liquibase migrations.
+
+**Database Access via pgAdmin:**
+- Login: `admin@example.com` / `admin`
+- Add PostgreSQL server with:
+  - Host: `postgres`
+  - User: `test`
+  - Password: `test`
+  - Database: `testdb`
+
+**Database Reset:**
+When you run `./start.sh` again, the database is automatically reset to a fresh state (no persistent data between restarts).
 
 #### Option 2: Local Development (Manual)
 
@@ -112,6 +124,9 @@ When running with Docker Compose (`./start.sh`), the backend uses PostgreSQL 15 
 
 Liquibase automatically runs migrations when the backend starts in Docker with the `docker` Spring profile.
 
+**Database Persistence:**
+The PostgreSQL database in Docker is **ephemeral** — data is NOT persisted between restarts. This is intentional for clean development and testing. Each time you run `./start.sh`, you get a fresh database with migrations applied automatically.
+
 ---
 
 ## Docker Configuration
@@ -120,6 +135,7 @@ Liquibase automatically runs migrations when the backend starts in Docker with t
 
 The `docker-compose.yml` configures:
 - **PostgreSQL:** Database on `postgres:5432`, credentials: `test`/`test`
+- **pgAdmin:** Web-based database admin at `http://localhost:5050`, credentials: `admin@example.com` / `admin`
 - **Backend:** Runs with `SPRING_PROFILES_ACTIVE=docker` (enables Liquibase)
 - **Frontend:** Connects to backend at `http://backend:8080`
 
