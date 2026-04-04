@@ -1,6 +1,6 @@
 "use client";
 
-import { typography } from "@/lib/theme";
+import { vote } from "@/lib/theme";
 
 interface VoteButtonsProps {
   score: number;
@@ -16,22 +16,19 @@ export default function VoteButtons({
   disabled = false,
 }: VoteButtonsProps) {
   return (
-    <div
-      className="inline-flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-xs"
-      data-testid="vote-buttons"
-    >
+    <div className={vote.container} data-testid="vote-buttons">
       <button
         type="button"
         onClick={() => onVote(1)}
         disabled={disabled}
         aria-label="Upvote"
-        className="rounded p-0.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className={vote.upvote}
         data-testid="upvote-button"
       >
         ▲
       </button>
       <span
-        className={`${typography.bodyText} min-w-[1.25rem] text-center font-semibold ${score >= 0 ? "text-indigo-600" : "text-red-600"}`}
+        className={score >= 0 ? vote.scorePositive : vote.scoreNegative}
         data-testid="vote-score"
       >
         {score}
@@ -41,7 +38,7 @@ export default function VoteButtons({
         onClick={() => onVote(-1)}
         disabled={disabled}
         aria-label="Downvote"
-        className="rounded p-0.5 text-gray-500 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className={vote.downvote}
         data-testid="downvote-button"
       >
         ▼

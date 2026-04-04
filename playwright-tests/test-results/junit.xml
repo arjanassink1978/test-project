@@ -1,0 +1,18 @@
+<testsuites id="" name="" tests="7" failures="0" skipped="0" errors="0" time="6.624243000000001">
+<testsuite name="rbac.spec.ts" timestamp="2026-04-03T20:35:53.098Z" hostname="chromium" tests="7" failures="0" skipped="0" time="5.25" errors="0">
+<testcase name="RBAC — Moderator can close threads › moderator sees Close Thread button on thread detail" classname="rbac.spec.ts" time="0.704">
+</testcase>
+<testcase name="RBAC — Moderator can close threads › regular user does not see Close Thread button" classname="rbac.spec.ts" time="0.594">
+</testcase>
+<testcase name="RBAC — Moderator can close threads › moderator closes thread — CLOSED badge appears and reply form disappears" classname="rbac.spec.ts" time="1.137">
+</testcase>
+<testcase name="RBAC — Moderator can delete replies › moderator sees delete button on replies" classname="rbac.spec.ts" time="0.682">
+</testcase>
+<testcase name="RBAC — Moderator can delete replies › regular user does not see delete button on replies" classname="rbac.spec.ts" time="0.745">
+</testcase>
+<testcase name="RBAC — Closed thread shows error for reply attempt › closed thread shows CLOSED badge" classname="rbac.spec.ts" time="0.649">
+</testcase>
+<testcase name="RBAC — Closed thread shows error for reply attempt › closed thread shows closed message and no reply form for logged-in user" classname="rbac.spec.ts" time="0.739">
+</testcase>
+</testsuite>
+</testsuites>

@@ -58,7 +58,7 @@ describe("ThreadList", () => {
     expect(screen.getByTestId("thread-list")).toBeInTheDocument();
   });
 
-  it("shows 'No threads found.' when threads array is empty and not loading", () => {
+  it("shows empty state message when threads array is empty and not loading", () => {
     render(
       <ThreadList
         threads={[]}
@@ -68,10 +68,10 @@ describe("ThreadList", () => {
       />
     );
 
-    expect(screen.getByText("No threads found.")).toBeInTheDocument();
+    expect(screen.getByText("No threads yet. Start the conversation!")).toBeInTheDocument();
   });
 
-  it("does not show 'No threads found.' while loading is true", () => {
+  it("does not show empty state message while loading is true", () => {
     render(
       <ThreadList
         threads={[]}
@@ -81,10 +81,10 @@ describe("ThreadList", () => {
       />
     );
 
-    expect(screen.queryByText("No threads found.")).not.toBeInTheDocument();
+    expect(screen.queryByText("No threads yet. Start the conversation!")).not.toBeInTheDocument();
   });
 
-  it("does not show 'No threads found.' when threads exist", () => {
+  it("does not show empty state message when threads exist", () => {
     const threads = [makeThread({ id: 1 })];
 
     render(
@@ -96,7 +96,7 @@ describe("ThreadList", () => {
       />
     );
 
-    expect(screen.queryByText("No threads found.")).not.toBeInTheDocument();
+    expect(screen.queryByText("No threads yet. Start the conversation!")).not.toBeInTheDocument();
   });
 
   it("renders a thread item for each thread", () => {
@@ -127,7 +127,7 @@ describe("ThreadList", () => {
       />
     );
 
-    const link = screen.getByTestId("thread-title-42");
+    const link = screen.getByTestId("thread-item-42");
     expect(link).toHaveAttribute("href", "/forum/threads/42");
     expect(link).toHaveTextContent("My Thread");
   });
@@ -145,8 +145,8 @@ describe("ThreadList", () => {
       />
     );
 
-    expect(screen.getByTestId("thread-title-10")).toHaveAttribute("href", "/forum/threads/10");
-    expect(screen.getByTestId("thread-title-99")).toHaveAttribute("href", "/forum/threads/99");
+    expect(screen.getByTestId("thread-item-10")).toHaveAttribute("href", "/forum/threads/10");
+    expect(screen.getByTestId("thread-item-99")).toHaveAttribute("href", "/forum/threads/99");
   });
 
   it("renders thread score", () => {
@@ -177,8 +177,8 @@ describe("ThreadList", () => {
     );
 
     const scoreEl = screen.getByTestId("thread-score-1");
-    expect(scoreEl.className).toContain("bg-indigo-50");
-    expect(scoreEl.className).toContain("text-indigo-600");
+    expect(scoreEl.className).toContain("bg-emerald-50");
+    expect(scoreEl.className).toContain("text-emerald-600");
     expect(scoreEl.className).not.toContain("bg-red-50");
   });
 
@@ -195,7 +195,7 @@ describe("ThreadList", () => {
     );
 
     const scoreEl = screen.getByTestId("thread-score-1");
-    expect(scoreEl.className).toContain("bg-indigo-50");
+    expect(scoreEl.className).toContain("bg-emerald-50");
     expect(scoreEl.className).not.toContain("bg-red-50");
   });
 
@@ -214,7 +214,7 @@ describe("ThreadList", () => {
     const scoreEl = screen.getByTestId("thread-score-1");
     expect(scoreEl.className).toContain("bg-red-50");
     expect(scoreEl.className).toContain("text-red-600");
-    expect(scoreEl.className).not.toContain("bg-indigo-50");
+    expect(scoreEl.className).not.toContain("bg-emerald-50");
   });
 
   it("shows category name when categoryName is set", () => {
@@ -263,8 +263,8 @@ describe("ThreadList", () => {
     expect(screen.getByText("by alice")).toBeInTheDocument();
     expect(screen.getByText("3 replies")).toBeInTheDocument();
     // The category span should not exist since categoryName is falsy
-    const metaRow = screen.getByTestId("thread-item-1").querySelector(".text-gray-500");
-    expect(metaRow?.children.length).toBe(2);
+    const metaRow = screen.getByTestId("thread-item-1").querySelector("div.flex.flex-wrap");
+    expect(metaRow?.children.length).toBe(3);
   });
 
   it("renders category span when categoryName is present, making 3 meta items", () => {
@@ -279,8 +279,8 @@ describe("ThreadList", () => {
       />
     );
 
-    const metaRow = screen.getByTestId("thread-item-1").querySelector(".text-gray-500");
-    expect(metaRow?.children.length).toBe(3);
+    const metaRow = screen.getByTestId("thread-item-1").querySelector("div.flex.flex-wrap");
+    expect(metaRow?.children.length).toBe(5);
   });
 
   it("shows '[Hidden due to low score]' for threads below the score threshold", () => {

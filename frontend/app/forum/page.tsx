@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ForumCategoryFilter from "@/components/ForumCategoryFilter";
 import ThreadList from "@/components/ThreadList";
-import { nav, button, input, typography } from "@/lib/theme";
+import { nav, button, input, typography, layout } from "@/lib/theme";
 import {
   getForumCategories,
   getForumThreads,
@@ -13,7 +13,7 @@ import {
 } from "@/lib/api";
 import LogoutButton from "@/components/LogoutButton";
 import ProfileLink from "@/components/ProfileLink";
-import Link from "next/link";
+import ForumLink from "@/components/ForumLink";
 
 export default function ForumPage() {
   const router = useRouter();
@@ -64,22 +64,16 @@ export default function ForumPage() {
   }, [selectedCategory, sort, search]);
 
   return (
-    <div className="min-h-screen bg-gray-50" data-testid="forum-page">
+    <div className={layout.page} data-testid="forum-page">
       <nav className={nav.bar}>
         <div className={nav.inner}>
           <ProfileLink />
-          <Link
-            href="/forum"
-            className="inline-flex w-32 items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 shadow-sm hover:bg-indigo-100 transition-colors"
-            data-testid="forum-link"
-          >
-            Forum
-          </Link>
+          <ForumLink />
           <LogoutButton />
         </div>
       </nav>
 
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className={layout.container}>
         <div className="flex items-center justify-between mb-6">
           <h1 className={typography.pageHeading} data-testid="forum-heading">
             Forum
@@ -87,16 +81,16 @@ export default function ForumPage() {
           {isLoggedIn && (
             <button
               type="button"
-              className={button.secondary}
+              className={button.primaryAuto}
               onClick={() => router.push("/forum/new")}
               data-testid="new-thread-button"
             >
-              + New Thread
+              New Thread
             </button>
           )}
         </div>
 
-        <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col gap-3 mb-6">
           <ForumCategoryFilter
             categories={categories}
             selectedId={selectedCategory}
@@ -107,7 +101,7 @@ export default function ForumPage() {
 
           <div className="flex gap-3">
             <select
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className={input.select}
               value={sort}
               onChange={(e) => setSort(e.target.value)}
               data-testid="sort-select"
@@ -119,7 +113,7 @@ export default function ForumPage() {
             <input
               type="search"
               className={input.base}
-              placeholder="Search threads…"
+              placeholder="Search…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               data-testid="search-input"

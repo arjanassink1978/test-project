@@ -33,10 +33,10 @@ describe("VoteButtons", () => {
     expect(screen.getByTestId("vote-score")).toHaveTextContent("42");
   });
 
-  it("shows positive score in indigo color", () => {
+  it("shows positive score in emerald color", () => {
     render(<VoteButtons {...defaultProps} score={5} />);
 
-    expect(screen.getByTestId("vote-score")).toHaveClass("text-indigo-600");
+    expect(screen.getByTestId("vote-score")).toHaveClass("text-emerald-600");
   });
 
   it("shows negative score in red color", () => {
