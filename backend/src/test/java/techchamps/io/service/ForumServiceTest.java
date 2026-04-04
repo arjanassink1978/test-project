@@ -1001,6 +1001,52 @@ class ForumServiceTest {
         assertThat(result.getUserVote()).isEqualTo(0);
     }
 
+    @Test
+    void vote_cancelAfterUpvote_viaZeroValue_removesUpvoteFromScore() {
+        // Documents cancel-on-opposite behavior: frontend sends 0 when user clicks
+        // the opposite vote button to cancel their current vote (issue #44).
+        AppUser voter = createUser("voter");
+        when(userRepository.findByUsername("voter")).thenReturn(Optional.of(voter));
+
+        ForumVote existingVote = new ForumVote(voter, 1L, "thread", 1);
+        when(voteRepository.findByVoterUsernameAndPostIdAndPostType("voter", 1L, "thread"))
+                .thenReturn(Optional.of(existingVote));
+
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        thread.setScore(3);
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(threadRepository.save(any(ForumThread.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Frontend sends voteValue=0 to cancel: score = 3 - 1 + 0 = 2
+        VoteResponse result = forumService.vote(1L, "thread", "voter", 0);
+
+        assertThat(result.getNewScore()).isEqualTo(2);
+        assertThat(result.getUserVote()).isEqualTo(0);
+    }
+
+    @Test
+    void vote_cancelAfterDownvote_viaZeroValue_removesDownvoteFromScore() {
+        // Documents cancel-on-opposite behavior: frontend sends 0 when user clicks
+        // the opposite vote button to cancel their current vote (issue #44).
+        AppUser voter = createUser("voter");
+        when(userRepository.findByUsername("voter")).thenReturn(Optional.of(voter));
+
+        ForumVote existingVote = new ForumVote(voter, 1L, "thread", -1);
+        when(voteRepository.findByVoterUsernameAndPostIdAndPostType("voter", 1L, "thread"))
+                .thenReturn(Optional.of(existingVote));
+
+        ForumThread thread = createThread(1L, "Title", "Desc");
+        thread.setScore(-1);
+        when(threadRepository.findById(1L)).thenReturn(Optional.of(thread));
+        when(threadRepository.save(any(ForumThread.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Frontend sends voteValue=0 to cancel: score = -1 - (-1) + 0 = 0
+        VoteResponse result = forumService.vote(1L, "thread", "voter", 0);
+
+        assertThat(result.getNewScore()).isEqualTo(0);
+        assertThat(result.getUserVote()).isEqualTo(0);
+    }
+
     // ============================================================
     // getThreads — additional coverage for paged size
     // ============================================================
