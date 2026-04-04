@@ -1,6 +1,6 @@
 # Project Structure Index
 
-**Last Updated:** 2026-04-04 (Issue #38: JWT token support — all layers migrated to Bearer token auth; 81/81 Playwright tests passing, 85/85 RestAssured tests passing)
+**Last Updated:** 2026-04-04 (Issue #41: Test suite deduplication — removed duplicate E2E layout tests from forum.spec.ts and forumThreadDetail.spec.ts, removed duplicate profile journey from user-journey.spec.ts; added 5 profile boundary tests (displayName/bio/location @Size) to ProfileControllerIT; added maxLength assertions to ProfileForm.test.tsx)
 **Important:** When agents add new files/components, they MUST update this file.
 
 ---
@@ -134,7 +134,7 @@
 - `components/RegisterForm.test.tsx` - 9 tests: render, data-testid, validation, error states, loading state
 - `components/LogoutButton.test.tsx` - 5 tests: render, data-testid, navigation, localStorage
 - `components/ProfileLink.test.tsx` - 4 tests: render, data-testid, href construction
-- `components/ProfileForm.test.tsx` - 40 tests: loading, profile data, onChange handlers, boundary validation, save/delete/upload avatar flows, error paths, alert styling
+- `components/ProfileForm.test.tsx` - 43 tests: loading, profile data, onChange handlers, maxLength attribute assertions (displayName 100, bio 500, location 100), boundary validation, save/delete/upload avatar flows, error paths, alert styling
 - `components/ForumCategoryFilter.test.tsx` - 15 tests: render, All button, category buttons, onChange with exact values, className for selected/unselected, rerender
 - `components/VoteButtons.test.tsx` - 9 tests: render, data-testid, score colors, click handlers, disabled state, badge layout
 - `components/ReplyItem.test.tsx` - 19 tests: render, data-testid, author header, avatar initials, vote badge, reply toggle, collapse/expand, nesting border, hidden score threshold
@@ -164,6 +164,7 @@
 - `controller/AuthControllerIntegrationTest.java` - Extended auth tests
 - `RegistrationIT.java` - Integration tests for registration endpoint
 - `RoleBasedAccessControlIT.java` - 14 integration tests for RBAC: close thread (user=403, mod=200, admin=200), closed thread rejects replies, delete reply (user=403, mod=204), list users (user=403, mod=403, admin=200)
+- `ProfileControllerIT.java` - 17 integration tests for profile: GET (200/404), PUT (200), boundary tests (displayName 100/101, bio 500/501, location 100/101 → 200/400), partial update, nonexistent user (404), avatar upload/delete flows
 - `ForumThreadIT.java` - 21 integration tests for forum: categories, threads CRUD, boundary tests (title 200/201, desc 5000/5001, reply 2000/2001), depth boundary (depth 2 passes, depth 3 rejected), voting, delete 204/403
 
 ### Test Builders
@@ -190,11 +191,11 @@
 
 ### Test Files
 - `tests/e2e/profile.spec.ts` - User Profile Page Flow (23 tests); happy-path tests use real API calls (no mocks); mocks kept only for error scenarios (404, 500) and the no-avatar edge case
-- `tests/e2e/forum.spec.ts` - Forum E2E tests: index page (public + auth), thread detail, create thread flow, reply flow, search; all happy-path tests use real API calls via backend on port 8080
+- `tests/e2e/forum.spec.ts` - Forum E2E tests (13 tests): index page (public + auth), thread detail, create thread flow, reply flow, nested reply flow, vote flow, search, filter/sort, delete thread, max depth constraint; layout redesign tests removed (covered by ReplyItem.test.tsx)
 - `tests/e2e/auth.spec.ts` - Auth E2E tests (11 tests): login wrong credentials, nonexistent user, empty fields, register-to-login link, full registration happy path, mismatched passwords, invalid email, duplicate username, short password, login link, logout from dashboard
 - `tests/e2e/rbac.spec.ts` - RBAC E2E tests: moderator close thread flow, delete reply visibility, closed thread UI
-- `tests/e2e/user-journey.spec.ts` - End-to-end user journeys (12 tests): full register→login→forum→create thread→reply→vote journey, forum navigation from dashboard, category filter flow, thread upvote/downvote/toggle, profile update journey, public thread access, forum search→detail navigation, reply constraint (content > 2000 chars errors on submit, counter)
-- `tests/e2e/forumThreadDetail.spec.ts` - Forum thread detail page UI fixes (issue #28, 18 tests): forum link visibility for logged-in and anonymous users, forum link navigation to /forum, forum link indigo styling, close thread button visibility by role (MODERATOR/ADMIN only), close thread button red danger styling, close/reopen thread button text updates, navigation bar integration with profile link, styling consistency between dashboard and thread detail
+- `tests/e2e/user-journey.spec.ts` - End-to-end user journeys (11 tests): full register→login→forum→create thread→reply→vote journey, forum navigation from dashboard, category filter flow, thread upvote/downvote/toggle, public thread access, forum search→detail navigation, reply constraint (content > 2000 chars errors on submit, counter)
+- `tests/e2e/forumThreadDetail.spec.ts` - Forum thread detail unique journeys (2 tests): forum link navigation from thread detail to /forum, moderator close/reopen thread journey (button state changes)
 
 ### Test Strategy
 - **Happy path tests** — real GET/PUT/POST/DELETE calls to backend on port 8080; catches integration mismatches (e.g. multipart field names)

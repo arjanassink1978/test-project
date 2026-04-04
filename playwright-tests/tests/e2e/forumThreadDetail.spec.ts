@@ -54,16 +54,18 @@ async function createThreadViaApi(credentials: {
   return data.id;
 }
 
-test.describe("Forum link visibility and navigation", () => {
+// -------------------------------------------------------------------------
+// Forum link navigation — unique journey test (logged-in user clicks forum link)
+// -------------------------------------------------------------------------
+
+test.describe("Forum link navigation from thread detail", () => {
   let threadId: number;
 
   test.beforeEach(async () => {
     threadId = await createThreadViaApi(SEEDED_USERS.user);
   });
 
-  test("forum link is visible on thread detail page for logged-in user", async ({
-    page,
-  }) => {
+  test("clicking forum link on thread detail navigates to /forum", async ({ page }) => {
     await loginAs(page, SEEDED_USERS.user);
     const detailPage = new ThreadDetailPage(page);
     await detailPage.goto(threadId);
@@ -71,97 +73,25 @@ test.describe("Forum link visibility and navigation", () => {
 
     const forumLink = page.locator('a[data-testid="forum-link"]');
     await expect(forumLink).toBeVisible({ timeout: 10000 });
-  });
-
-  test("forum link text is 'Forum' on thread detail page", async ({ page }) => {
-    await loginAs(page, SEEDED_USERS.user);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const forumLink = page.locator('a[data-testid="forum-link"]');
-    await expect(forumLink).toHaveText("Forum", { timeout: 10000 });
-  });
-
-  test("forum link is visible for anonymous users on thread detail page", async ({
-    page,
-  }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const forumLink = page.locator('a[data-testid="forum-link"]');
-    await expect(forumLink).toBeVisible({ timeout: 10000 });
-  });
-
-  test("clicking forum link navigates to /forum page", async ({ page }) => {
-    await loginAs(page, SEEDED_USERS.user);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const forumLink = page.locator('a[data-testid="forum-link"]');
     await forumLink.click();
 
     await expect(page).toHaveURL(/\/forum/, { timeout: 10000 });
   });
 });
 
-test.describe("Close Thread button styling", () => {
+// -------------------------------------------------------------------------
+// Close/Reopen thread flow — user journey with state change
+// (role-based visibility is covered in rbac.spec.ts)
+// -------------------------------------------------------------------------
+
+test.describe("Close and reopen thread journey", () => {
   let threadId: number;
 
   test.beforeEach(async () => {
     threadId = await createThreadViaApi(SEEDED_USERS.user);
   });
 
-  test("close thread button is visible only for moderator role", async ({
-    page,
-  }) => {
-    await loginAs(page, SEEDED_USERS.moderator);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const closeButton = detailPage.getCloseThreadButton();
-    await expect(closeButton).toBeVisible({ timeout: 5000 });
-  });
-
-  test("close thread button is visible for admin role", async ({ page }) => {
-    await loginAs(page, SEEDED_USERS.admin);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const closeButton = detailPage.getCloseThreadButton();
-    await expect(closeButton).toBeVisible({ timeout: 5000 });
-  });
-
-  test("close thread button is not visible for regular user role", async ({
-    page,
-  }) => {
-    await loginAs(page, SEEDED_USERS.user);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const closeButton = detailPage.getCloseThreadButton();
-    await expect(closeButton).not.toBeVisible();
-  });
-
-  test("close thread button is not visible for anonymous user", async ({
-    page,
-  }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const closeButton = detailPage.getCloseThreadButton();
-    await expect(closeButton).not.toBeVisible();
-  });
-
-  test("close thread button shows 'Close Thread' text for open thread", async ({
-    page,
-  }) => {
+  test("moderator closes thread — button updates to 'Reopen Thread', then reopens", async ({ page }) => {
     await loginAs(page, SEEDED_USERS.moderator);
     const detailPage = new ThreadDetailPage(page);
     await detailPage.goto(threadId);
@@ -169,107 +99,11 @@ test.describe("Close Thread button styling", () => {
 
     const closeButton = detailPage.getCloseThreadButton();
     await expect(closeButton).toHaveText("Close Thread");
-  });
-
-  test("close thread button shows 'Reopen Thread' text after closing", async ({
-    page,
-  }) => {
-    await loginAs(page, SEEDED_USERS.moderator);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const closeButton = detailPage.getCloseThreadButton();
-    await closeButton.click();
-
-    await expect(closeButton).toHaveText("Reopen Thread", { timeout: 5000 });
-  });
-
-  test("close thread button remains visible with correct text after reopening", async ({
-    page,
-  }) => {
-    await loginAs(page, SEEDED_USERS.moderator);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const closeButton = detailPage.getCloseThreadButton();
 
     await closeButton.click();
     await expect(closeButton).toHaveText("Reopen Thread", { timeout: 5000 });
 
     await closeButton.click();
     await expect(closeButton).toHaveText("Close Thread", { timeout: 5000 });
-  });
-
-  test("close thread button text is readable after closing and reopening", async ({
-    page,
-  }) => {
-    await loginAs(page, SEEDED_USERS.moderator);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const closeButton = detailPage.getCloseThreadButton();
-
-    await closeButton.click();
-    await expect(closeButton).toHaveText("Reopen Thread", { timeout: 5000 });
-
-    await closeButton.click();
-    await expect(closeButton).toHaveText("Close Thread", { timeout: 5000 });
-  });
-});
-
-test.describe("Thread detail page integration", () => {
-  let threadId: number;
-
-  test.beforeEach(async () => {
-    threadId = await createThreadViaApi(SEEDED_USERS.user);
-  });
-
-  test("thread detail page loads and displays content correctly", async ({
-    page,
-  }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const title = detailPage.getTitle();
-    const description = detailPage.getDescription();
-    const author = detailPage.getAuthor();
-
-    await expect(title).toBeVisible();
-    await expect(description).toBeVisible();
-    await expect(author).toBeVisible();
-  });
-
-  test("navigation bar shows forum link and profile link when logged in", async ({
-    page,
-  }) => {
-    await loginAs(page, SEEDED_USERS.user);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const forumLink = page.locator('a[data-testid="forum-link"]');
-    const profileLink = page.locator('a[data-testid="profile-link"]');
-
-    await expect(forumLink).toBeVisible({ timeout: 10000 });
-    await expect(profileLink).toBeVisible({ timeout: 10000 });
-  });
-
-  test("forum link and profile link are both accessible on thread detail", async ({
-    page,
-  }) => {
-    await loginAs(page, SEEDED_USERS.user);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const forumLink = page.locator('a[data-testid="forum-link"]');
-    const profileLink = page.locator('a[data-testid="profile-link"]');
-
-    await expect(forumLink).toBeEnabled();
-    await expect(profileLink).toBeEnabled();
   });
 });
