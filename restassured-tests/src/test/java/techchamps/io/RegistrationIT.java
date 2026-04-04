@@ -1,9 +1,11 @@
 package techchamps.io;
 
+import techchamps.io.builder.LoginRequestBuilder;
 import techchamps.io.builder.RegisterRequestBuilder;
 import techchamps.io.dto.request.RegisterRequest;
 import techchamps.io.dto.request.LoginRequest;
 import techchamps.io.dto.response.RegisterResponse;
+import techchamps.io.dto.response.LoginResponse;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.DisplayName;
@@ -13,8 +15,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -37,7 +37,7 @@ class RegistrationIT extends BaseIntegrationTest {
                 .password("securePass123")
                 .build();
 
-        Response response = given()
+        RegisterResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", ORIGIN)
@@ -46,19 +46,13 @@ class RegistrationIT extends BaseIntegrationTest {
             .post("/api/auth/register")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true))
-            .body("message", equalTo("Registration successful"))
-            .body("id", notNullValue())
-            .body("email", equalTo("alice@example.com"))
-            .body("username", equalTo("alice"))
-            .extract()
-            .response();
+            .extract().as(RegisterResponse.class);
 
-        RegisterResponse body = response.as(RegisterResponse.class);
-        assertThat(body.getId()).isNotNull().isGreaterThan(0);
-        assertThat(body.getEmail()).isEqualTo("alice@example.com");
-        assertThat(body.getUsername()).isEqualTo("alice");
-        assertThat(body.isSuccess()).isTrue();
+        assertThat(response.isSuccess()).isTrue();
+        assertThat(response.getMessage()).isEqualTo("Registration successful");
+        assertThat(response.getId()).isNotNull().isGreaterThan(0);
+        assertThat(response.getEmail()).isEqualTo("alice@example.com");
+        assertThat(response.getUsername()).isEqualTo("alice");
     }
 
     @Test
@@ -71,7 +65,7 @@ class RegistrationIT extends BaseIntegrationTest {
                 .password("anotherPass456")
                 .build();
 
-        given()
+        RegisterResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", ORIGIN)
@@ -80,11 +74,13 @@ class RegistrationIT extends BaseIntegrationTest {
             .post("/api/auth/register")
         .then()
             .statusCode(200)
-            .body("id", notNullValue())
-            .body("email", notNullValue())
-            .body("username", notNullValue())
-            .body("success", notNullValue())
-            .body("message", notNullValue());
+            .extract().as(RegisterResponse.class);
+
+        assertThat(response.getId()).isNotNull();
+        assertThat(response.getEmail()).isNotNull();
+        assertThat(response.getUsername()).isNotNull();
+        assertThat(response.isSuccess()).isNotNull();
+        assertThat(response.getMessage()).isNotNull();
     }
 
     // ---------------------------------------------------------------
@@ -238,7 +234,7 @@ class RegistrationIT extends BaseIntegrationTest {
                 .password("securePass123")
                 .build();
 
-        given()
+        RegisterResponse duplicateResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", ORIGIN)
@@ -247,8 +243,10 @@ class RegistrationIT extends BaseIntegrationTest {
             .post("/api/auth/register")
         .then()
             .statusCode(409)
-            .body("success", equalTo(false))
-            .body("message", equalTo("Email address is already in use"));
+            .extract().as(RegisterResponse.class);
+
+        assertThat(duplicateResponse.isSuccess()).isFalse();
+        assertThat(duplicateResponse.getMessage()).isEqualTo("Email address is already in use");
     }
 
     @Test
@@ -280,7 +278,7 @@ class RegistrationIT extends BaseIntegrationTest {
                 .password("securePass123")
                 .build();
 
-        given()
+        RegisterResponse duplicateResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", ORIGIN)
@@ -289,8 +287,10 @@ class RegistrationIT extends BaseIntegrationTest {
             .post("/api/auth/register")
         .then()
             .statusCode(409)
-            .body("success", equalTo(false))
-            .body("message", equalTo("Username is already in use"));
+            .extract().as(RegisterResponse.class);
+
+        assertThat(duplicateResponse.isSuccess()).isFalse();
+        assertThat(duplicateResponse.getMessage()).isEqualTo("Username is already in use");
     }
 
     @Test
@@ -324,7 +324,7 @@ class RegistrationIT extends BaseIntegrationTest {
                 .password("securePass123")
                 .build();
 
-        given()
+        RegisterResponse duplicateResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", ORIGIN)
@@ -333,8 +333,10 @@ class RegistrationIT extends BaseIntegrationTest {
             .post("/api/auth/register")
         .then()
             .statusCode(409)
-            .body("success", equalTo(false))
-            .body("message", equalTo("Email address is already in use"));
+            .extract().as(RegisterResponse.class);
+
+        assertThat(duplicateResponse.isSuccess()).isFalse();
+        assertThat(duplicateResponse.getMessage()).isEqualTo("Email address is already in use");
     }
 
     // ---------------------------------------------------------------
@@ -350,7 +352,7 @@ class RegistrationIT extends BaseIntegrationTest {
         String password = "securePass123";
 
         // Register new user
-        Response registerResponse = given()
+        RegisterResponse registerResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", ORIGIN)
@@ -363,16 +365,14 @@ class RegistrationIT extends BaseIntegrationTest {
             .post("/api/auth/register")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true))
-            .extract()
-            .response();
+            .extract().as(RegisterResponse.class);
 
-        RegisterResponse regBody = registerResponse.as(RegisterResponse.class);
-        assertThat(regBody.getId()).isNotNull().isGreaterThan(0);
+        assertThat(registerResponse.isSuccess()).isTrue();
+        assertThat(registerResponse.getId()).isNotNull().isGreaterThan(0);
 
         // Login with registered credentials should succeed
         LoginRequest loginRequest = new LoginRequest(username, password);
-        given()
+        LoginResponse loginResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", ORIGIN)
@@ -381,8 +381,10 @@ class RegistrationIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true))
-            .body("message", equalTo("Login successful"));
+            .extract().as(LoginResponse.class);
+
+        assertThat(loginResponse.isSuccess()).isTrue();
+        assertThat(loginResponse.getMessage()).isEqualTo("Login successful");
     }
 
     @Test
@@ -394,7 +396,7 @@ class RegistrationIT extends BaseIntegrationTest {
         String username1 = "multiuser1";
         String password1 = "securePass123";
 
-        given()
+        RegisterResponse registerResponse1 = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", ORIGIN)
@@ -407,14 +409,16 @@ class RegistrationIT extends BaseIntegrationTest {
             .post("/api/auth/register")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true));
+            .extract().as(RegisterResponse.class);
+
+        assertThat(registerResponse1.isSuccess()).isTrue();
 
         // Register second user
         String email2 = "multi2@example.com";
         String username2 = "multiuser2";
         String password2 = "anotherPass456";
 
-        given()
+        RegisterResponse registerResponse2 = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", ORIGIN)
@@ -427,10 +431,12 @@ class RegistrationIT extends BaseIntegrationTest {
             .post("/api/auth/register")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true));
+            .extract().as(RegisterResponse.class);
+
+        assertThat(registerResponse2.isSuccess()).isTrue();
 
         // Login as first user should succeed
-        given()
+        LoginResponse loginResponse1 = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", ORIGIN)
@@ -439,10 +445,12 @@ class RegistrationIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true));
+            .extract().as(LoginResponse.class);
+
+        assertThat(loginResponse1.isSuccess()).isTrue();
 
         // Login as second user should succeed
-        given()
+        LoginResponse loginResponse2 = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", ORIGIN)
@@ -451,10 +459,12 @@ class RegistrationIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true));
+            .extract().as(LoginResponse.class);
+
+        assertThat(loginResponse2.isSuccess()).isTrue();
 
         // Attempting to login as first user again should still work (stateless)
-        given()
+        LoginResponse loginResponse3 = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", ORIGIN)
@@ -463,6 +473,8 @@ class RegistrationIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true));
+            .extract().as(LoginResponse.class);
+
+        assertThat(loginResponse3.isSuccess()).isTrue();
     }
 }

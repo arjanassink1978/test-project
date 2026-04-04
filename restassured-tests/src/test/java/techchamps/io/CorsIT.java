@@ -8,9 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("CORS configuratie")
@@ -24,7 +22,7 @@ class CorsIT extends BaseIntegrationTest {
     @Order(1)
     @DisplayName("setAllowedOrigins: OPTIONS preflight → Access-Control-Allow-Origin is exact http://localhost:3000")
     void setAllowedOrigins_preflight_returnsExactAllowedOrigin() {
-        given()
+        String allowOrigin = given()
             .port(port)
             .header("Origin", "http://localhost:3000")
             .header("Access-Control-Request-Method", "POST")
@@ -33,7 +31,10 @@ class CorsIT extends BaseIntegrationTest {
             .options("/api/auth/login")
         .then()
             .statusCode(200)
-            .header("Access-Control-Allow-Origin", equalTo("http://localhost:3000"));
+            .extract()
+            .header("Access-Control-Allow-Origin");
+
+        assertThat(allowOrigin).isEqualTo("http://localhost:3000");
     }
 
     // ---------------------------------------------------------------
@@ -44,7 +45,7 @@ class CorsIT extends BaseIntegrationTest {
     @Order(2)
     @DisplayName("setAllowedMethods: OPTIONS preflight met DELETE → Access-Control-Allow-Methods bevat DELETE")
     void setAllowedMethods_preflightWithDelete_allowMethodsContainsDelete() {
-        given()
+        String allowMethods = given()
             .port(port)
             .header("Origin", "http://localhost:3000")
             .header("Access-Control-Request-Method", "DELETE")
@@ -52,7 +53,10 @@ class CorsIT extends BaseIntegrationTest {
             .options("/api/auth/login")
         .then()
             .statusCode(200)
-            .header("Access-Control-Allow-Methods", containsString("DELETE"));
+            .extract()
+            .header("Access-Control-Allow-Methods");
+
+        assertThat(allowMethods).contains("DELETE");
     }
 
     // ---------------------------------------------------------------
@@ -63,7 +67,7 @@ class CorsIT extends BaseIntegrationTest {
     @Order(3)
     @DisplayName("setAllowedHeaders: OPTIONS preflight met Content-Type → Access-Control-Allow-Headers bevat Content-Type")
     void setAllowedHeaders_preflightWithContentType_allowHeadersContainsContentType() {
-        given()
+        String allowHeaders = given()
             .port(port)
             .header("Origin", "http://localhost:3000")
             .header("Access-Control-Request-Method", "POST")
@@ -72,7 +76,10 @@ class CorsIT extends BaseIntegrationTest {
             .options("/api/auth/login")
         .then()
             .statusCode(200)
-            .header("Access-Control-Allow-Headers", containsString("Content-Type"));
+            .extract()
+            .header("Access-Control-Allow-Headers");
+
+        assertThat(allowHeaders).contains("Content-Type");
     }
 
     // ---------------------------------------------------------------
@@ -83,7 +90,7 @@ class CorsIT extends BaseIntegrationTest {
     @Order(4)
     @DisplayName("setAllowCredentials: OPTIONS preflight → Access-Control-Allow-Credentials is \"true\"")
     void setAllowCredentials_preflight_returnsTrue() {
-        given()
+        String allowCredentials = given()
             .port(port)
             .header("Origin", "http://localhost:3000")
             .header("Access-Control-Request-Method", "POST")
@@ -92,7 +99,10 @@ class CorsIT extends BaseIntegrationTest {
             .options("/api/auth/login")
         .then()
             .statusCode(200)
-            .header("Access-Control-Allow-Credentials", equalTo("true"));
+            .extract()
+            .header("Access-Control-Allow-Credentials");
+
+        assertThat(allowCredentials).isEqualTo("true");
     }
 
     // ---------------------------------------------------------------
@@ -103,7 +113,7 @@ class CorsIT extends BaseIntegrationTest {
     @Order(5)
     @DisplayName("setMaxAge: OPTIONS preflight → Access-Control-Max-Age is aanwezig en niet leeg")
     void setMaxAge_preflight_maxAgeHeaderIsPresent() {
-        given()
+        String maxAge = given()
             .port(port)
             .header("Origin", "http://localhost:3000")
             .header("Access-Control-Request-Method", "POST")
@@ -112,7 +122,10 @@ class CorsIT extends BaseIntegrationTest {
             .options("/api/auth/login")
         .then()
             .statusCode(200)
-            .header("Access-Control-Max-Age", notNullValue());
+            .extract()
+            .header("Access-Control-Max-Age");
+
+        assertThat(maxAge).isNotNull();
     }
 
     // ---------------------------------------------------------------
@@ -124,7 +137,7 @@ class CorsIT extends BaseIntegrationTest {
     @Order(6)
     @DisplayName("corsFilter: POST van toegestane origin → Access-Control-Allow-Origin is exact http://localhost:3000")
     void corsFilter_postFromAllowedOrigin_returnsExactAllowOriginHeader() {
-        given()
+        String allowOrigin = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Origin", "http://localhost:3000")
@@ -133,7 +146,10 @@ class CorsIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .header("Access-Control-Allow-Origin", equalTo("http://localhost:3000"));
+            .extract()
+            .header("Access-Control-Allow-Origin");
+
+        assertThat(allowOrigin).isEqualTo("http://localhost:3000");
     }
 
     // ---------------------------------------------------------------

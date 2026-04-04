@@ -2,11 +2,16 @@ package techchamps.io;
 
 import techchamps.io.builder.CreateReplyRequestBuilder;
 import techchamps.io.builder.CreateThreadRequestBuilder;
+import techchamps.io.dto.response.ForumThreadResponse;
+import techchamps.io.dto.response.UserSummaryResponse;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.*;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Integration tests for role-based access control.
@@ -79,7 +84,7 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @DisplayName("POST /api/forum/threads/{id}/close — moderator can close thread (200)")
     void closeThread_asModerator_returns200() {
         String token = moderatorToken();
-        given()
+        ForumThreadResponse response = given()
             .port(port)
             .header("Authorization", "Bearer " + token)
             .param("closed", "true")
@@ -87,14 +92,16 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
             .post("/api/forum/threads/{id}/close", threadId)
         .then()
             .statusCode(200)
-            .body("closed", equalTo(true));
+            .extract().as(ForumThreadResponse.class);
+
+        assertThat(response.isClosed()).isTrue();
     }
 
     @Test
     @DisplayName("POST /api/forum/threads/{id}/close — admin can close thread (200)")
     void closeThread_asAdmin_returns200() {
         String token = adminToken();
-        given()
+        ForumThreadResponse response = given()
             .port(port)
             .header("Authorization", "Bearer " + token)
             .param("closed", "true")
@@ -102,7 +109,9 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
             .post("/api/forum/threads/{id}/close", threadId)
         .then()
             .statusCode(200)
-            .body("closed", equalTo(true));
+            .extract().as(ForumThreadResponse.class);
+
+        assertThat(response.isClosed()).isTrue();
     }
 
     @Test
@@ -160,7 +169,7 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
         .then()
             .statusCode(200);
 
-        given()
+        ForumThreadResponse reopenResponse = given()
             .port(port)
             .header("Authorization", "Bearer " + modToken)
             .param("closed", "false")
@@ -168,7 +177,9 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
             .post("/api/forum/threads/{id}/close", threadId)
         .then()
             .statusCode(200)
-            .body("closed", equalTo(false));
+            .extract().as(ForumThreadResponse.class);
+
+        assertThat(reopenResponse.isClosed()).isFalse();
 
         String userToken = userToken();
         given()
@@ -286,17 +297,19 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @DisplayName("GET /api/users — admin can list users (200)")
     void listUsers_asAdmin_returns200WithUsers() {
         String token = adminToken();
-        given()
+        List<UserSummaryResponse> users = Arrays.asList(given()
             .port(port)
             .header("Authorization", "Bearer " + token)
         .when()
             .get("/api/users")
         .then()
             .statusCode(200)
-            .body("size()", greaterThanOrEqualTo(3))
-            .body("find { it.username == 'user' }.role", equalTo("USER"))
-            .body("find { it.username == 'moderator' }.role", equalTo("MODERATOR"))
-            .body("find { it.username == 'admin' }.role", equalTo("ADMIN"));
+            .extract().as(UserSummaryResponse[].class));
+
+        assertThat(users).hasSizeGreaterThanOrEqualTo(3);
+        assertThat(users).anyMatch(u -> "user".equals(u.getUsername()) && "USER".equals(u.getRole()));
+        assertThat(users).anyMatch(u -> "moderator".equals(u.getUsername()) && "MODERATOR".equals(u.getRole()));
+        assertThat(users).anyMatch(u -> "admin".equals(u.getUsername()) && "ADMIN".equals(u.getRole()));
     }
 
     @Test

@@ -6,11 +6,20 @@ import techchamps.io.builder.RegisterRequestBuilder;
 import techchamps.io.dto.request.CreateReplyRequest;
 import techchamps.io.dto.request.CreateThreadRequest;
 import techchamps.io.dto.request.VoteRequest;
+import techchamps.io.dto.response.ForumCategoryResponse;
+import techchamps.io.dto.response.ForumReplyResponse;
+import techchamps.io.dto.response.ForumThreadResponse;
+import techchamps.io.dto.response.ForumThreadDetailResponse;
+import techchamps.io.dto.response.PagedThreadsResponse;
+import techchamps.io.dto.response.VoteResponse;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.*;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Integration tests for Forum endpoints.
@@ -30,15 +39,17 @@ class ForumThreadIT extends BaseIntegrationTest {
     @Order(1)
     @DisplayName("GET /api/forum/categories → 200 with at least 1 category")
     void getCategories_returns200AndList() {
-        given()
+        List<ForumCategoryResponse> categories = Arrays.asList(given()
             .port(port)
         .when()
             .get("/api/forum/categories")
         .then()
             .statusCode(200)
-            .body("size()", greaterThanOrEqualTo(1))
-            .body("[0].id", notNullValue())
-            .body("[0].name", notNullValue());
+            .extract().as(ForumCategoryResponse[].class));
+
+        assertThat(categories).hasSizeGreaterThanOrEqualTo(1);
+        assertThat(categories.get(0).getId()).isNotNull();
+        assertThat(categories.get(0).getName()).isNotNull();
     }
 
     // -------------------------------------------------------------------------
@@ -49,15 +60,17 @@ class ForumThreadIT extends BaseIntegrationTest {
     @Order(2)
     @DisplayName("GET /api/forum/threads → 200 with paged response fields")
     void getThreads_noParams_returns200WithPagedResponse() {
-        given()
+        PagedThreadsResponse response = given()
             .port(port)
         .when()
             .get("/api/forum/threads")
         .then()
             .statusCode(200)
-            .body("threads", notNullValue())
-            .body("page", equalTo(0))
-            .body("hasMore", notNullValue());
+            .extract().as(PagedThreadsResponse.class);
+
+        assertThat(response.getThreads()).isNotNull();
+        assertThat(response.getPage()).isEqualTo(0);
+        assertThat(response.isHasMore()).isNotNull();
     }
 
     // -------------------------------------------------------------------------
@@ -71,7 +84,7 @@ class ForumThreadIT extends BaseIntegrationTest {
         String token = userToken();
         CreateThreadRequest request = new CreateThreadRequestBuilder().build();
 
-        given()
+        ForumThreadResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Authorization", "Bearer " + token)
@@ -80,9 +93,11 @@ class ForumThreadIT extends BaseIntegrationTest {
             .post("/api/forum/threads")
         .then()
             .statusCode(201)
-            .body("id", notNullValue())
-            .body("title", equalTo("Test Thread Title"))
-            .body("authorUsername", equalTo("user"));
+            .extract().as(ForumThreadResponse.class);
+
+        assertThat(response.getId()).isNotNull();
+        assertThat(response.getTitle()).isEqualTo("Test Thread Title");
+        assertThat(response.getAuthorUsername()).isEqualTo("user");
     }
 
     // -------------------------------------------------------------------------
@@ -120,7 +135,7 @@ class ForumThreadIT extends BaseIntegrationTest {
                 .title(title200)
                 .build();
 
-        given()
+        ForumThreadResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Authorization", "Bearer " + token)
@@ -129,7 +144,9 @@ class ForumThreadIT extends BaseIntegrationTest {
             .post("/api/forum/threads")
         .then()
             .statusCode(201)
-            .body("title", equalTo(title200));
+            .extract().as(ForumThreadResponse.class);
+
+        assertThat(response.getTitle()).isEqualTo(title200);
     }
 
     // -------------------------------------------------------------------------
@@ -231,7 +248,7 @@ class ForumThreadIT extends BaseIntegrationTest {
 
         CreateReplyRequest reply = new CreateReplyRequestBuilder().build();
 
-        given()
+        ForumReplyResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Authorization", "Bearer " + token)
@@ -240,9 +257,11 @@ class ForumThreadIT extends BaseIntegrationTest {
             .post("/api/forum/threads/" + threadId + "/replies")
         .then()
             .statusCode(201)
-            .body("id", notNullValue())
-            .body("content", equalTo("Test reply content"))
-            .body("depth", equalTo(0));
+            .extract().as(ForumReplyResponse.class);
+
+        assertThat(response.getId()).isNotNull();
+        assertThat(response.getContent()).isEqualTo("Test reply content");
+        assertThat(response.getDepth()).isEqualTo(0);
     }
 
     // -------------------------------------------------------------------------
@@ -307,7 +326,7 @@ class ForumThreadIT extends BaseIntegrationTest {
         Long replyId0 = createReplyOnThread(threadId, "Level 0 reply", token);
         Long replyId1 = createNestedReplyOnReply(replyId0, "Level 1 reply", token);
 
-        given()
+        ForumReplyResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Authorization", "Bearer " + token)
@@ -316,7 +335,9 @@ class ForumThreadIT extends BaseIntegrationTest {
             .post("/api/forum/threads/" + threadId + "/replies")
         .then()
             .statusCode(201)
-            .body("depth", equalTo(2));
+            .extract().as(ForumReplyResponse.class);
+
+        assertThat(response.getDepth()).isEqualTo(2);
     }
 
     @Test
@@ -353,15 +374,17 @@ class ForumThreadIT extends BaseIntegrationTest {
         String token = userToken();
         createReplyOnThread(threadId, "A reply for the detail test", token);
 
-        given()
+        ForumThreadDetailResponse response = given()
             .port(port)
         .when()
             .get("/api/forum/threads/" + threadId)
         .then()
             .statusCode(200)
-            .body("id", equalTo(threadId.intValue()))
-            .body("title", notNullValue())
-            .body("replies", notNullValue());
+            .extract().as(ForumThreadDetailResponse.class);
+
+        assertThat(response.getId()).isEqualTo(threadId);
+        assertThat(response.getTitle()).isNotNull();
+        assertThat(response.getReplies()).isNotNull();
     }
 
     @Test
@@ -387,7 +410,7 @@ class ForumThreadIT extends BaseIntegrationTest {
         Long threadId = createThreadAndGetId();
         String token = userToken();
 
-        given()
+        VoteResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Authorization", "Bearer " + token)
@@ -397,10 +420,12 @@ class ForumThreadIT extends BaseIntegrationTest {
             .post("/api/forum/posts/" + threadId + "/vote")
         .then()
             .statusCode(200)
-            .body("postId", equalTo(threadId.intValue()))
-            .body("postType", equalTo("thread"))
-            .body("newScore", equalTo(1))
-            .body("userVote", equalTo(1));
+            .extract().as(VoteResponse.class);
+
+        assertThat(response.getPostId()).isEqualTo(threadId);
+        assertThat(response.getPostType()).isEqualTo("thread");
+        assertThat(response.getNewScore()).isEqualTo(1);
+        assertThat(response.getUserVote()).isEqualTo(1);
     }
 
     @Test
@@ -410,7 +435,7 @@ class ForumThreadIT extends BaseIntegrationTest {
         Long threadId = createThreadAndGetId();
         String token = userToken();
 
-        given()
+        VoteResponse firstVote = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Authorization", "Bearer " + token)
@@ -420,9 +445,11 @@ class ForumThreadIT extends BaseIntegrationTest {
             .post("/api/forum/posts/" + threadId + "/vote")
         .then()
             .statusCode(200)
-            .body("newScore", equalTo(1));
+            .extract().as(VoteResponse.class);
 
-        given()
+        assertThat(firstVote.getNewScore()).isEqualTo(1);
+
+        VoteResponse secondVote = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Authorization", "Bearer " + token)
@@ -432,8 +459,10 @@ class ForumThreadIT extends BaseIntegrationTest {
             .post("/api/forum/posts/" + threadId + "/vote")
         .then()
             .statusCode(200)
-            .body("newScore", equalTo(-1))
-            .body("userVote", equalTo(-1));
+            .extract().as(VoteResponse.class);
+
+        assertThat(secondVote.getNewScore()).isEqualTo(-1);
+        assertThat(secondVote.getUserVote()).isEqualTo(-1);
     }
 
     // -------------------------------------------------------------------------
@@ -500,7 +529,7 @@ class ForumThreadIT extends BaseIntegrationTest {
 
         createReplyOnThread(threadId, "Flow test reply", token);
 
-        given()
+        VoteResponse voteResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .header("Authorization", "Bearer " + token)
@@ -510,16 +539,20 @@ class ForumThreadIT extends BaseIntegrationTest {
             .post("/api/forum/posts/" + threadId + "/vote")
         .then()
             .statusCode(200)
-            .body("newScore", equalTo(1));
+            .extract().as(VoteResponse.class);
 
-        given()
+        assertThat(voteResponse.getNewScore()).isEqualTo(1);
+
+        ForumThreadDetailResponse threadDetail = given()
             .port(port)
         .when()
             .get("/api/forum/threads/" + threadId)
         .then()
             .statusCode(200)
-            .body("score", equalTo(1))
-            .body("replies", hasSize(1));
+            .extract().as(ForumThreadDetailResponse.class);
+
+        assertThat(threadDetail.getScore()).isEqualTo(1);
+        assertThat(threadDetail.getReplies()).hasSize(1);
     }
 
     // -------------------------------------------------------------------------
