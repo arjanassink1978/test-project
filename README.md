@@ -76,11 +76,8 @@ Docker Compose handles database initialization automatically with Liquibase migr
 
 **Database Access via pgAdmin:**
 - Login: `admin@example.com` / `admin`
-- Add PostgreSQL server with:
-  - Host: `postgres`
-  - User: `test`
-  - Password: `test`
-  - Database: `testdb`
+- PostgreSQL server is automatically configured as `test-project`
+- No additional setup needed — just login and start browsing!
 
 **Database Reset:**
 When you run `./start.sh` again, the database is automatically reset to a fresh state (no persistent data between restarts).
