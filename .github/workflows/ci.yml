@@ -375,7 +375,7 @@ jobs:
           retention-days: 30
 
   generate-report:
-    needs: [ test-backend, test-restassured, test-e2e-docker ]
+    needs: [ test-backend, test-restassured, test-e2e-docker, mutation-testing ]
     runs-on: ubuntu-latest
     if: always()
     steps:
