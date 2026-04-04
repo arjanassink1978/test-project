@@ -8,6 +8,8 @@ import techchamps.io.dto.request.RegisterRequest;
 import techchamps.io.model.AppUser;
 import techchamps.io.model.Role;
 import techchamps.io.repository.AppUserRepository;
+import techchamps.io.security.JwtAuthenticationFilter;
+import techchamps.io.security.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -49,6 +51,11 @@ class AuthControllerTest {
                 throw new UsernameNotFoundException("No users in test context");
             };
         }
+
+        @Bean
+        JwtAuthenticationFilter jwtAuthenticationFilter(UserDetailsService userDetailsService) {
+            return new JwtAuthenticationFilter("test-secret-key-that-is-at-least-32-bytes-long!", userDetailsService);
+        }
     }
 
     @Autowired
@@ -66,6 +73,9 @@ class AuthControllerTest {
     @MockBean
     private PasswordEncoder passwordEncoder;
 
+    @MockBean
+    private JwtService jwtService;
+
     private void mockSuccessfulAuth(String username) {
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken(username, null, Collections.emptyList());
@@ -73,6 +83,7 @@ class AuthControllerTest {
                 .thenReturn(auth);
         when(appUserRepository.findByUsername(username))
                 .thenReturn(Optional.of(new AppUser(username, "encoded", Role.USER)));
+        when(jwtService.generateToken(any(AppUser.class))).thenReturn("mocked-jwt-token");
     }
 
     @Test
@@ -88,7 +99,8 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Login successful"))
                 .andExpect(jsonPath("$.username").value("user"))
-                .andExpect(jsonPath("$.role").value("USER"));
+                .andExpect(jsonPath("$.role").value("USER"))
+                .andExpect(jsonPath("$.token").value("mocked-jwt-token"));
     }
 
     @Test
@@ -104,7 +116,8 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value("Invalid credentials"))
-                .andExpect(jsonPath("$.username").doesNotExist());
+                .andExpect(jsonPath("$.username").isEmpty())
+                .andExpect(jsonPath("$.token").isEmpty());
     }
 
     @Test
@@ -156,6 +169,7 @@ class AuthControllerTest {
                 .thenReturn(auth);
         when(appUserRepository.findByUsername("admin"))
                 .thenReturn(Optional.of(new AppUser("admin", "encoded", Role.ADMIN)));
+        when(jwtService.generateToken(any(AppUser.class))).thenReturn("admin-jwt-token");
 
         LoginRequest request = new LoginRequest("admin", "admin1234");
 

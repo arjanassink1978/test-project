@@ -51,12 +51,9 @@ export default function ThreadDetailPage() {
 
   async function handleVoteThread(value: number) {
     if (!thread || !username) return;
-    const password = localStorage.getItem("password") ?? "";
+    const token = localStorage.getItem("authToken") ?? "";
     try {
-      const result = await voteOnPost(thread.id, "thread", value, {
-        username,
-        password,
-      });
+      const result = await voteOnPost(thread.id, "thread", value, token);
       setThread((prev) => (prev ? { ...prev, score: result.newScore } : prev));
     } catch (err) {
       console.error(err);
@@ -65,9 +62,9 @@ export default function ThreadDetailPage() {
 
   async function handleVoteReply(replyId: number, value: number) {
     if (!username) return;
-    const password = localStorage.getItem("password") ?? "";
+    const token = localStorage.getItem("authToken") ?? "";
     try {
-      await voteOnPost(replyId, "reply", value, { username, password });
+      await voteOnPost(replyId, "reply", value, token);
       const updated = await getForumThread(threadId);
       setThread(updated);
     } catch (err) {
@@ -77,15 +74,11 @@ export default function ThreadDetailPage() {
 
   async function handleDirectReply(content: string) {
     if (!username || !thread) return;
-    const password = localStorage.getItem("password") ?? "";
+    const token = localStorage.getItem("authToken") ?? "";
     setReplyLoading(true);
     setReplyError(null);
     try {
-      await createForumReply(
-        thread.id,
-        { content },
-        { username, password }
-      );
+      await createForumReply(thread.id, { content }, token);
       const updated = await getForumThread(threadId);
       setThread(updated);
     } catch (err) {
@@ -101,21 +94,17 @@ export default function ThreadDetailPage() {
     parentReplyId: number
   ) {
     if (!username) return;
-    const password = localStorage.getItem("password") ?? "";
-    await createForumReply(
-      threadId,
-      { content, parentReplyId },
-      { username, password }
-    );
+    const token = localStorage.getItem("authToken") ?? "";
+    await createForumReply(threadId, { content, parentReplyId }, token);
     const updated = await getForumThread(threadId);
     setThread(updated);
   }
 
   async function handleDeleteReply(replyId: number) {
     if (!username) return;
-    const password = localStorage.getItem("password") ?? "";
+    const token = localStorage.getItem("authToken") ?? "";
     try {
-      await deleteReply(replyId, { username, password });
+      await deleteReply(replyId, token);
       const updated = await getForumThread(threadId);
       setThread(updated);
     } catch (err) {
@@ -125,10 +114,10 @@ export default function ThreadDetailPage() {
 
   async function handleCloseThread(closed: boolean) {
     if (!username || !thread) return;
-    const password = localStorage.getItem("password") ?? "";
+    const token = localStorage.getItem("authToken") ?? "";
     setCloseLoading(true);
     try {
-      const updated = await closeThread(thread.id, closed, { username, password });
+      const updated = await closeThread(thread.id, closed, token);
       setThread((prev) => (prev ? { ...prev, closed: updated.closed } : prev));
     } catch (err) {
       console.error(err);

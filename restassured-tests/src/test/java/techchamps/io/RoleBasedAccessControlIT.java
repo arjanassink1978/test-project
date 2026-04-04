@@ -16,27 +16,23 @@ import static org.hamcrest.Matchers.*;
  * - Delete reply (MODERATOR+)
  * - List users (ADMIN only)
  * - Closed thread rejects new replies
+ *
+ * Authenticated requests use JWT Bearer tokens obtained via {@link BaseIntegrationTest} helpers.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Role-Based Access Control Integration Tests")
 class RoleBasedAccessControlIT extends BaseIntegrationTest {
-
-    private static final String USER = "user";
-    private static final String USER_PASSWORD = "user1234";
-    private static final String MODERATOR = "moderator";
-    private static final String MODERATOR_PASSWORD = "moderator1234";
-    private static final String ADMIN = "admin";
-    private static final String ADMIN_PASSWORD = "admin1234";
 
     private Long threadId;
     private Long replyId;
 
     @BeforeEach
     void setup() {
-        // Create a thread as regular user
+        String token = userToken();
+
         threadId = given()
             .port(port)
-            .auth().preemptive().basic(USER, USER_PASSWORD)
+            .header("Authorization", "Bearer " + token)
             .contentType(ContentType.JSON)
             .body(new CreateThreadRequestBuilder()
                 .title("RBAC Test Thread")
@@ -48,10 +44,9 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
             .statusCode(201)
             .extract().jsonPath().getLong("id");
 
-        // Create a reply on that thread
         replyId = given()
             .port(port)
-            .auth().preemptive().basic(USER, USER_PASSWORD)
+            .header("Authorization", "Bearer " + token)
             .contentType(ContentType.JSON)
             .body(new CreateReplyRequestBuilder()
                 .content("A reply for RBAC testing")
@@ -70,9 +65,10 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @Test
     @DisplayName("POST /api/forum/threads/{id}/close — user cannot close thread (403)")
     void closeThread_asUser_returns403() {
+        String token = userToken();
         given()
             .port(port)
-            .auth().preemptive().basic(USER, USER_PASSWORD)
+            .header("Authorization", "Bearer " + token)
         .when()
             .post("/api/forum/threads/{id}/close", threadId)
         .then()
@@ -82,9 +78,10 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @Test
     @DisplayName("POST /api/forum/threads/{id}/close — moderator can close thread (200)")
     void closeThread_asModerator_returns200() {
+        String token = moderatorToken();
         given()
             .port(port)
-            .auth().preemptive().basic(MODERATOR, MODERATOR_PASSWORD)
+            .header("Authorization", "Bearer " + token)
             .param("closed", "true")
         .when()
             .post("/api/forum/threads/{id}/close", threadId)
@@ -96,9 +93,10 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @Test
     @DisplayName("POST /api/forum/threads/{id}/close — admin can close thread (200)")
     void closeThread_asAdmin_returns200() {
+        String token = adminToken();
         given()
             .port(port)
-            .auth().preemptive().basic(ADMIN, ADMIN_PASSWORD)
+            .header("Authorization", "Bearer " + token)
             .param("closed", "true")
         .when()
             .post("/api/forum/threads/{id}/close", threadId)
@@ -125,20 +123,20 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @Test
     @DisplayName("Closed thread — replying returns 403")
     void replyToClosedThread_returns403() {
-        // Close the thread as moderator
+        String modToken = moderatorToken();
         given()
             .port(port)
-            .auth().preemptive().basic(MODERATOR, MODERATOR_PASSWORD)
+            .header("Authorization", "Bearer " + modToken)
             .param("closed", "true")
         .when()
             .post("/api/forum/threads/{id}/close", threadId)
         .then()
             .statusCode(200);
 
-        // Attempt to reply — should be rejected
+        String userToken = userToken();
         given()
             .port(port)
-            .auth().preemptive().basic(USER, USER_PASSWORD)
+            .header("Authorization", "Bearer " + userToken)
             .contentType(ContentType.JSON)
             .body(new CreateReplyRequestBuilder()
                 .content("Trying to reply to closed thread")
@@ -152,20 +150,19 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @Test
     @DisplayName("Reopened thread — replying succeeds (201)")
     void replyToReopenedThread_returns201() {
-        // Close the thread
+        String modToken = moderatorToken();
         given()
             .port(port)
-            .auth().preemptive().basic(MODERATOR, MODERATOR_PASSWORD)
+            .header("Authorization", "Bearer " + modToken)
             .param("closed", "true")
         .when()
             .post("/api/forum/threads/{id}/close", threadId)
         .then()
             .statusCode(200);
 
-        // Reopen the thread
         given()
             .port(port)
-            .auth().preemptive().basic(MODERATOR, MODERATOR_PASSWORD)
+            .header("Authorization", "Bearer " + modToken)
             .param("closed", "false")
         .when()
             .post("/api/forum/threads/{id}/close", threadId)
@@ -173,10 +170,10 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
             .statusCode(200)
             .body("closed", equalTo(false));
 
-        // Reply should succeed now
+        String userToken = userToken();
         given()
             .port(port)
-            .auth().preemptive().basic(USER, USER_PASSWORD)
+            .header("Authorization", "Bearer " + userToken)
             .contentType(ContentType.JSON)
             .body(new CreateReplyRequestBuilder()
                 .content("Reply after reopen")
@@ -194,9 +191,10 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @Test
     @DisplayName("DELETE /api/forum/replies/{id} — user cannot delete reply (403)")
     void deleteReply_asUser_returns403() {
+        String token = userToken();
         given()
             .port(port)
-            .auth().preemptive().basic(USER, USER_PASSWORD)
+            .header("Authorization", "Bearer " + token)
         .when()
             .delete("/api/forum/replies/{id}", replyId)
         .then()
@@ -206,9 +204,10 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @Test
     @DisplayName("DELETE /api/forum/replies/{id} — moderator can delete reply (204)")
     void deleteReply_asModerator_returns204() {
+        String token = moderatorToken();
         given()
             .port(port)
-            .auth().preemptive().basic(MODERATOR, MODERATOR_PASSWORD)
+            .header("Authorization", "Bearer " + token)
         .when()
             .delete("/api/forum/replies/{id}", replyId)
         .then()
@@ -218,10 +217,10 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @Test
     @DisplayName("DELETE /api/forum/replies/{id} — admin can delete reply (204)")
     void deleteReply_asAdmin_returns204() {
-        // Create another reply to delete as admin
+        String userToken = userToken();
         Long anotherReplyId = given()
             .port(port)
-            .auth().preemptive().basic(USER, USER_PASSWORD)
+            .header("Authorization", "Bearer " + userToken)
             .contentType(ContentType.JSON)
             .body(new CreateReplyRequestBuilder()
                 .content("Another reply for admin to delete")
@@ -232,9 +231,10 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
             .statusCode(201)
             .extract().jsonPath().getLong("id");
 
+        String adminToken = adminToken();
         given()
             .port(port)
-            .auth().preemptive().basic(ADMIN, ADMIN_PASSWORD)
+            .header("Authorization", "Bearer " + adminToken)
         .when()
             .delete("/api/forum/replies/{id}", anotherReplyId)
         .then()
@@ -259,9 +259,10 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @Test
     @DisplayName("GET /api/users — user cannot list users (403)")
     void listUsers_asUser_returns403() {
+        String token = userToken();
         given()
             .port(port)
-            .auth().preemptive().basic(USER, USER_PASSWORD)
+            .header("Authorization", "Bearer " + token)
         .when()
             .get("/api/users")
         .then()
@@ -271,9 +272,10 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @Test
     @DisplayName("GET /api/users — moderator cannot list users (403)")
     void listUsers_asModerator_returns403() {
+        String token = moderatorToken();
         given()
             .port(port)
-            .auth().preemptive().basic(MODERATOR, MODERATOR_PASSWORD)
+            .header("Authorization", "Bearer " + token)
         .when()
             .get("/api/users")
         .then()
@@ -283,9 +285,10 @@ class RoleBasedAccessControlIT extends BaseIntegrationTest {
     @Test
     @DisplayName("GET /api/users — admin can list users (200)")
     void listUsers_asAdmin_returns200WithUsers() {
+        String token = adminToken();
         given()
             .port(port)
-            .auth().preemptive().basic(ADMIN, ADMIN_PASSWORD)
+            .header("Authorization", "Bearer " + token)
         .when()
             .get("/api/users")
         .then()

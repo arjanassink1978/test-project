@@ -2,9 +2,7 @@ package techchamps.io;
 
 import techchamps.io.builder.LoginRequestBuilder;
 import techchamps.io.dto.request.LoginRequest;
-import techchamps.io.dto.response.LoginResponse;
 import io.restassured.http.ContentType;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -61,12 +59,29 @@ class AuthControllerIT extends BaseIntegrationTest {
             .body("username", equalTo("user"));
     }
 
+    @Test
+    @Order(3)
+    @DisplayName("Geldige credentials → response bevat niet-null JWT token")
+    void login_happyPath_returnsNonNullToken() {
+        LoginRequest request = new LoginRequestBuilder().build();
+
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .post("/api/auth/login")
+        .then()
+            .statusCode(200)
+            .body("token", notNullValue());
+    }
+
     // ---------------------------------------------------------------
     // Unauthorized (401)
     // ---------------------------------------------------------------
 
     @Test
-    @Order(3)
+    @Order(4)
     @DisplayName("Fout wachtwoord → 401 met success=false")
     void login_wrongPassword_returns401AndSuccessFalse() {
         LoginRequest request = new LoginRequestBuilder()
@@ -86,7 +101,7 @@ class AuthControllerIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     @DisplayName("Onbekende gebruiker → 401")
     void login_unknownUser_returns401() {
         LoginRequest request = new LoginRequestBuilder()
@@ -105,7 +120,7 @@ class AuthControllerIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     @DisplayName("Leeg wachtwoord → 401")
     void login_emptyPassword_returns401() {
         LoginRequest request = new LoginRequestBuilder()
@@ -123,7 +138,7 @@ class AuthControllerIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(6)
+    @Order(7)
     @DisplayName("Lege gebruikersnaam → 401")
     void login_emptyUsername_returns401() {
         LoginRequest request = new LoginRequestBuilder()
@@ -141,16 +156,15 @@ class AuthControllerIT extends BaseIntegrationTest {
     }
 
     // ---------------------------------------------------------------
-    // Functionele flow: inloggen en valideren dat token/bericht herbruikbaar is
+    // Functionele flow
     // ---------------------------------------------------------------
 
     @Test
-    @Order(7)
+    @Order(8)
     @DisplayName("Flow: geldige login → message klopt → opnieuw inloggen met zelfde credentials slaagt")
     void loginFlow_successfulLoginCanBeRepeated() {
         LoginRequest request = new LoginRequestBuilder().build();
 
-        // Eerste login
         String message = given()
             .port(port)
             .contentType(ContentType.JSON)
@@ -163,7 +177,6 @@ class AuthControllerIT extends BaseIntegrationTest {
             .extract()
             .path("message");
 
-        // Tweede login met zelfde credentials – stateless server, moet opnieuw slagen
         given()
             .port(port)
             .contentType(ContentType.JSON)
@@ -177,10 +190,9 @@ class AuthControllerIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(8)
+    @Order(9)
     @DisplayName("Flow: mislukte login gevolgd door geldige login slaagt alsnog")
     void loginFlow_failedLoginFollowedByValidLogin_succeeds() {
-        // Mislukte poging
         given()
             .port(port)
             .contentType(ContentType.JSON)
@@ -191,7 +203,6 @@ class AuthControllerIT extends BaseIntegrationTest {
             .statusCode(401)
             .body("success", equalTo(false));
 
-        // Geldige poging direct erna
         given()
             .port(port)
             .contentType(ContentType.JSON)

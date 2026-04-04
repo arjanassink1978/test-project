@@ -168,19 +168,19 @@ export async function getForumThread(id: number): Promise<ForumThreadDetailRespo
   return response.json() as Promise<ForumThreadDetailResponse>;
 }
 
-function basicAuth(username: string, password: string): string {
-  return "Basic " + btoa(`${username}:${password}`);
+function bearerAuth(token: string): string {
+  return `Bearer ${token}`;
 }
 
 export async function createForumThread(
   data: { title: string; description?: string; categoryId?: number },
-  credentials: { username: string; password: string }
+  token: string
 ): Promise<ForumThreadResponse> {
   const response = await fetch(`${API_BASE}/api/forum/threads`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: basicAuth(credentials.username, credentials.password),
+      Authorization: bearerAuth(token),
     },
     body: JSON.stringify(data),
   });
@@ -194,13 +194,13 @@ export async function createForumThread(
 export async function createForumReply(
   threadId: number,
   data: { content: string; parentReplyId?: number },
-  credentials: { username: string; password: string }
+  token: string
 ): Promise<ForumReplyResponse> {
   const response = await fetch(`${API_BASE}/api/forum/threads/${threadId}/replies`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: basicAuth(credentials.username, credentials.password),
+      Authorization: bearerAuth(token),
     },
     body: JSON.stringify(data),
   });
@@ -215,7 +215,7 @@ export async function voteOnPost(
   postId: number,
   postType: "thread" | "reply",
   voteValue: number,
-  credentials: { username: string; password: string }
+  token: string
 ): Promise<VoteResponse> {
   const response = await fetch(
     `${API_BASE}/api/forum/posts/${postId}/vote?postType=${postType}`,
@@ -223,7 +223,7 @@ export async function voteOnPost(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: basicAuth(credentials.username, credentials.password),
+        Authorization: bearerAuth(token),
       },
       body: JSON.stringify({ voteValue }),
     }
@@ -238,14 +238,14 @@ export async function voteOnPost(
 export async function closeThread(
   threadId: number,
   closed: boolean,
-  credentials: { username: string; password: string }
+  token: string
 ): Promise<ForumThreadResponse> {
   const response = await fetch(
     `${API_BASE}/api/forum/threads/${threadId}/close?closed=${closed}`,
     {
       method: "POST",
       headers: {
-        Authorization: basicAuth(credentials.username, credentials.password),
+        Authorization: bearerAuth(token),
       },
     }
   );
@@ -261,12 +261,12 @@ export async function closeThread(
 
 export async function deleteReply(
   replyId: number,
-  credentials: { username: string; password: string }
+  token: string
 ): Promise<void> {
   const response = await fetch(`${API_BASE}/api/forum/replies/${replyId}`, {
     method: "DELETE",
     headers: {
-      Authorization: basicAuth(credentials.username, credentials.password),
+      Authorization: bearerAuth(token),
     },
   });
   if (!response.ok) {

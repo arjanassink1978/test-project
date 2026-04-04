@@ -32,6 +32,9 @@ export default function LoginForm() {
             localStorage.setItem("role", data.role);
           }
           localStorage.setItem("username", data.username);
+          if (data.token) {
+            localStorage.setItem("authToken", data.token);
+          }
         }
         // Store password for HTTP Basic auth in subsequent requests
         localStorage.setItem("password", password);
