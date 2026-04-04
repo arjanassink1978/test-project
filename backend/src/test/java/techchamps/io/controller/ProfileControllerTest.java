@@ -6,6 +6,7 @@ import techchamps.io.config.SecurityConfig;
 import techchamps.io.dto.request.UpdateProfileRequest;
 import techchamps.io.dto.response.AvatarUploadResponse;
 import techchamps.io.dto.response.ProfileResponse;
+import techchamps.io.security.JwtAuthenticationFilter;
 import techchamps.io.service.ProfileService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,11 @@ class ProfileControllerTest {
             return username -> {
                 throw new UsernameNotFoundException("No users in test context");
             };
+        }
+
+        @Bean
+        JwtAuthenticationFilter jwtAuthenticationFilter(UserDetailsService userDetailsService) {
+            return new JwtAuthenticationFilter("test-secret-key-that-is-at-least-32-bytes-long!", userDetailsService);
         }
     }
 

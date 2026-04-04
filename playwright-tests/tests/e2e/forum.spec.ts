@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { ForumPage } from "./pages/ForumPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
-import { loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
+import { setupDefaultUserAuth, loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
+import { createThreadViaApi, createReplyViaApi } from "./fixtures/forum";
 import { API_BASE } from "./config";
 
 // -------------------------------------------------------------------------
@@ -10,7 +11,8 @@ import { API_BASE } from "./config";
 
 test.describe("Thread creation flow", () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
+    await setupDefaultUserAuth(page);
+    await page.goto("/forum");
   });
 
   test("navigates from forum index to new-thread form and creates a thread", async ({ page }) => {
@@ -71,7 +73,8 @@ test.describe("Thread creation flow", () => {
 
 test.describe("Thread title constraint flow", () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
+    await setupDefaultUserAuth(page);
+    await page.goto("/forum/new");
   });
 
   test("title over 200 chars — submit blocked or error shown", async ({ page }) => {
@@ -111,24 +114,12 @@ test.describe("Thread reply flow", () => {
   let threadId: number;
 
   test.beforeEach(async ({ page }) => {
-    // Create a fresh thread for each reply test
-    await loginAsDefaultUser(page);
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
-
-    const title = `Reply Flow Thread ${Date.now()}`;
-    await page.getByTestId("thread-title-input").fill(title);
-    await page.getByTestId("thread-desc-input").fill("Thread for reply flow testing");
-    await page.getByTestId("thread-submit-button").click();
-
-    await page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    const url = page.url();
-    const match = url.match(/\/forum\/threads\/(\d+)/);
-    if (!match) throw new Error("Could not extract thread ID from URL");
-    threadId = Number(match[1]);
+    await setupDefaultUserAuth(page);
+    threadId = await createThreadViaApi(
+      `Reply Flow Thread ${Date.now()}`,
+      "Thread for reply flow testing",
+      DEFAULT_USER
+    );
   });
 
   test("adds a reply and it appears in the replies section", async ({ page }) => {
@@ -156,39 +147,19 @@ test.describe("Nested reply flow", () => {
   let parentReplyId: number;
 
   test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
+    await setupDefaultUserAuth(page);
 
-    // Create thread
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
+    threadId = await createThreadViaApi(
+      `Nesting Flow Thread ${Date.now()}`,
+      "Thread for nesting flow testing",
+      DEFAULT_USER
+    );
 
-    const title = `Nesting Flow Thread ${Date.now()}`;
-    await page.getByTestId("thread-title-input").fill(title);
-    await page.getByTestId("thread-desc-input").fill("Thread for nesting flow testing");
-    await page.getByTestId("thread-submit-button").click();
-
-    await page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    const url = page.url();
-    const match = url.match(/\/forum\/threads\/(\d+)/);
-    if (!match) throw new Error("Could not extract thread ID from URL");
-    threadId = Number(match[1]);
-
-    // Add a top-level reply
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.waitForLoad();
-    await detailPage.getReplyContentInput().fill(`Parent reply ${Date.now()}`);
-    await detailPage.getReplySubmitButton().click();
-
-    await page.waitForSelector('[data-testid^="reply-item-"]', { timeout: 10000 });
-    const parentTestId = await page
-      .locator('[data-testid^="reply-item-"]')
-      .first()
-      .getAttribute("data-testid");
-    if (!parentTestId) throw new Error("Could not find parent reply item");
-    parentReplyId = Number(parentTestId.replace("reply-item-", ""));
+    parentReplyId = await createReplyViaApi(
+      threadId,
+      `Parent reply ${Date.now()}`,
+      DEFAULT_USER
+    );
   });
 
   test("nested reply appears inside parent reply after posting", async ({ page }) => {

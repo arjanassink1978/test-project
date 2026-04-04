@@ -9,7 +9,7 @@ export const DEFAULT_USER = {
 
 /**
  * Sets up authentication by calling /api/auth/login with JSON credentials.
- * Stores the auth token in localStorage and sets Authorization header for API calls.
+ * Stores both 'authToken' and 'username' in localStorage for frontend access.
  */
 export async function setupAuthViaAPI(page: Page, credentials: { username: string; password: string }): Promise<void> {
   const response = await fetch(`${API_BASE}/api/auth/login`, {
@@ -27,22 +27,18 @@ export async function setupAuthViaAPI(page: Page, credentials: { username: strin
     throw new Error(`Auth setup failed: ${response.status}`);
   }
 
-  const data = await response.json() as { token?: string };
+  const data = await response.json() as { token?: string; username?: string; role?: string };
   const token = data.token;
 
   if (!token) {
     throw new Error("No token returned from auth API");
   }
 
-  // Store token in localStorage for frontend access
-  await page.evaluate((t) => {
+  await page.evaluate(({ t, u, r }) => {
     localStorage.setItem("authToken", t);
-  }, token);
-
-  // Set Authorization header for API calls
-  await page.setExtraHTTPHeaders({
-    "Authorization": `Bearer ${token}`,
-  });
+    if (u) localStorage.setItem("username", u);
+    if (r) localStorage.setItem("role", r);
+  }, { t: token, u: data.username ?? credentials.username, r: data.role ?? "" });
 }
 
 /**
@@ -55,7 +51,6 @@ export async function setupAuthViaAPI(page: Page, credentials: { username: strin
 export async function loginAsDefaultUser(page: Page): Promise<void> {
   const loginPage = new LoginPage(page);
   await loginPage.login(DEFAULT_USER.username, DEFAULT_USER.password);
-  // Wait for redirect to dashboard
   await page.waitForURL(/\/dashboard/, { timeout: 10000 });
 }
 

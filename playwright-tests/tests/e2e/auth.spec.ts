@@ -170,13 +170,17 @@ test.describe("Registration — error edge cases", () => {
 
 test.describe("Logout flow — dashboard", () => {
   test("logout button on dashboard clears session and redirects to home/login", async ({ page }) => {
-    // Log in first
+    // Log in first (test the actual UI flow for auth feature)
     const loginPage = new LoginPage(page);
     await loginPage.login(DEFAULT_USER.username, DEFAULT_USER.password);
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
 
-    // Click logout
+    // Navigate to dashboard to ensure it's fully loaded
+    await page.goto("/dashboard");
     const dashboardPage = new DashboardPage(page);
+    await dashboardPage.waitForLoad();
+
+    // Click logout
     await dashboardPage.clickLogout();
 
     // Should land on home or login

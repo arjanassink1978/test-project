@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { LoginPage } from "./pages/LoginPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
+import { LoginPage } from "./pages/LoginPage";
 import { API_BASE } from "./config";
 
 const SEEDED_USERS = {
@@ -18,18 +18,31 @@ async function loginAs(
   await page.waitForURL(/\/dashboard/, { timeout: 10000 });
 }
 
+async function fetchBearerToken(credentials: {
+  username: string;
+  password: string;
+}): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: credentials.username, password: credentials.password }),
+  });
+  if (!res.ok) throw new Error(`Failed to authenticate: ${res.status}`);
+  const data = (await res.json()) as { token?: string };
+  if (!data.token) throw new Error("No token returned from auth API");
+  return data.token;
+}
+
 async function createThreadViaApi(credentials: {
   username: string;
   password: string;
 }): Promise<number> {
-  const basicAuth = Buffer.from(
-    `${credentials.username}:${credentials.password}`
-  ).toString("base64");
+  const token = await fetchBearerToken(credentials);
   const res = await fetch(`${API_BASE}/api/forum/threads`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Basic ${basicAuth}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       title: `Thread Detail E2E Test ${Date.now()}`,
