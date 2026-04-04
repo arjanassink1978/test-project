@@ -476,6 +476,9 @@ jobs:
     needs: [ generate-report, test-summary ]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && always()
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       contents: read
       pages: write
