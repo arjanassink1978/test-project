@@ -375,7 +375,7 @@ jobs:
           retention-days: 30
 
   generate-report:
-    needs: [ test-backend, test-restassured, test-e2e-docker, mutation-testing ]
+    needs: [ test-backend, test-restassured, test-e2e-docker ]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -388,6 +388,7 @@ jobs:
 
       - name: Download test results
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           path: .
 
@@ -411,13 +412,14 @@ jobs:
 
   test-summary:
     if: always()
-    needs: [ test-backend, test-restassured, test-frontend, test-e2e-docker, mutation-testing ]
+    needs: [ test-backend, test-restassured, test-frontend, test-e2e-docker ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Download mutation results
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: mutation-results
           path: mutation-reports
