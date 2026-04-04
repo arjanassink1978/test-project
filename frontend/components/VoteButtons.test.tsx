@@ -45,22 +45,58 @@ describe("VoteButtons", () => {
     expect(screen.getByTestId("vote-score")).toHaveClass("text-red-600");
   });
 
-  it("calls onVote(1) when upvote button clicked", () => {
+  it("calls onVote(1) when upvote button clicked with userVote=0", () => {
     const onVote = jest.fn();
-    render(<VoteButtons {...defaultProps} onVote={onVote} />);
+    render(<VoteButtons {...defaultProps} onVote={onVote} userVote={0} />);
 
     fireEvent.click(screen.getByTestId("upvote-button"));
 
     expect(onVote).toHaveBeenCalledWith(1);
   });
 
-  it("calls onVote(-1) when downvote button clicked", () => {
+  it("calls onVote(-1) when downvote button clicked with userVote=0", () => {
     const onVote = jest.fn();
-    render(<VoteButtons {...defaultProps} onVote={onVote} />);
+    render(<VoteButtons {...defaultProps} onVote={onVote} userVote={0} />);
 
     fireEvent.click(screen.getByTestId("downvote-button"));
 
     expect(onVote).toHaveBeenCalledWith(-1);
+  });
+
+  it("calls onVote(0) when upvote clicked and userVote=1 (cancel same)", () => {
+    const onVote = jest.fn();
+    render(<VoteButtons {...defaultProps} onVote={onVote} userVote={1} />);
+
+    fireEvent.click(screen.getByTestId("upvote-button"));
+
+    expect(onVote).toHaveBeenCalledWith(0);
+  });
+
+  it("calls onVote(0) when downvote clicked and userVote=-1 (cancel same)", () => {
+    const onVote = jest.fn();
+    render(<VoteButtons {...defaultProps} onVote={onVote} userVote={-1} />);
+
+    fireEvent.click(screen.getByTestId("downvote-button"));
+
+    expect(onVote).toHaveBeenCalledWith(0);
+  });
+
+  it("calls onVote(0) when downvote clicked and userVote=1 (cancel opposite)", () => {
+    const onVote = jest.fn();
+    render(<VoteButtons {...defaultProps} onVote={onVote} userVote={1} />);
+
+    fireEvent.click(screen.getByTestId("downvote-button"));
+
+    expect(onVote).toHaveBeenCalledWith(0);
+  });
+
+  it("calls onVote(0) when upvote clicked and userVote=-1 (cancel opposite)", () => {
+    const onVote = jest.fn();
+    render(<VoteButtons {...defaultProps} onVote={onVote} userVote={-1} />);
+
+    fireEvent.click(screen.getByTestId("upvote-button"));
+
+    expect(onVote).toHaveBeenCalledWith(0);
   });
 
   it("disables both buttons when disabled prop is true", () => {
