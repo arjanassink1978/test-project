@@ -35,15 +35,15 @@ export const colors = {
     focusRing: "focus:ring-emerald-500",
   },
 
-  // Secondary: Warm Gray (UI elements, borders, subtle accents)
+  // Secondary: Green accent colors (UI elements, borders, subtle accents)
   warmGray: {
-    50: "bg-amber-50",
-    100: "bg-amber-100",
-    200: "bg-amber-200",
-    300: "bg-amber-300",
-    text500: "text-amber-600",
-    border200: "border-amber-200",
-    border300: "border-amber-300",
+    50: "bg-green-50",
+    100: "bg-green-100",
+    200: "bg-green-200",
+    300: "bg-green-300",
+    text500: "text-green-600",
+    border200: "border-green-200",
+    border300: "border-green-300",
   },
 
   // Neutral: Cool Grays for text & hierarchy
@@ -172,10 +172,10 @@ export const borders = {
   inputBorderDefault: "border border-gray-300",
   inputBorderError: "border border-red-300",
 
-  // Card styling - warm gray borders
-  cardRing: "border border-amber-200",
-  avatarRing: "ring-2 ring-amber-200",
-  navRing: "border-b border-amber-200",
+  // Card styling - green borders
+  cardRing: "border border-green-200",
+  avatarRing: "ring-2 ring-green-200",
+  navRing: "border-b border-green-200",
 
   // Nesting border for threaded replies
   nestedReply: "border-l-2 border-gray-200",
@@ -228,17 +228,17 @@ export const alert = {
   base: "rounded-md border px-3 py-2 text-sm font-medium",
   error: "rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm font-medium text-red-700",
   success: "rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm font-medium text-green-700",
-  info: "rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm font-medium text-amber-700",
+  info: "rounded-md bg-green-50 border border-green-200 px-3 py-2 text-sm font-medium text-green-700",
 } as const;
 
 /**
  * Card - clean panel with warm gray borders
  */
 export const card = {
-  base: "bg-white border border-amber-200 rounded-lg",
-  padded: "bg-white border border-amber-200 rounded-lg px-4 py-4",
-  paddedLg: "bg-white border border-amber-200 rounded-lg px-6 py-6",
-  interactive: "bg-white border border-amber-200 rounded-lg hover:border-amber-300 hover:shadow-sm transition-all duration-150",
+  base: "bg-white border border-green-200 rounded-lg",
+  padded: "bg-white border border-green-200 rounded-lg px-4 py-4",
+  paddedLg: "bg-white border border-green-200 rounded-lg px-6 py-6",
+  interactive: "bg-white border border-green-200 rounded-lg hover:border-green-300 hover:shadow-sm transition-all duration-150",
 } as const;
 
 /**
@@ -288,9 +288,9 @@ export const button = {
   compactSecondary:
     "inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors",
 
-  // Secondary - nav variant
+  // Secondary - nav variant (logout button)
   secondaryNav:
-    "inline-flex items-center justify-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors",
+    "inline-flex items-center justify-center gap-2 rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors",
 
   // Danger - red
   danger:
@@ -313,7 +313,7 @@ export const button = {
  * Navigation bar
  */
 export const nav = {
-  bar: "w-full bg-white border-b border-amber-200 sticky top-0 z-40",
+  bar: "w-full bg-white border-b border-green-200 sticky top-0 z-40",
   inner: "mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 md:px-6 md:py-4",
 } as const;
 
@@ -337,8 +337,8 @@ export const link = {
  */
 export const avatar = {
   image: "h-10 w-10 rounded-md object-cover bg-gray-100",
-  placeholder: "flex h-10 w-10 items-center justify-center rounded-md bg-amber-100",
-  initial: "text-xs font-bold text-amber-700",
+  placeholder: "flex h-10 w-10 items-center justify-center rounded-md bg-green-100",
+  initial: "text-xs font-bold text-green-700",
   // Small round avatar used in reply headers
   replyAvatar: "flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-600",
 } as const;
