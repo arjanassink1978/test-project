@@ -45,6 +45,20 @@ def parse_junit_reports():
             except:
                 pass
 
+    # Frontend Jest tests (artifacts downloaded as frontend-test-results/)
+    junit_path = "frontend-test-results"
+    if os.path.exists(junit_path):
+        for file in Path(junit_path).glob("*.xml"):
+            try:
+                tree = ET.parse(file)
+                root = tree.getroot()
+                test_results["frontend"]["passed"] += int(root.get("tests", 0)) - int(root.get("failures", 0)) - int(root.get("skipped", 0))
+                test_results["frontend"]["failed"] += int(root.get("failures", 0))
+                test_results["frontend"]["skipped"] += int(root.get("skipped", 0))
+                test_results["frontend"]["time"] += float(root.get("time", 0))
+            except:
+                pass
+
     # Playwright E2E tests (read from test-results/report.json if available)
     playwright_report_path = "playwright-test-results/report.json"
     if os.path.exists(playwright_report_path):
