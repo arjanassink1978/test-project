@@ -1,6 +1,7 @@
 package techchamps.io;
 
 import techchamps.io.builder.LoginRequestBuilder;
+import techchamps.io.dto.response.LoginResponse;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -24,7 +24,7 @@ class SecurityConfigIT extends BaseIntegrationTest {
 
     @BeforeEach
     void seedUserMustBeAvailable() {
-        given()
+        LoginResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().build())
@@ -32,7 +32,9 @@ class SecurityConfigIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true));
+            .extract().as(LoginResponse.class);
+
+        assertThat(response.isSuccess()).isTrue();
     }
 
     // ---------------------------------------------------------------
@@ -43,7 +45,7 @@ class SecurityConfigIT extends BaseIntegrationTest {
     @Order(1)
     @DisplayName("DataInitializer: login met user/user1234 slaagt → seed-data is aangemaakt")
     void dataInitializer_seedUserExists_loginSucceeds() {
-        given()
+        LoginResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().build())
@@ -51,8 +53,10 @@ class SecurityConfigIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true))
-            .body("message", equalTo("Login successful"));
+            .extract().as(LoginResponse.class);
+
+        assertThat(response.isSuccess()).isTrue();
+        assertThat(response.getMessage()).isEqualTo("Login successful");
     }
 
     @Test
@@ -60,7 +64,7 @@ class SecurityConfigIT extends BaseIntegrationTest {
     @DisplayName("DataInitializer: twee keer inloggen slaagt → duplicate-user-check voorkomt fout")
     void dataInitializer_loginTwice_bothSucceed() {
         // Eerste login
-        given()
+        LoginResponse firstLogin = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().build())
@@ -68,10 +72,12 @@ class SecurityConfigIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true));
+            .extract().as(LoginResponse.class);
+
+        assertThat(firstLogin.isSuccess()).isTrue();
 
         // Tweede login — DataInitializer mag user niet opnieuw aanmaken (duplicate-check)
-        given()
+        LoginResponse secondLogin = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().build())
@@ -79,7 +85,9 @@ class SecurityConfigIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true));
+            .extract().as(LoginResponse.class);
+
+        assertThat(secondLogin.isSuccess()).isTrue();
     }
 
     // ---------------------------------------------------------------
@@ -90,7 +98,7 @@ class SecurityConfigIT extends BaseIntegrationTest {
     @Order(3)
     @DisplayName("PasswordEncoder: login met correct plaintext wachtwoord → 200 (BCrypt actief)")
     void passwordEncoder_correctPassword_returns200() {
-        given()
+        LoginResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().password("user1234").build())
@@ -98,14 +106,16 @@ class SecurityConfigIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true));
+            .extract().as(LoginResponse.class);
+
+        assertThat(response.isSuccess()).isTrue();
     }
 
     @Test
     @Order(4)
     @DisplayName("PasswordEncoder: login met verkeerd wachtwoord → 401 (BCrypt-check actief)")
     void passwordEncoder_wrongPassword_returns401() {
-        given()
+        LoginResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().password("verkeerDWachtwoord").build())
@@ -113,7 +123,9 @@ class SecurityConfigIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(401)
-            .body("success", equalTo(false));
+            .extract().as(LoginResponse.class);
+
+        assertThat(response.isSuccess()).isFalse();
     }
 
     // ---------------------------------------------------------------
@@ -149,7 +161,7 @@ class SecurityConfigIT extends BaseIntegrationTest {
         // DatabaseUserDetailsService maakt authority "ROLE_" + getRole().
         // Als getRole() "" of null teruggeeft wordt de authority "ROLE_" of faalt de opbouw,
         // waardoor authenticatie mislukt. Slagen van login bevestigt dat getRole() "USER" retourneert.
-        Response response = given()
+        LoginResponse loginResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().build())
@@ -157,9 +169,10 @@ class SecurityConfigIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true))
-            .body("message", equalTo("Login successful"))
-            .extract().response();
+            .extract().as(LoginResponse.class);
+
+        assertThat(loginResponse.isSuccess()).isTrue();
+        assertThat(loginResponse.getMessage()).isEqualTo("Login successful");
 
         // Aanvullende assertie: beveiligd endpoint is bereikbaar na succesvolle login
         // (dit bevestigt dat de authority ROLE_USER correct is opgebouwd).
@@ -176,10 +189,5 @@ class SecurityConfigIT extends BaseIntegrationTest {
         assertThat(protectedStatus)
                 .as("Beveiligd endpoint zonder token geeft 401 of 403")
                 .isIn(401, 403);
-
-        // De login zelf is gelukt → getRole() heeft een niet-lege waarde teruggegeven
-        assertThat(response.path("success").toString())
-                .as("Login success moet true zijn zodat getRole() bevestigend werkt")
-                .isEqualTo("true");
     }
 }

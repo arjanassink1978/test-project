@@ -2,6 +2,7 @@ package techchamps.io;
 
 import techchamps.io.builder.LoginRequestBuilder;
 import techchamps.io.dto.request.LoginRequest;
+import techchamps.io.dto.response.LoginResponse;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -10,9 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("POST /api/auth/login")
@@ -28,7 +27,7 @@ class AuthControllerIT extends BaseIntegrationTest {
     void login_happyPath_returns200AndSuccessTrue() {
         LoginRequest request = new LoginRequestBuilder().build();
 
-        given()
+        LoginResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(request)
@@ -36,9 +35,11 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true))
-            .body("message", notNullValue())
-            .body("username", equalTo("user"));
+            .extract().as(LoginResponse.class);
+
+        assertThat(response.isSuccess()).isTrue();
+        assertThat(response.getMessage()).isNotNull();
+        assertThat(response.getUsername()).isEqualTo("user");
     }
 
     @Test
@@ -47,7 +48,7 @@ class AuthControllerIT extends BaseIntegrationTest {
     void login_happyPath_responseMessageIsLoginSuccessful() {
         LoginRequest request = new LoginRequestBuilder().build();
 
-        given()
+        LoginResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(request)
@@ -55,8 +56,10 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("message", equalTo("Login successful"))
-            .body("username", equalTo("user"));
+            .extract().as(LoginResponse.class);
+
+        assertThat(response.getMessage()).isEqualTo("Login successful");
+        assertThat(response.getUsername()).isEqualTo("user");
     }
 
     @Test
@@ -65,7 +68,7 @@ class AuthControllerIT extends BaseIntegrationTest {
     void login_happyPath_returnsNonNullToken() {
         LoginRequest request = new LoginRequestBuilder().build();
 
-        given()
+        LoginResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(request)
@@ -73,7 +76,9 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("token", notNullValue());
+            .extract().as(LoginResponse.class);
+
+        assertThat(response.getToken()).isNotNull();
     }
 
     // ---------------------------------------------------------------
@@ -88,7 +93,7 @@ class AuthControllerIT extends BaseIntegrationTest {
                 .password("foutWachtwoord")
                 .build();
 
-        given()
+        LoginResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(request)
@@ -96,8 +101,10 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(401)
-            .body("success", equalTo(false))
-            .body("username", nullValue());
+            .extract().as(LoginResponse.class);
+
+        assertThat(response.isSuccess()).isFalse();
+        assertThat(response.getUsername()).isNull();
     }
 
     @Test
@@ -165,7 +172,7 @@ class AuthControllerIT extends BaseIntegrationTest {
     void loginFlow_successfulLoginCanBeRepeated() {
         LoginRequest request = new LoginRequestBuilder().build();
 
-        String message = given()
+        LoginResponse firstResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(request)
@@ -173,11 +180,12 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true))
-            .extract()
-            .path("message");
+            .extract().as(LoginResponse.class);
 
-        given()
+        assertThat(firstResponse.isSuccess()).isTrue();
+        String message = firstResponse.getMessage();
+
+        LoginResponse secondResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().build())
@@ -185,15 +193,17 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true))
-            .body("message", equalTo(message));
+            .extract().as(LoginResponse.class);
+
+        assertThat(secondResponse.isSuccess()).isTrue();
+        assertThat(secondResponse.getMessage()).isEqualTo(message);
     }
 
     @Test
     @Order(9)
     @DisplayName("Flow: mislukte login gevolgd door geldige login slaagt alsnog")
     void loginFlow_failedLoginFollowedByValidLogin_succeeds() {
-        given()
+        LoginResponse failedResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().password("verkeerd").build())
@@ -201,9 +211,11 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(401)
-            .body("success", equalTo(false));
+            .extract().as(LoginResponse.class);
 
-        given()
+        assertThat(failedResponse.isSuccess()).isFalse();
+
+        LoginResponse successResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().build())
@@ -211,6 +223,8 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true));
+            .extract().as(LoginResponse.class);
+
+        assertThat(successResponse.isSuccess()).isTrue();
     }
 }
