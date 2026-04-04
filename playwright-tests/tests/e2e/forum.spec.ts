@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { ForumPage } from "./pages/ForumPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
-import { loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
+import { setupDefaultUserAuth, loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
+import { createThreadViaApi, createReplyViaApi } from "./fixtures/forum";
 import { API_BASE } from "./config";
 
 // -------------------------------------------------------------------------
@@ -10,7 +11,8 @@ import { API_BASE } from "./config";
 
 test.describe("Thread creation flow", () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
+    await setupDefaultUserAuth(page);
+    await page.goto("/forum");
   });
 
   test("navigates from forum index to new-thread form and creates a thread", async ({ page }) => {
@@ -71,7 +73,8 @@ test.describe("Thread creation flow", () => {
 
 test.describe("Thread title constraint flow", () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
+    await setupDefaultUserAuth(page);
+    await page.goto("/forum/new");
   });
 
   test("title over 200 chars — submit blocked or error shown", async ({ page }) => {
@@ -111,24 +114,12 @@ test.describe("Thread reply flow", () => {
   let threadId: number;
 
   test.beforeEach(async ({ page }) => {
-    // Create a fresh thread for each reply test
-    await loginAsDefaultUser(page);
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
-
-    const title = `Reply Flow Thread ${Date.now()}`;
-    await page.getByTestId("thread-title-input").fill(title);
-    await page.getByTestId("thread-desc-input").fill("Thread for reply flow testing");
-    await page.getByTestId("thread-submit-button").click();
-
-    await page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    const url = page.url();
-    const match = url.match(/\/forum\/threads\/(\d+)/);
-    if (!match) throw new Error("Could not extract thread ID from URL");
-    threadId = Number(match[1]);
+    await setupDefaultUserAuth(page);
+    threadId = await createThreadViaApi(
+      `Reply Flow Thread ${Date.now()}`,
+      "Thread for reply flow testing",
+      DEFAULT_USER
+    );
   });
 
   test("adds a reply and it appears in the replies section", async ({ page }) => {
@@ -156,39 +147,19 @@ test.describe("Nested reply flow", () => {
   let parentReplyId: number;
 
   test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
+    await setupDefaultUserAuth(page);
 
-    // Create thread
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
+    threadId = await createThreadViaApi(
+      `Nesting Flow Thread ${Date.now()}`,
+      "Thread for nesting flow testing",
+      DEFAULT_USER
+    );
 
-    const title = `Nesting Flow Thread ${Date.now()}`;
-    await page.getByTestId("thread-title-input").fill(title);
-    await page.getByTestId("thread-desc-input").fill("Thread for nesting flow testing");
-    await page.getByTestId("thread-submit-button").click();
-
-    await page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    const url = page.url();
-    const match = url.match(/\/forum\/threads\/(\d+)/);
-    if (!match) throw new Error("Could not extract thread ID from URL");
-    threadId = Number(match[1]);
-
-    // Add a top-level reply
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.waitForLoad();
-    await detailPage.getReplyContentInput().fill(`Parent reply ${Date.now()}`);
-    await detailPage.getReplySubmitButton().click();
-
-    await page.waitForSelector('[data-testid^="reply-item-"]', { timeout: 10000 });
-    const parentTestId = await page
-      .locator('[data-testid^="reply-item-"]')
-      .first()
-      .getAttribute("data-testid");
-    if (!parentTestId) throw new Error("Could not find parent reply item");
-    parentReplyId = Number(parentTestId.replace("reply-item-", ""));
+    parentReplyId = await createReplyViaApi(
+      threadId,
+      `Parent reply ${Date.now()}`,
+      DEFAULT_USER
+    );
   });
 
   test("nested reply appears inside parent reply after posting", async ({ page }) => {
@@ -482,427 +453,6 @@ test.describe("Forum delete thread flow", () => {
     await expect(
       forumPage.getThreadItem(threadId)
     ).toHaveCount(0, { timeout: 5000 });
-  });
-});
-
-// -------------------------------------------------------------------------
-// Forum layout redesign — vote badge
-// -------------------------------------------------------------------------
-
-test.describe("Forum layout redesign — vote badge", () => {
-  let threadId: number;
-  let replyId: number;
-
-  test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
-
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
-
-    const title = `Vote Badge Test ${Date.now()}`;
-    await page.getByTestId("thread-title-input").fill(title);
-    await page.getByTestId("thread-desc-input").fill("Vote badge layout test");
-    await page.getByTestId("thread-submit-button").click();
-
-    await page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    const url = page.url();
-    const match = url.match(/\/forum\/threads\/(\d+)/);
-    if (!match) throw new Error("Could not extract thread ID from URL");
-    threadId = Number(match[1]);
-
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.waitForLoad();
-    const replyContent = `Badge reply ${Date.now()}`;
-    await detailPage.getReplyContentInput().fill(replyContent);
-    await detailPage.getReplySubmitButton().click();
-
-    await page.waitForSelector('[data-testid^="reply-item-"]', { timeout: 10000 });
-    const replyTestId = await page
-      .locator('[data-testid^="reply-item-"]')
-      .first()
-      .getAttribute("data-testid");
-    if (!replyTestId) throw new Error("Could not find reply item");
-    replyId = Number(replyTestId.replace("reply-item-", ""));
-  });
-
-  test("upvote-button and vote-score are visible on a reply", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    await expect(detailPage.getReplyVoteBadge(replyId)).toBeVisible();
-    await expect(detailPage.getReplyUpvoteButton(replyId)).toBeVisible();
-    await expect(detailPage.getReplyVoteScore(replyId)).toBeVisible();
-  });
-
-  test("vote badge is inside the reply header row (top-right position)", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const replyItem = detailPage.getReplyItem(replyId);
-    await expect(replyItem).toBeVisible();
-
-    const badge = detailPage.getReplyVoteBadge(replyId);
-    const authorRow = detailPage.getReplyAuthorRow(replyId);
-    await expect(badge).toBeVisible();
-    await expect(authorRow).toBeVisible();
-
-    const badgeBox = await badge.boundingBox();
-    const authorBox = await authorRow.boundingBox();
-    if (!badgeBox || !authorBox) throw new Error("Could not get bounding boxes");
-
-    expect(badgeBox.x).toBeGreaterThan(authorBox.x);
-  });
-
-  test("clicking upvote-button on a reply increments the vote-score", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const initialScore = await detailPage.getReplyVoteScoreValue(replyId);
-
-    await detailPage.getReplyUpvoteButton(replyId).click();
-
-    await expect(detailPage.getReplyVoteScore(replyId)).not.toHaveText(
-      String(initialScore),
-      { timeout: 5000 }
-    );
-    const updatedScore = await detailPage.getReplyVoteScoreValue(replyId);
-    expect(updatedScore).toBe(initialScore + 1);
-  });
-});
-
-// -------------------------------------------------------------------------
-// Forum layout redesign — reply header
-// -------------------------------------------------------------------------
-
-test.describe("Forum layout redesign — reply header", () => {
-  let threadId: number;
-  let replyId: number;
-
-  test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
-
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
-
-    const title = `Reply Header Test ${Date.now()}`;
-    await page.getByTestId("thread-title-input").fill(title);
-    await page.getByTestId("thread-desc-input").fill("Reply header layout test");
-    await page.getByTestId("thread-submit-button").click();
-
-    await page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    const url = page.url();
-    const match = url.match(/\/forum\/threads\/(\d+)/);
-    if (!match) throw new Error("Could not extract thread ID from URL");
-    threadId = Number(match[1]);
-
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.waitForLoad();
-    await detailPage.getReplyContentInput().fill(`Header reply ${Date.now()}`);
-    await detailPage.getReplySubmitButton().click();
-
-    await page.waitForSelector('[data-testid^="reply-item-"]', { timeout: 10000 });
-    const replyTestId = await page
-      .locator('[data-testid^="reply-item-"]')
-      .first()
-      .getAttribute("data-testid");
-    if (!replyTestId) throw new Error("Could not find reply item");
-    replyId = Number(replyTestId.replace("reply-item-", ""));
-  });
-
-  test("reply-author-{id} shows the author username inline", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const authorRow = detailPage.getReplyAuthorRow(replyId);
-    await expect(authorRow).toBeVisible();
-    await expect(authorRow).toContainText(DEFAULT_USER.username);
-  });
-
-  test("reply author row contains depth indicator text", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const authorRow = detailPage.getReplyAuthorRow(replyId);
-    await expect(authorRow).toContainText("depth");
-  });
-});
-
-// -------------------------------------------------------------------------
-// Forum layout redesign — nesting left-border
-// -------------------------------------------------------------------------
-
-test.describe("Forum layout redesign — nesting left-border", () => {
-  let threadId: number;
-  let parentReplyId: number;
-  let childReplyId: number;
-
-  test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
-
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
-
-    const title = `Nesting Test ${Date.now()}`;
-    await page.getByTestId("thread-title-input").fill(title);
-    await page.getByTestId("thread-desc-input").fill("Nesting visual test");
-    await page.getByTestId("thread-submit-button").click();
-
-    await page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    const url = page.url();
-    const match = url.match(/\/forum\/threads\/(\d+)/);
-    if (!match) throw new Error("Could not extract thread ID from URL");
-    threadId = Number(match[1]);
-
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.waitForLoad();
-    await detailPage.getReplyContentInput().fill(`Parent reply ${Date.now()}`);
-    await detailPage.getReplySubmitButton().click();
-
-    await page.waitForSelector('[data-testid^="reply-item-"]', { timeout: 10000 });
-    const parentTestId = await page
-      .locator('[data-testid^="reply-item-"]')
-      .first()
-      .getAttribute("data-testid");
-    if (!parentTestId) throw new Error("Could not find parent reply item");
-    parentReplyId = Number(parentTestId.replace("reply-item-", ""));
-
-    const replyToggle = detailPage.getReplyToggle(parentReplyId);
-    await replyToggle.click();
-
-    const nestedForm = page
-      .getByTestId(`reply-item-${parentReplyId}`)
-      .getByTestId("reply-content-input");
-    await nestedForm.waitFor({ state: "visible", timeout: 5000 });
-    await nestedForm.fill(`Nested reply ${Date.now()}`);
-
-    await page
-      .getByTestId(`reply-item-${parentReplyId}`)
-      .getByTestId("reply-submit-button")
-      .or(
-        page
-          .getByTestId(`reply-item-${parentReplyId}`)
-          .getByRole("button", { name: /post reply/i })
-      )
-      .click();
-
-    await page.waitForTimeout(2000);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const childItems = await page
-      .getByTestId(`reply-item-${parentReplyId}`)
-      .locator('[data-testid^="reply-item-"]')
-      .all();
-    if (childItems.length === 0) throw new Error("No nested reply found");
-    const childTestId = await childItems[0].getAttribute("data-testid");
-    if (!childTestId) throw new Error("Could not get child reply testid");
-    childReplyId = Number(childTestId.replace("reply-item-", ""));
-  });
-
-  test("nested reply (depth > 0) has left-border class applied", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const nestedReplyContainer = page
-      .getByTestId(`reply-item-${childReplyId}`)
-      .locator(".border-l-2")
-      .first();
-
-    await expect(nestedReplyContainer).toBeVisible();
-  });
-
-  test("top-level reply does not have left-border class", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const topLevelItem = page.getByTestId(`reply-item-${parentReplyId}`);
-    await expect(topLevelItem).toBeVisible();
-
-    const borderElements = topLevelItem.locator(
-      ":scope > div.border-l-2"
-    );
-    await expect(borderElements).toHaveCount(0);
-  });
-});
-
-// -------------------------------------------------------------------------
-// Forum layout redesign — collapse toggle
-// -------------------------------------------------------------------------
-
-test.describe("Forum layout redesign — collapse toggle", () => {
-  let threadId: number;
-  let parentReplyId: number;
-  let childReplyId: number;
-
-  test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
-
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
-
-    const title = `Collapse Test ${Date.now()}`;
-    await page.getByTestId("thread-title-input").fill(title);
-    await page.getByTestId("thread-desc-input").fill("Collapse toggle test");
-    await page.getByTestId("thread-submit-button").click();
-
-    await page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    const url = page.url();
-    const match = url.match(/\/forum\/threads\/(\d+)/);
-    if (!match) throw new Error("Could not extract thread ID from URL");
-    threadId = Number(match[1]);
-
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.waitForLoad();
-    const parentContent = `Collapse parent ${Date.now()}`;
-    await detailPage.getReplyContentInput().fill(parentContent);
-    await detailPage.getReplySubmitButton().click();
-
-    await page.waitForSelector('[data-testid^="reply-item-"]', { timeout: 10000 });
-    const parentTestId = await page
-      .locator('[data-testid^="reply-item-"]')
-      .first()
-      .getAttribute("data-testid");
-    if (!parentTestId) throw new Error("Could not find parent reply item");
-    parentReplyId = Number(parentTestId.replace("reply-item-", ""));
-
-    const replyToggle = detailPage.getReplyToggle(parentReplyId);
-    await replyToggle.click();
-
-    const nestedForm = page
-      .getByTestId(`reply-item-${parentReplyId}`)
-      .getByTestId("reply-content-input");
-    await nestedForm.waitFor({ state: "visible", timeout: 5000 });
-    const childContent = `Collapse child ${Date.now()}`;
-    await nestedForm.fill(childContent);
-
-    await page
-      .getByTestId(`reply-item-${parentReplyId}`)
-      .getByTestId("reply-submit-button")
-      .or(
-        page
-          .getByTestId(`reply-item-${parentReplyId}`)
-          .getByRole("button", { name: /post reply/i })
-      )
-      .click();
-
-    await page.waitForTimeout(2000);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const childItems = await page
-      .getByTestId(`reply-item-${parentReplyId}`)
-      .locator('[data-testid^="reply-item-"]')
-      .all();
-    if (childItems.length === 0) throw new Error("No nested reply found after reload");
-    const childTestId = await childItems[0].getAttribute("data-testid");
-    if (!childTestId) throw new Error("Could not get child reply testid");
-    childReplyId = Number(childTestId.replace("reply-item-", ""));
-  });
-
-  test("collapse toggle button is visible on nested reply with children", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const childItem = page.getByTestId(`reply-item-${childReplyId}`);
-    await expect(childItem).toBeVisible();
-  });
-
-  test("reply-toggle-{id} button shows and hides the nested reply form", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const toggle = detailPage.getReplyToggle(parentReplyId);
-    await expect(toggle).toBeVisible();
-    await expect(toggle).toContainText("Reply");
-
-    await toggle.click();
-    await expect(toggle).toContainText("Cancel");
-
-    const nestedInput = page
-      .getByTestId(`reply-item-${parentReplyId}`)
-      .getByTestId("reply-content-input");
-    await expect(nestedInput).toBeVisible();
-
-    await toggle.click();
-    await expect(toggle).toContainText("Reply");
-    await expect(nestedInput).not.toBeVisible();
-  });
-
-  test("collapse toggle (–/+) collapses and expands child replies", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    // Add a grandchild reply so the child has children (makes the collapse toggle appear)
-    const childToggle = detailPage.getReplyToggle(childReplyId);
-    await childToggle.click();
-
-    const grandchildForm = page
-      .getByTestId(`reply-item-${childReplyId}`)
-      .getByTestId("reply-content-input");
-    await grandchildForm.waitFor({ state: "visible", timeout: 5000 });
-    await grandchildForm.fill(`Grandchild reply ${Date.now()}`);
-
-    await page
-      .getByTestId(`reply-item-${childReplyId}`)
-      .getByTestId("reply-submit-button")
-      .or(
-        page
-          .getByTestId(`reply-item-${childReplyId}`)
-          .getByRole("button", { name: /post reply/i })
-      )
-      .click();
-
-    await page.waitForTimeout(2000);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const grandchildItems = await page
-      .getByTestId(`reply-item-${childReplyId}`)
-      .locator('[data-testid^="reply-item-"]')
-      .all();
-    if (grandchildItems.length === 0) {
-      throw new Error("No grandchild reply found — collapse toggle test requires 3 levels");
-    }
-    const grandchildTestId = await grandchildItems[0].getAttribute("data-testid");
-    if (!grandchildTestId) throw new Error("Could not get grandchild reply testid");
-    const grandchildReplyId = Number(grandchildTestId.replace("reply-item-", ""));
-
-    const collapseBtn = detailPage.getCollapseToggle(childReplyId);
-    await expect(collapseBtn).toBeVisible();
-    await expect(collapseBtn).toHaveText("–");
-
-    const grandchildItem = page.getByTestId(`reply-item-${grandchildReplyId}`);
-    await expect(grandchildItem).toBeVisible();
-
-    await collapseBtn.click();
-    await expect(collapseBtn).toHaveText("+");
-    await expect(grandchildItem).not.toBeVisible();
-
-    await collapseBtn.click();
-    await expect(collapseBtn).toHaveText("–");
-    await expect(grandchildItem).toBeVisible();
   });
 });
 

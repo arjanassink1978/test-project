@@ -30,7 +30,7 @@ export default function NewThreadPage() {
     categoryId: number | null;
   }) {
     if (!username) return;
-    const password = localStorage.getItem("password") ?? "";
+    const token = localStorage.getItem("authToken") ?? "";
     setLoading(true);
     try {
       const thread = await createForumThread(
@@ -39,7 +39,7 @@ export default function NewThreadPage() {
           description: data.description || undefined,
           categoryId: data.categoryId ?? undefined,
         },
-        { username, password }
+        token
       );
       router.push(`/forum/threads/${thread.id}`);
     } finally {

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { LoginPage } from "./pages/LoginPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
+import { LoginPage } from "./pages/LoginPage";
 import { API_BASE } from "./config";
 
 const MODERATOR = { username: "moderator", password: "moderator1234" };
@@ -12,13 +12,25 @@ async function loginAs(page: import("@playwright/test").Page, creds: { username:
   await page.waitForURL(/\/dashboard/, { timeout: 10000 });
 }
 
+async function fetchBearerToken(credentials: { username: string; password: string }): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: credentials.username, password: credentials.password }),
+  });
+  if (!res.ok) throw new Error(`Failed to authenticate: ${res.status}`);
+  const data = await res.json() as { token?: string };
+  if (!data.token) throw new Error("No token returned from auth API");
+  return data.token;
+}
+
 async function createThreadViaApi(credentials: { username: string; password: string }): Promise<number> {
-  const basicAuth = Buffer.from(`${credentials.username}:${credentials.password}`).toString("base64");
+  const token = await fetchBearerToken(credentials);
   const res = await fetch(`${API_BASE}/api/forum/threads`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Basic ${basicAuth}`,
+      "Authorization": `Bearer ${token}`,
     },
     body: JSON.stringify({
       title: `RBAC E2E Test Thread ${Date.now()}`,
@@ -34,12 +46,12 @@ async function createReplyViaApi(
   threadId: number,
   credentials: { username: string; password: string }
 ): Promise<number> {
-  const basicAuth = Buffer.from(`${credentials.username}:${credentials.password}`).toString("base64");
+  const token = await fetchBearerToken(credentials);
   const res = await fetch(`${API_BASE}/api/forum/threads/${threadId}/replies`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Basic ${basicAuth}`,
+      "Authorization": `Bearer ${token}`,
     },
     body: JSON.stringify({ content: "E2E test reply content" }),
   });
@@ -120,11 +132,10 @@ test.describe("RBAC — Closed thread shows error for reply attempt", () => {
 
   test.beforeEach(async () => {
     threadId = await createThreadViaApi(USER);
-    // Close the thread via API
-    const basicAuth = Buffer.from(`${MODERATOR.username}:${MODERATOR.password}`).toString("base64");
+    const token = await fetchBearerToken(MODERATOR);
     await fetch(`${API_BASE}/api/forum/threads/${threadId}/close?closed=true`, {
       method: "POST",
-      headers: { "Authorization": `Basic ${basicAuth}` },
+      headers: { "Authorization": `Bearer ${token}` },
     });
   });
 

@@ -388,6 +388,7 @@ jobs:
 
       - name: Download test results
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           path: .
 
@@ -395,8 +396,8 @@ jobs:
         run: |
           # Copy Playwright test report metadata for the Python script
           mkdir -p playwright-test-results
-          if [ -f "playwright-report/report.json" ]; then
-            cp playwright-report/report.json playwright-test-results/report.json
+          if [ -f "playwright-report/playwright-tests/playwright-report/report.json" ]; then
+            cp playwright-report/playwright-tests/playwright-report/report.json playwright-test-results/report.json
           fi
 
       - name: Generate report
@@ -411,13 +412,14 @@ jobs:
 
   test-summary:
     if: always()
-    needs: [ test-backend, test-restassured, test-frontend, test-e2e-docker, mutation-testing ]
+    needs: [ test-backend, test-restassured, test-frontend, test-e2e-docker ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Download mutation results
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: mutation-results
           path: mutation-reports
@@ -474,13 +476,13 @@ jobs:
     needs: [ generate-report, test-summary ]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && always()
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       contents: read
       pages: write
       id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -628,6 +630,25 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
+
+      - name: Clean up old github-pages artifacts
+        run: |
+          # Delete any existing github-pages artifacts from this run to avoid conflicts
+          ARTIFACT_IDS=$(gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts \
+            --jq '.artifacts[] | select(.name=="github-pages") | .id' 2>/dev/null || echo "")
+
+          if [ ! -z "$ARTIFACT_IDS" ]; then
+            echo "Found github-pages artifacts, deleting: $ARTIFACT_IDS"
+            echo "$ARTIFACT_IDS" | while read artifact_id; do
+              echo "Deleting artifact $artifact_id..."
+              gh api repos/${{ github.repository }}/actions/artifacts/$artifact_id -X DELETE 2>/dev/null || true
+            done
+          else
+            echo "No existing github-pages artifacts found"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 
       - name: Upload to Pages
         uses: actions/upload-pages-artifact@v3

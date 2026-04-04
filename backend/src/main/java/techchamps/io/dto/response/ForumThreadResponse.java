@@ -1,5 +1,6 @@
 package techchamps.io.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
@@ -37,6 +38,7 @@ public class ForumThreadResponse {
     private int replyCount;
 
     @Schema(description = "Whether the thread is closed for new replies")
+    @JsonProperty("closed")
     private boolean isClosed;
 
     public ForumThreadResponse() {}

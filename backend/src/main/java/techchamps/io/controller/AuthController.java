@@ -7,6 +7,7 @@ import techchamps.io.dto.response.RegisterResponse;
 import techchamps.io.model.AppUser;
 import techchamps.io.model.Role;
 import techchamps.io.repository.AppUserRepository;
+import techchamps.io.security.JwtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -30,13 +31,16 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public AuthController(AuthenticationManager authenticationManager,
                           AppUserRepository appUserRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          JwtService jwtService) {
         this.authenticationManager = authenticationManager;
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/login")
@@ -56,12 +60,13 @@ public class AuthController {
                 )
             );
 
-            String role = appUserRepository.findByUsername(loginRequest.getUsername())
-                    .map(u -> u.getRole().name())
-                    .orElse(Role.USER.name());
+            AppUser user = appUserRepository.findByUsername(loginRequest.getUsername())
+                    .orElseThrow(() -> new BadCredentialsException("User not found"));
+
+            String token = jwtService.generateToken(user);
 
             return ResponseEntity.ok(new LoginResponse(true, "Login successful",
-                    loginRequest.getUsername(), role));
+                    user.getUsername(), user.getRole().name(), token));
 
         } catch (BadCredentialsException e) {
             return ResponseEntity

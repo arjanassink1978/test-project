@@ -17,8 +17,8 @@ def parse_junit_reports():
         "playwright": {"passed": 0, "failed": 0, "skipped": 0, "time": 0},
     }
 
-    # Backend tests
-    junit_path = "backend/target/surefire-reports"
+    # Backend tests (artifacts downloaded as backend-test-results/)
+    junit_path = "backend-test-results"
     if os.path.exists(junit_path):
         for file in Path(junit_path).glob("TEST-*.xml"):
             try:
@@ -31,8 +31,8 @@ def parse_junit_reports():
             except:
                 pass
 
-    # RestAssured tests
-    junit_path = "restassured-tests/target/surefire-reports"
+    # RestAssured tests (artifacts downloaded as restassured-test-results/)
+    junit_path = "restassured-test-results"
     if os.path.exists(junit_path):
         for file in Path(junit_path).glob("TEST-*.xml"):
             try:
@@ -42,6 +42,20 @@ def parse_junit_reports():
                 test_results["restassured"]["failed"] += int(root.get("failures", 0))
                 test_results["restassured"]["skipped"] += int(root.get("skipped", 0))
                 test_results["restassured"]["time"] += float(root.get("time", 0))
+            except:
+                pass
+
+    # Frontend Jest tests (artifacts downloaded as frontend-test-results/)
+    junit_path = "frontend-test-results"
+    if os.path.exists(junit_path):
+        for file in Path(junit_path).glob("*.xml"):
+            try:
+                tree = ET.parse(file)
+                root = tree.getroot()
+                test_results["frontend"]["passed"] += int(root.get("tests", 0)) - int(root.get("failures", 0)) - int(root.get("skipped", 0))
+                test_results["frontend"]["failed"] += int(root.get("failures", 0))
+                test_results["frontend"]["skipped"] += int(root.get("skipped", 0))
+                test_results["frontend"]["time"] += float(root.get("time", 0))
             except:
                 pass
 
@@ -69,7 +83,7 @@ def parse_mutation_reports():
     }
 
     # Backend mutations
-    pit_path = "backend/target/pit-reports/mutations.xml"
+    pit_path = "mutation-results/backend/target/pit-reports/mutations.xml"
     if os.path.exists(pit_path):
         try:
             tree = ET.parse(pit_path)
@@ -92,7 +106,7 @@ def parse_mutation_reports():
             pass
 
     # RestAssured mutations
-    pit_path = "restassured-tests/target/pit-reports/mutations.xml"
+    pit_path = "mutation-results/restassured-tests/target/pit-reports/mutations.xml"
     if os.path.exists(pit_path):
         try:
             tree = ET.parse(pit_path)

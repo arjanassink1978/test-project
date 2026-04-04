@@ -5,7 +5,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { ForumPage } from "./pages/ForumPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
 import { ProfilePage } from "./pages/ProfilePage";
-import { loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
+import { loginAsDefaultUser, setupDefaultUserAuth, DEFAULT_USER } from "./fixtures/auth";
 import { API_BASE } from "./config";
 
 // ---------------------------------------------------------------------------
@@ -86,7 +86,8 @@ test.describe("Full user journey: register → login → forum → create thread
 
 test.describe("Forum navigation from dashboard", () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
+    await setupDefaultUserAuth(page);
+    await page.goto("/dashboard");
   });
 
   test("forum link in dashboard nav goes to /forum and shows thread list", async ({ page }) => {
@@ -110,7 +111,7 @@ test.describe("Forum navigation from dashboard", () => {
 
 test.describe("Forum category filter flow", () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
+    await setupDefaultUserAuth(page);
   });
 
   test("clicking a category filter shows only threads for that category", async ({ page }) => {
@@ -218,68 +219,6 @@ test.describe("Thread voting flow", () => {
     await expect(detailPage.getVoteScore()).toHaveText(String(original), { timeout: 5000 });
     const after = await detailPage.getVoteScoreValue();
     expect(after).toBe(original);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// User profile update journey
-// ---------------------------------------------------------------------------
-
-test.describe("Profile update journey", () => {
-  async function resetProfile() {
-    await fetch(`${API_BASE}/api/profile/${DEFAULT_USER.username}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        displayName: "Demo User",
-        bio: "Software developer and coffee enthusiast",
-        location: "Amsterdam, Netherlands",
-      }),
-    });
-  }
-
-  test.beforeEach(async () => {
-    await resetProfile();
-  });
-
-  test.afterEach(async () => {
-    await resetProfile();
-  });
-
-  test("login → navigate to profile via dashboard → update profile → verify persisted", async ({
-    page,
-  }) => {
-    // Step 1: Login through UI
-    const loginPage = new LoginPage(page);
-    await loginPage.login(DEFAULT_USER.username, DEFAULT_USER.password);
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
-
-    // Step 2: Navigate to profile via dashboard link
-    const dashboardPage = new DashboardPage(page);
-    await dashboardPage.waitForLoad();
-    await dashboardPage.clickProfileLink();
-    await expect(page).toHaveURL(new RegExp(`/profile/${DEFAULT_USER.username}`), {
-      timeout: 10000,
-    });
-
-    // Step 3: Update profile fields
-    const profilePage = new ProfilePage(page);
-    await profilePage.waitForLoad();
-
-    await profilePage.fillEditForm("Journey Name", "Updated in journey test", "Rotterdam");
-    await profilePage.saveProfile();
-
-    const alert = profilePage.getAlertBanner();
-    await expect(alert).toBeVisible({ timeout: 10000 });
-    await expect(alert).toContainText(/succesvol|opgeslagen/i);
-
-    // Step 4: Reload and verify persistence
-    await page.reload();
-    await profilePage.waitForLoad();
-
-    await expect(profilePage.getDisplayNameInput()).toHaveValue("Journey Name");
-    await expect(profilePage.getBioInput()).toHaveValue("Updated in journey test");
-    await expect(profilePage.getLocationInput()).toHaveValue("Rotterdam");
   });
 });
 

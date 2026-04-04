@@ -246,7 +246,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
               <label
                 htmlFor="avatar-upload"
                 data-testid="avatar-upload-label"
-                className={`${button.secondaryInline} cursor-pointer ${
+                className={`${button.primaryAuto} cursor-pointer ${
                   uploadingAvatar || deletingAvatar ? "cursor-not-allowed opacity-50" : ""
                 }`}
               >

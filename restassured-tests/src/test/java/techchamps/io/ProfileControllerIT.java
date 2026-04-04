@@ -2,9 +2,9 @@ package techchamps.io;
 
 import techchamps.io.builder.UpdateProfileRequestBuilder;
 import techchamps.io.dto.request.UpdateProfileRequest;
+import techchamps.io.dto.response.AvatarUploadResponse;
 import techchamps.io.dto.response.ProfileResponse;
 import io.restassured.http.ContentType;
-import io.restassured.response.Response;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -15,11 +15,6 @@ import java.io.InputStream;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Profile endpoints — /api/profile/{username}")
@@ -35,21 +30,17 @@ class ProfileControllerIT extends BaseIntegrationTest {
     @Order(1)
     @DisplayName("GET /api/profile/user — valid user → 200 with all fields present")
     void getProfile_validUser_returns200WithAllFields() {
-        Response response = given()
+        ProfileResponse profile = given()
             .port(port)
         .when()
             .get("/api/profile/{username}", USERNAME)
         .then()
             .statusCode(200)
-            .body("id", notNullValue())
-            .body("email", notNullValue())
-            .body("username", notNullValue())
-            .extract().response();
+            .extract().as(ProfileResponse.class);
 
-        ProfileResponse profile = response.as(ProfileResponse.class);
-        assertNotNull(profile.getId());
-        assertEquals(USERNAME, profile.getUsername());
-        assertNotNull(profile.getEmail());
+        assertThat(profile.getId()).isNotNull();
+        assertThat(profile.getUsername()).isEqualTo(USERNAME);
+        assertThat(profile.getEmail()).isNotNull();
     }
 
     @Test
@@ -78,7 +69,7 @@ class ProfileControllerIT extends BaseIntegrationTest {
                 .location("Utrecht, Netherlands")
                 .build();
 
-        Response response = given()
+        ProfileResponse profile = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(request)
@@ -86,13 +77,12 @@ class ProfileControllerIT extends BaseIntegrationTest {
             .put("/api/profile/{username}", USERNAME)
         .then()
             .statusCode(200)
-            .extract().response();
+            .extract().as(ProfileResponse.class);
 
-        ProfileResponse profile = response.as(ProfileResponse.class);
-        assertEquals("Jane Doe", profile.getDisplayName());
-        assertEquals("Integration tester extraordinaire", profile.getBio());
-        assertEquals("Utrecht, Netherlands", profile.getLocation());
-        assertEquals(USERNAME, profile.getUsername());
+        assertThat(profile.getDisplayName()).isEqualTo("Jane Doe");
+        assertThat(profile.getBio()).isEqualTo("Integration tester extraordinaire");
+        assertThat(profile.getLocation()).isEqualTo("Utrecht, Netherlands");
+        assertThat(profile.getUsername()).isEqualTo(USERNAME);
     }
 
     @Test
@@ -118,6 +108,106 @@ class ProfileControllerIT extends BaseIntegrationTest {
 
     @Test
     @Order(5)
+    @DisplayName("PUT /api/profile/user — displayName exactly 100 chars @Size max → 200")
+    void updateProfile_displayNameAtLimit_returns200() {
+        String atLimit = "A".repeat(100);
+
+        UpdateProfileRequest request = new UpdateProfileRequestBuilder()
+                .displayName(atLimit)
+                .build();
+
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .put("/api/profile/{username}", USERNAME)
+        .then()
+            .statusCode(200);
+    }
+
+    @Test
+    @Order(6)
+    @DisplayName("PUT /api/profile/user — bio exactly 500 chars @Size max → 200")
+    void updateProfile_bioAtLimit_returns200() {
+        String atLimit = "B".repeat(500);
+
+        UpdateProfileRequest request = new UpdateProfileRequestBuilder()
+                .bio(atLimit)
+                .build();
+
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .put("/api/profile/{username}", USERNAME)
+        .then()
+            .statusCode(200);
+    }
+
+    @Test
+    @Order(7)
+    @DisplayName("PUT /api/profile/user — bio exceeds 500 chars @Size max → 400")
+    void updateProfile_bioTooLong_returns400() {
+        String tooLong = "B".repeat(501);
+
+        UpdateProfileRequest request = new UpdateProfileRequestBuilder()
+                .bio(tooLong)
+                .build();
+
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .put("/api/profile/{username}", USERNAME)
+        .then()
+            .statusCode(400);
+    }
+
+    @Test
+    @Order(8)
+    @DisplayName("PUT /api/profile/user — location exactly 100 chars @Size max → 200")
+    void updateProfile_locationAtLimit_returns200() {
+        String atLimit = "C".repeat(100);
+
+        UpdateProfileRequest request = new UpdateProfileRequestBuilder()
+                .location(atLimit)
+                .build();
+
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .put("/api/profile/{username}", USERNAME)
+        .then()
+            .statusCode(200);
+    }
+
+    @Test
+    @Order(9)
+    @DisplayName("PUT /api/profile/user — location exceeds 100 chars @Size max → 400")
+    void updateProfile_locationTooLong_returns400() {
+        String tooLong = "C".repeat(101);
+
+        UpdateProfileRequest request = new UpdateProfileRequestBuilder()
+                .location(tooLong)
+                .build();
+
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .put("/api/profile/{username}", USERNAME)
+        .then()
+            .statusCode(400);
+    }
+
+    @Test
+    @Order(10)
     @DisplayName("PUT /api/profile/user — partial update (only bio) → 200, other fields preserved")
     void updateProfile_partialUpdate_unchangedFieldsPreserved() {
         // First set a known displayName
@@ -139,7 +229,7 @@ class ProfileControllerIT extends BaseIntegrationTest {
         // Now update only the bio, sending null for displayName and location
         UpdateProfileRequest partialRequest = new UpdateProfileRequest(null, "Updated bio only", null);
 
-        Response response = given()
+        ProfileResponse profile = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(partialRequest)
@@ -147,18 +237,17 @@ class ProfileControllerIT extends BaseIntegrationTest {
             .put("/api/profile/{username}", USERNAME)
         .then()
             .statusCode(200)
-            .extract().response();
+            .extract().as(ProfileResponse.class);
 
-        ProfileResponse profile = response.as(ProfileResponse.class);
-        assertEquals("Updated bio only", profile.getBio());
+        assertThat(profile.getBio()).isEqualTo("Updated bio only");
         // displayName and location were nulled — verify they reflect what was sent
-        assertNull(profile.getDisplayName());
-        assertNull(profile.getLocation());
-        assertEquals(USERNAME, profile.getUsername());
+        assertThat(profile.getDisplayName()).isNull();
+        assertThat(profile.getLocation()).isNull();
+        assertThat(profile.getUsername()).isEqualTo(USERNAME);
     }
 
     @Test
-    @Order(6)
+    @Order(11)
     @DisplayName("PUT /api/profile/nonexistent — unknown user → 404")
     void updateProfile_nonexistentUser_returns404() {
         UpdateProfileRequest request = new UpdateProfileRequestBuilder().build();
@@ -178,29 +267,27 @@ class ProfileControllerIT extends BaseIntegrationTest {
     // ---------------------------------------------------------------
 
     @Test
-    @Order(7)
+    @Order(12)
     @DisplayName("POST /api/profile/user/avatar — valid PNG file → 200, avatarUrl not null")
     void uploadAvatar_validImageFile_returns200WithAvatarUrl() throws Exception {
         InputStream avatarStream = getClass().getResourceAsStream("/test-avatar.png");
-        assertNotNull(avatarStream, "test-avatar.png must exist in test resources");
+        assertThat(avatarStream).as("test-avatar.png must exist in test resources").isNotNull();
 
-        Response response = given()
+        AvatarUploadResponse response = given()
             .port(port)
             .multiPart("file", "test-avatar.png", avatarStream, "image/png")
         .when()
             .post("/api/profile/{username}/avatar", USERNAME)
         .then()
             .statusCode(200)
-            .body("avatarUrl", notNullValue())
-            .extract().response();
+            .extract().as(AvatarUploadResponse.class);
 
-        String avatarUrl = response.path("avatarUrl");
-        assertNotNull(avatarUrl);
-        assertThat(avatarUrl).startsWith("data:image/png;base64,");
+        assertThat(response.getAvatarUrl()).isNotNull();
+        assertThat(response.getAvatarUrl()).startsWith("data:image/png;base64,");
     }
 
     @Test
-    @Order(8)
+    @Order(13)
     @DisplayName("POST /api/profile/user/avatar — missing file part → 4xx client error")
     void uploadAvatar_missingFilePart_returns4xxError() {
         // Submitting a multipart request without the required 'file' part is a client error.
@@ -221,7 +308,7 @@ class ProfileControllerIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(9)
+    @Order(14)
     @DisplayName("POST /api/profile/user/avatar — config contract test: max-file-size=5MB")
     void uploadAvatar_contractTest_maxFileSizeIs5MB() {
         // Contract test: backend max-file-size=5MB (application.properties)
@@ -232,16 +319,18 @@ class ProfileControllerIT extends BaseIntegrationTest {
 
         // This test verifies a valid file still works (happy path boundary)
         InputStream smallFile = getClass().getResourceAsStream("/test-avatar.png");
-        assertNotNull(smallFile, "test-avatar.png must exist");
+        assertThat(smallFile).as("test-avatar.png must exist").isNotNull();
 
-        given()
+        AvatarUploadResponse response = given()
             .port(port)
             .multiPart("file", "test-avatar.png", smallFile)
         .when()
             .post("/api/profile/{username}/avatar", USERNAME)
         .then()
             .statusCode(200)
-            .body("avatarUrl", notNullValue());
+            .extract().as(AvatarUploadResponse.class);
+
+        assertThat(response.getAvatarUrl()).isNotNull();
     }
 
     // ---------------------------------------------------------------
@@ -249,12 +338,12 @@ class ProfileControllerIT extends BaseIntegrationTest {
     // ---------------------------------------------------------------
 
     @Test
-    @Order(10)
+    @Order(15)
     @DisplayName("DELETE /api/profile/user/avatar — removes avatar → 200, avatarUrl is null")
     void deleteAvatar_existingUser_returns200WithNullAvatarUrl() {
         // Upload avatar first so there is something to delete
         InputStream avatarStream = getClass().getResourceAsStream("/test-avatar.png");
-        assertNotNull(avatarStream, "test-avatar.png must exist in test resources");
+        assertThat(avatarStream).as("test-avatar.png must exist in test resources").isNotNull();
 
         given()
             .port(port)
@@ -265,21 +354,19 @@ class ProfileControllerIT extends BaseIntegrationTest {
             .statusCode(200);
 
         // Now delete
-        Response response = given()
+        ProfileResponse profile = given()
             .port(port)
         .when()
             .delete("/api/profile/{username}/avatar", USERNAME)
         .then()
             .statusCode(200)
-            .body("avatarUrl", nullValue())
-            .extract().response();
+            .extract().as(ProfileResponse.class);
 
-        ProfileResponse profile = response.as(ProfileResponse.class);
-        assertNull(profile.getAvatarUrl());
+        assertThat(profile.getAvatarUrl()).isNull();
     }
 
     @Test
-    @Order(11)
+    @Order(16)
     @DisplayName("DELETE /api/profile/nonexistent/avatar — unknown user → 404")
     void deleteAvatar_nonexistentUser_returns404() {
         given()
@@ -295,22 +382,21 @@ class ProfileControllerIT extends BaseIntegrationTest {
     // ---------------------------------------------------------------
 
     @Test
-    @Order(12)
+    @Order(17)
     @DisplayName("Full flow: GET → PUT → upload avatar → GET → DELETE avatar → GET")
     void fullProfileFlow_allStepsSucceed() throws Exception {
         // Step 1: GET initial profile — user exists, has id and email
-        Response initialGet = given()
+        ProfileResponse initial = given()
             .port(port)
         .when()
             .get("/api/profile/{username}", USERNAME)
         .then()
             .statusCode(200)
-            .extract().response();
+            .extract().as(ProfileResponse.class);
 
-        ProfileResponse initial = initialGet.as(ProfileResponse.class);
-        assertNotNull(initial.getId());
-        assertEquals(USERNAME, initial.getUsername());
-        assertNotNull(initial.getEmail());
+        assertThat(initial.getId()).isNotNull();
+        assertThat(initial.getUsername()).isEqualTo(USERNAME);
+        assertThat(initial.getEmail()).isNotNull();
 
         // Step 2: PUT — update displayName and bio
         UpdateProfileRequest updateRequest = new UpdateProfileRequestBuilder()
@@ -319,7 +405,7 @@ class ProfileControllerIT extends BaseIntegrationTest {
                 .location("Rotterdam, Netherlands")
                 .build();
 
-        Response putResponse = given()
+        ProfileResponse updated = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(updateRequest)
@@ -327,66 +413,63 @@ class ProfileControllerIT extends BaseIntegrationTest {
             .put("/api/profile/{username}", USERNAME)
         .then()
             .statusCode(200)
-            .extract().response();
+            .extract().as(ProfileResponse.class);
 
-        ProfileResponse updated = putResponse.as(ProfileResponse.class);
-        assertEquals("Flow Test User", updated.getDisplayName());
-        assertEquals("Bio set during full flow test", updated.getBio());
-        assertEquals("Rotterdam, Netherlands", updated.getLocation());
+        assertThat(updated.getDisplayName()).isEqualTo("Flow Test User");
+        assertThat(updated.getBio()).isEqualTo("Bio set during full flow test");
+        assertThat(updated.getLocation()).isEqualTo("Rotterdam, Netherlands");
 
         // Step 3: POST avatar
         InputStream avatarStream = getClass().getResourceAsStream("/test-avatar.png");
-        assertNotNull(avatarStream, "test-avatar.png must exist in test resources");
+        assertThat(avatarStream).as("test-avatar.png must exist in test resources").isNotNull();
 
-        Response avatarResponse = given()
+        AvatarUploadResponse avatarResponse = given()
             .port(port)
             .multiPart("file", "test-avatar.png", avatarStream, "image/png")
         .when()
             .post("/api/profile/{username}/avatar", USERNAME)
         .then()
             .statusCode(200)
-            .body("avatarUrl", notNullValue())
-            .extract().response();
+            .extract().as(AvatarUploadResponse.class);
 
-        String avatarUrl = avatarResponse.path("avatarUrl");
-        assertThat(avatarUrl).startsWith("data:image/png;base64,");
+        assertThat(avatarResponse.getAvatarUrl()).startsWith("data:image/png;base64,");
 
         // Step 4: GET — assert all updates persisted (displayName, bio, avatarUrl)
-        Response getAfterUpdate = given()
+        ProfileResponse afterUpdate = given()
             .port(port)
         .when()
             .get("/api/profile/{username}", USERNAME)
         .then()
             .statusCode(200)
-            .extract().response();
+            .extract().as(ProfileResponse.class);
 
-        ProfileResponse afterUpdate = getAfterUpdate.as(ProfileResponse.class);
-        assertEquals("Flow Test User", afterUpdate.getDisplayName());
-        assertEquals("Bio set during full flow test", afterUpdate.getBio());
-        assertNotNull(afterUpdate.getAvatarUrl());
+        assertThat(afterUpdate.getDisplayName()).isEqualTo("Flow Test User");
+        assertThat(afterUpdate.getBio()).isEqualTo("Bio set during full flow test");
+        assertThat(afterUpdate.getAvatarUrl()).isNotNull();
         assertThat(afterUpdate.getAvatarUrl()).startsWith("data:image/png;base64,");
 
         // Step 5: DELETE avatar
-        given()
+        ProfileResponse deletedResponse = given()
             .port(port)
         .when()
             .delete("/api/profile/{username}/avatar", USERNAME)
         .then()
             .statusCode(200)
-            .body("avatarUrl", nullValue());
+            .extract().as(ProfileResponse.class);
+
+        assertThat(deletedResponse.getAvatarUrl()).isNull();
 
         // Step 6: Final GET — avatar cleared, other fields still present
-        Response finalGet = given()
+        ProfileResponse finalProfile = given()
             .port(port)
         .when()
             .get("/api/profile/{username}", USERNAME)
         .then()
             .statusCode(200)
-            .extract().response();
+            .extract().as(ProfileResponse.class);
 
-        ProfileResponse finalProfile = finalGet.as(ProfileResponse.class);
-        assertEquals(USERNAME, finalProfile.getUsername());
-        assertNull(finalProfile.getAvatarUrl());
-        assertEquals("Flow Test User", finalProfile.getDisplayName());
+        assertThat(finalProfile.getUsername()).isEqualTo(USERNAME);
+        assertThat(finalProfile.getAvatarUrl()).isNull();
+        assertThat(finalProfile.getDisplayName()).isEqualTo("Flow Test User");
     }
 }

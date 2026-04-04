@@ -67,3 +67,4 @@ Helpt agents elkaar context door te geven en tijd/tokens te sparen door bekend b
 **Last Updated:** 2026-04-03
 **Next Steps:** Resolve RestAssured PIT in future PR with Maven configuration expert
 **Generic Template:** ~/.claude/agents/AGENT_CONSTRAINTS.md (for use across projects)
+

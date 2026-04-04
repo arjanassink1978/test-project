@@ -69,7 +69,7 @@ export default function ReplyForm({
       </p>
       <button
         type="submit"
-        className={`mt-2 ${button.secondary}`}
+        className={`mt-2 ${button.primaryAuto}`}
         disabled={isDisabled || loading || content.trim().length === 0}
         data-testid="reply-submit-button"
       >

@@ -10,6 +10,7 @@ import techchamps.io.dto.response.*;
 import techchamps.io.model.ForumReply;
 import techchamps.io.model.ForumThread;
 import techchamps.io.model.AppUser;
+import techchamps.io.security.JwtAuthenticationFilter;
 import techchamps.io.service.ForumService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,11 @@ class ForumControllerTest {
             return username -> {
                 throw new UsernameNotFoundException("No users in test context");
             };
+        }
+
+        @Bean
+        JwtAuthenticationFilter jwtAuthenticationFilter(UserDetailsService userDetailsService) {
+            return new JwtAuthenticationFilter("test-secret-key-that-is-at-least-32-bytes-long!", userDetailsService);
         }
     }
 

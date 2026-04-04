@@ -1,6 +1,6 @@
 # Project Structure Index
 
-**Last Updated:** 2026-04-03 (Role-based access control: USER, MODERATOR, ADMIN roles; close thread, delete reply, list users endpoints)
+**Last Updated:** 2026-04-04 (Issue #41: Test suite deduplication — removed duplicate E2E layout tests from forum.spec.ts and forumThreadDetail.spec.ts, removed duplicate profile journey from user-journey.spec.ts; added 5 profile boundary tests (displayName/bio/location @Size) to ProfileControllerIT; added maxLength assertions to ProfileForm.test.tsx)
 **Important:** When agents add new files/components, they MUST update this file.
 
 ---
@@ -16,7 +16,7 @@
   - `GET /api/forum/categories` — list all categories (public)
   - `GET /api/forum/threads?category=&sort=newest&page=0&search=` — paginated threads (public)
   - `GET /api/forum/threads/{id}` — thread detail with replies (public)
-  - `POST /api/forum/threads` — create thread (auth required, HTTP Basic)
+  - `POST /api/forum/threads` — create thread (auth required, JWT Bearer)
   - `POST /api/forum/threads/{threadId}/replies` — create reply (auth)
   - `POST /api/forum/replies/{replyId}/replies` — create nested reply (auth, max depth 3)
   - `POST /api/forum/posts/{postId}/vote?postType=thread` — vote (auth)
@@ -45,7 +45,7 @@
   - `dto/request/VoteRequest.java` - voteValue (-1, 0, or 1)
   - *(Add new request DTOs here)*
 - **Response:**
-  - `dto/response/LoginResponse.java` - success, message, username (nullable; populated on successful login)
+  - `dto/response/LoginResponse.java` - success, message, username, role, token (JWT string, null on failure) (nullable; populated on successful login)
   - `dto/response/RegisterResponse.java` - id, email, username, success, message
   - `dto/response/ProfileResponse.java` - id, email, username, displayName, bio, location, avatarUrl
   - `dto/response/AvatarUploadResponse.java` - avatarUrl, message
@@ -56,7 +56,7 @@
   - `dto/response/PagedThreadsResponse.java` - threads, page, size, hasMore
   - `dto/response/VoteResponse.java` - postId, postType, newScore, userVote
   - `dto/response/UserSummaryResponse.java` - id, username, email, role (admin user listing)
-  - `dto/response/LoginResponse.java` now includes `role` field (USER/MODERATOR/ADMIN)
+  - `dto/response/LoginResponse.java` - includes `success`, `message`, `username`, `role`, and `token` (JWT string) fields; `ALWAYS` included even when null on failure
   - *(Add new response DTOs here)*
 
 ### Models (JPA Entities)
@@ -76,7 +76,9 @@
 
 ### Security
 - `security/DatabaseUserDetailsService.java` - Spring Security user details loader
-- `config/SecurityConfig.java` - Security config: HTTP Basic auth enabled, GET /api/forum/** is public, POST/DELETE require auth
+- `security/JwtService.java` - Generates signed JWTs containing userId, username, role; configured via `jwt.secret` and `jwt.expiration-ms`
+- `security/JwtAuthenticationFilter.java` - `OncePerRequestFilter` that reads `Authorization: Bearer <token>`, validates the JWT, loads full `UserDetails` via `UserDetailsService`, and populates `SecurityContext`; catches `JwtException` and `UsernameNotFoundException`
+- `config/SecurityConfig.java` - Security config: JWT filter + HTTP Basic auth fallback; GET /api/forum/** is public, POST/DELETE require JWT Bearer token auth
 - `config/CorsConfig.java` - CORS configuration
 
 ### Config
@@ -85,12 +87,14 @@
 
 ### Testing
 - `src/test/java/techchamps/io/` - Unit tests
-  - `controller/AuthControllerTest.java` - Auth controller tests
+  - `controller/AuthControllerTest.java` - Auth controller tests (14 tests); mocks JwtService; asserts token field present on success, null on failure
   - `controller/ProfileControllerTest.java` - Profile controller tests (12 tests)
   - `service/ProfileServiceTest.java` - Profile service tests (10 tests)
   - `config/DataInitializerTest.java` - Data initializer tests
   - `config/CorsConfigTest.java` - CORS config tests
   - `security/DatabaseUserDetailsServiceTest.java` - User details service tests
+  - `security/JwtServiceTest.java` - JwtService tests (11 tests): token subject, role/userId claims, expiration, distinct tokens per user
+  - `security/JwtAuthenticationFilterTest.java` - JwtAuthenticationFilter tests (10 tests): valid Bearer token sets auth, correct role from UserDetails, expired/tampered/missing token skips auth, user not found skips auth, always calls filter chain
   - `model/AppUserTest.java` - AppUser model tests
 
 ---
@@ -130,13 +134,13 @@
 - `components/RegisterForm.test.tsx` - 9 tests: render, data-testid, validation, error states, loading state
 - `components/LogoutButton.test.tsx` - 5 tests: render, data-testid, navigation, localStorage
 - `components/ProfileLink.test.tsx` - 4 tests: render, data-testid, href construction
-- `components/ProfileForm.test.tsx` - 40 tests: loading, profile data, onChange handlers, boundary validation, save/delete/upload avatar flows, error paths, alert styling
+- `components/ProfileForm.test.tsx` - 43 tests: loading, profile data, onChange handlers, maxLength attribute assertions (displayName 100, bio 500, location 100), boundary validation, save/delete/upload avatar flows, error paths, alert styling
 - `components/ForumCategoryFilter.test.tsx` - 15 tests: render, All button, category buttons, onChange with exact values, className for selected/unselected, rerender
 - `components/VoteButtons.test.tsx` - 11 tests: render, data-testid, score colors, click handlers (userVote=0 normal, cancel-same, cancel-opposite), disabled state, badge layout
 - `components/ReplyItem.test.tsx` - 19 tests: render, data-testid, author header, avatar initials, vote badge, reply toggle, collapse/expand, nesting border, hidden score threshold
 
 ### Libraries
-- `lib/api.ts` - All API calls (auth, profile, avatar, forum: getForumCategories, getForumThreads, getForumThread, createForumThread, createForumReply, voteOnPost)
+- `lib/api.ts` - All API calls (auth, profile, avatar, forum: getForumCategories, getForumThreads, getForumThread, createForumThread, createForumReply, voteOnPost, closeThread, deleteReply); auth functions accept JWT Bearer `token` string instead of credentials
 - `lib/forumConstants.ts` - Cross-layer forum constraints: THREAD_TITLE_MAX=200, THREAD_DESC_MAX=5000, REPLY_CONTENT_MAX=2000, MAX_REPLY_DEPTH=3, PAGE_SIZE=20, HIDDEN_SCORE_THRESHOLD=-5
 - `lib/theme.ts` - Centralized design tokens: colors, typography, spacing, borders, shadows, and composite className patterns (alert, card, input, button, nav, avatar, link, profileLink). Import named exports (`alert`, `button`, `card`, `input`, `typography`, `nav`, `avatar`, `link`, `profileLink`, `colors`, `spacing`, `borders`, `shadows`, `states`) in components instead of writing Tailwind strings inline.
 
@@ -160,6 +164,7 @@
 - `controller/AuthControllerIntegrationTest.java` - Extended auth tests
 - `RegistrationIT.java` - Integration tests for registration endpoint
 - `RoleBasedAccessControlIT.java` - 14 integration tests for RBAC: close thread (user=403, mod=200, admin=200), closed thread rejects replies, delete reply (user=403, mod=204), list users (user=403, mod=403, admin=200)
+- `ProfileControllerIT.java` - 17 integration tests for profile: GET (200/404), PUT (200), boundary tests (displayName 100/101, bio 500/501, location 100/101 → 200/400), partial update, nonexistent user (404), avatar upload/delete flows
 - `ForumThreadIT.java` - 21 integration tests for forum: categories, threads CRUD, boundary tests (title 200/201, desc 5000/5001, reply 2000/2001), depth boundary (depth 2 passes, depth 3 rejected), voting, delete 204/403
 
 ### Test Builders
@@ -170,6 +175,7 @@
 
 ### Testing
 - Uses `@SpringBootTest(webEnvironment = RANDOM_PORT)`
+- All authenticated tests use JWT Bearer tokens via `BaseIntegrationTest.fetchToken()`, `userToken()`, `moderatorToken()`, `adminToken()` helpers
 - RestAssured 5.x for HTTP testing
 - JUnit 5, AssertJ for assertions
 - H2 in-memory database
@@ -185,11 +191,11 @@
 
 ### Test Files
 - `tests/e2e/profile.spec.ts` - User Profile Page Flow (23 tests); happy-path tests use real API calls (no mocks); mocks kept only for error scenarios (404, 500) and the no-avatar edge case
-- `tests/e2e/forum.spec.ts` - Forum E2E tests: index page (public + auth), thread detail, create thread flow, reply flow, search; all happy-path tests use real API calls via backend on port 8080
+- `tests/e2e/forum.spec.ts` - Forum E2E tests (13 tests): index page (public + auth), thread detail, create thread flow, reply flow, nested reply flow, vote flow, search, filter/sort, delete thread, max depth constraint; layout redesign tests removed (covered by ReplyItem.test.tsx)
 - `tests/e2e/auth.spec.ts` - Auth E2E tests (11 tests): login wrong credentials, nonexistent user, empty fields, register-to-login link, full registration happy path, mismatched passwords, invalid email, duplicate username, short password, login link, logout from dashboard
 - `tests/e2e/rbac.spec.ts` - RBAC E2E tests: moderator close thread flow, delete reply visibility, closed thread UI
-- `tests/e2e/user-journey.spec.ts` - End-to-end user journeys (12 tests): full register→login→forum→create thread→reply→vote journey, forum navigation from dashboard, category filter flow, thread upvote/downvote/toggle, profile update journey, public thread access, forum search→detail navigation, reply constraint (content > 2000 chars errors on submit, counter)
-- `tests/e2e/forumThreadDetail.spec.ts` - Forum thread detail page UI fixes (issue #28, 18 tests): forum link visibility for logged-in and anonymous users, forum link navigation to /forum, forum link indigo styling, close thread button visibility by role (MODERATOR/ADMIN only), close thread button red danger styling, close/reopen thread button text updates, navigation bar integration with profile link, styling consistency between dashboard and thread detail
+- `tests/e2e/user-journey.spec.ts` - End-to-end user journeys (11 tests): full register→login→forum→create thread→reply→vote journey, forum navigation from dashboard, category filter flow, thread upvote/downvote/toggle, public thread access, forum search→detail navigation, reply constraint (content > 2000 chars errors on submit, counter)
+- `tests/e2e/forumThreadDetail.spec.ts` - Forum thread detail unique journeys (2 tests): forum link navigation from thread detail to /forum, moderator close/reopen thread journey (button state changes)
 
 ### Test Strategy
 - **Happy path tests** — real GET/PUT/POST/DELETE calls to backend on port 8080; catches integration mismatches (e.g. multipart field names)
@@ -207,7 +213,8 @@ All page objects use `getByTestId("…")` as the **primary** locator, with `.or(
 - `ThreadDetailPage.ts` - Thread detail page; locators: `thread-detail-title`, `thread-detail-desc`, `thread-detail-score`, `thread-detail-author`, `replies-section`, `upvote-button`, `downvote-button`, `vote-score`, `reply-form`, `reply-content-input`, `reply-submit-button`, `reply-item-{id}`, `reply-content-{id}`, `reply-toggle-{id}`
 
 ### Fixtures (`tests/e2e/fixtures/`)
-- `auth.ts` - `loginAsDefaultUser(page)` helper, `DEFAULT_USER` constant; delegates to `LoginPage` for data-testid-first login
+- `forum.ts` - `createThreadViaApi`, `createReplyViaApi`, `closeThreadViaApi`, `deleteThreadViaApi` helpers using JWT Bearer tokens for API-based test setup
+- `auth.ts` - `setupAuthViaAPI(page, credentials)` navigates to `/` first (to allow localStorage access), then sets JWT token via API (stores `authToken`, `username`, `role` in localStorage); `loginAsDefaultUser(page)` for UI login; `setupDefaultUserAuth(page)` for API-based auth
 
 ---
 

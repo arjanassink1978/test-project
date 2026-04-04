@@ -4,7 +4,6 @@ import techchamps.io.builder.LoginRequestBuilder;
 import techchamps.io.dto.request.LoginRequest;
 import techchamps.io.dto.response.LoginResponse;
 import io.restassured.http.ContentType;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -12,9 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("POST /api/auth/login")
@@ -30,7 +27,7 @@ class AuthControllerIT extends BaseIntegrationTest {
     void login_happyPath_returns200AndSuccessTrue() {
         LoginRequest request = new LoginRequestBuilder().build();
 
-        given()
+        LoginResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(request)
@@ -38,9 +35,11 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true))
-            .body("message", notNullValue())
-            .body("username", equalTo("user"));
+            .extract().as(LoginResponse.class);
+
+        assertThat(response.isSuccess()).isTrue();
+        assertThat(response.getMessage()).isNotNull();
+        assertThat(response.getUsername()).isEqualTo("user");
     }
 
     @Test
@@ -49,7 +48,7 @@ class AuthControllerIT extends BaseIntegrationTest {
     void login_happyPath_responseMessageIsLoginSuccessful() {
         LoginRequest request = new LoginRequestBuilder().build();
 
-        given()
+        LoginResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(request)
@@ -57,8 +56,29 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("message", equalTo("Login successful"))
-            .body("username", equalTo("user"));
+            .extract().as(LoginResponse.class);
+
+        assertThat(response.getMessage()).isEqualTo("Login successful");
+        assertThat(response.getUsername()).isEqualTo("user");
+    }
+
+    @Test
+    @Order(3)
+    @DisplayName("Geldige credentials → response bevat niet-null JWT token")
+    void login_happyPath_returnsNonNullToken() {
+        LoginRequest request = new LoginRequestBuilder().build();
+
+        LoginResponse response = given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .post("/api/auth/login")
+        .then()
+            .statusCode(200)
+            .extract().as(LoginResponse.class);
+
+        assertThat(response.getToken()).isNotNull();
     }
 
     // ---------------------------------------------------------------
@@ -66,14 +86,14 @@ class AuthControllerIT extends BaseIntegrationTest {
     // ---------------------------------------------------------------
 
     @Test
-    @Order(3)
+    @Order(4)
     @DisplayName("Fout wachtwoord → 401 met success=false")
     void login_wrongPassword_returns401AndSuccessFalse() {
         LoginRequest request = new LoginRequestBuilder()
                 .password("foutWachtwoord")
                 .build();
 
-        given()
+        LoginResponse response = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(request)
@@ -81,12 +101,14 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(401)
-            .body("success", equalTo(false))
-            .body("username", nullValue());
+            .extract().as(LoginResponse.class);
+
+        assertThat(response.isSuccess()).isFalse();
+        assertThat(response.getUsername()).isNull();
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     @DisplayName("Onbekende gebruiker → 401")
     void login_unknownUser_returns401() {
         LoginRequest request = new LoginRequestBuilder()
@@ -105,7 +127,7 @@ class AuthControllerIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     @DisplayName("Leeg wachtwoord → 401")
     void login_emptyPassword_returns401() {
         LoginRequest request = new LoginRequestBuilder()
@@ -123,7 +145,7 @@ class AuthControllerIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(6)
+    @Order(7)
     @DisplayName("Lege gebruikersnaam → 401")
     void login_emptyUsername_returns401() {
         LoginRequest request = new LoginRequestBuilder()
@@ -141,17 +163,16 @@ class AuthControllerIT extends BaseIntegrationTest {
     }
 
     // ---------------------------------------------------------------
-    // Functionele flow: inloggen en valideren dat token/bericht herbruikbaar is
+    // Functionele flow
     // ---------------------------------------------------------------
 
     @Test
-    @Order(7)
+    @Order(8)
     @DisplayName("Flow: geldige login → message klopt → opnieuw inloggen met zelfde credentials slaagt")
     void loginFlow_successfulLoginCanBeRepeated() {
         LoginRequest request = new LoginRequestBuilder().build();
 
-        // Eerste login
-        String message = given()
+        LoginResponse firstResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(request)
@@ -159,12 +180,12 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true))
-            .extract()
-            .path("message");
+            .extract().as(LoginResponse.class);
 
-        // Tweede login met zelfde credentials – stateless server, moet opnieuw slagen
-        given()
+        assertThat(firstResponse.isSuccess()).isTrue();
+        String message = firstResponse.getMessage();
+
+        LoginResponse secondResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().build())
@@ -172,16 +193,17 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true))
-            .body("message", equalTo(message));
+            .extract().as(LoginResponse.class);
+
+        assertThat(secondResponse.isSuccess()).isTrue();
+        assertThat(secondResponse.getMessage()).isEqualTo(message);
     }
 
     @Test
-    @Order(8)
+    @Order(9)
     @DisplayName("Flow: mislukte login gevolgd door geldige login slaagt alsnog")
     void loginFlow_failedLoginFollowedByValidLogin_succeeds() {
-        // Mislukte poging
-        given()
+        LoginResponse failedResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().password("verkeerd").build())
@@ -189,10 +211,11 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(401)
-            .body("success", equalTo(false));
+            .extract().as(LoginResponse.class);
 
-        // Geldige poging direct erna
-        given()
+        assertThat(failedResponse.isSuccess()).isFalse();
+
+        LoginResponse successResponse = given()
             .port(port)
             .contentType(ContentType.JSON)
             .body(new LoginRequestBuilder().build())
@@ -200,6 +223,8 @@ class AuthControllerIT extends BaseIntegrationTest {
             .post("/api/auth/login")
         .then()
             .statusCode(200)
-            .body("success", equalTo(true));
+            .extract().as(LoginResponse.class);
+
+        assertThat(successResponse.isSuccess()).isTrue();
     }
 }
