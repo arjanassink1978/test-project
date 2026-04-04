@@ -3,7 +3,7 @@
 import { useState } from "react";
 import VoteButtons from "@/components/VoteButtons";
 import ReplyForm from "@/components/ReplyForm";
-import { typography, card } from "@/lib/theme";
+import { typography, card, button, avatar, borders } from "@/lib/theme";
 import { FORUM_CONSTRAINTS } from "@/lib/forumConstants";
 import type { ForumReplyResponse } from "@/lib/api";
 
@@ -64,13 +64,13 @@ export default function ReplyItem({
       className="mt-3"
       data-testid={`reply-item-${reply.id}`}
     >
-      <div className={`flex gap-2 ${depth > 0 ? "pl-4 border-l-2 border-gray-200" : ""}`}>
+      <div className={`flex gap-2 ${depth > 0 ? `pl-4 ${borders.nestedReply}` : ""}`}>
         {depth > 0 && hasChildren && (
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}
             aria-label={collapsed ? "Expand replies" : "Collapse replies"}
-            className="self-start mt-1 flex-shrink-0 w-5 h-5 flex items-center justify-center rounded border border-gray-300 bg-white text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
+            className={button.collapseToggle}
           >
             {collapsed ? "+" : "–"}
           </button>
@@ -79,7 +79,7 @@ export default function ReplyItem({
         <div className={`flex-1 ${card.padded} ${isHidden ? "opacity-50 grayscale" : ""}`}>
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2" data-testid={`reply-author-${reply.id}`}>
-              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-600">
+              <div className={avatar.replyAvatar}>
                 {initials}
               </div>
               <span className={`${typography.bodyText} font-medium text-gray-900`}>
@@ -95,7 +95,7 @@ export default function ReplyItem({
                   type="button"
                   onClick={handleDelete}
                   disabled={deleteLoading}
-                  className="text-xs text-red-600 hover:text-red-500 disabled:opacity-50"
+                  className={button.inlineDanger}
                   data-testid={`delete-reply-${reply.id}`}
                 >
                   {deleteLoading ? "Deleting…" : "Delete"}
@@ -121,7 +121,7 @@ export default function ReplyItem({
           {isLoggedIn && canReply && (
             <button
               type="button"
-              className="mt-2 text-xs text-emerald-600 hover:text-emerald-500"
+              className={button.inlineGreen}
               onClick={() => setShowReplyForm((v) => !v)}
               data-testid={`reply-toggle-${reply.id}`}
             >

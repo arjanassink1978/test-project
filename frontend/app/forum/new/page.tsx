@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ThreadForm from "@/components/ThreadForm";
-import { nav, typography } from "@/lib/theme";
+import { nav, typography, layout } from "@/lib/theme";
 import { getForumCategories, createForumThread, type ForumCategory } from "@/lib/api";
 import LogoutButton from "@/components/LogoutButton";
 import ProfileLink from "@/components/ProfileLink";
@@ -48,7 +48,7 @@ export default function NewThreadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" data-testid="new-thread-page">
+    <div className={layout.page} data-testid="new-thread-page">
       <nav className={nav.bar}>
         <div className={nav.inner}>
           <ProfileLink />
@@ -56,7 +56,7 @@ export default function NewThreadPage() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-2xl px-4 py-8">
+      <main className={layout.container}>
         <h1 className={typography.pageHeading} data-testid="new-thread-heading">
           Create New Thread
         </h1>

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import ForumCategoryFilter from "@/components/ForumCategoryFilter";
 import ThreadList from "@/components/ThreadList";
-import { nav, button, input, typography } from "@/lib/theme";
+import { nav, button, input, typography, layout } from "@/lib/theme";
 import {
   getForumCategories,
   getForumThreads,
@@ -64,7 +64,7 @@ export default function ForumPage() {
   }, [selectedCategory, sort, search]);
 
   return (
-    <div className="min-h-screen bg-gray-50" data-testid="forum-page">
+    <div className={layout.page} data-testid="forum-page">
       <nav className={nav.bar}>
         <div className={nav.inner}>
           <ProfileLink />
@@ -73,7 +73,7 @@ export default function ForumPage() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-3xl px-4 py-8 md:px-6 md:py-12">
+      <main className={layout.container}>
         <div className="flex items-center justify-between mb-6">
           <h1 className={typography.pageHeading} data-testid="forum-heading">
             Forum
@@ -81,10 +81,9 @@ export default function ForumPage() {
           {isLoggedIn && (
             <button
               type="button"
-              className={button.primary}
+              className={button.primaryAuto}
               onClick={() => router.push("/forum/new")}
               data-testid="new-thread-button"
-              style={{ width: "auto" }}
             >
               New Thread
             </button>
@@ -102,7 +101,7 @@ export default function ForumPage() {
 
           <div className="flex gap-3">
             <select
-              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className={input.select}
               value={sort}
               onChange={(e) => setSort(e.target.value)}
               data-testid="sort-select"

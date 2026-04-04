@@ -18,7 +18,7 @@ export default function ForumCategoryFilter({
     <div className="flex flex-wrap gap-2" data-testid="category-filter">
       <button
         type="button"
-        className={selectedId === null ? button.primary : button.secondary}
+        className={selectedId === null ? button.compactPrimary : button.compactSecondary}
         onClick={() => onChange(null)}
         data-testid="category-option-all"
       >
@@ -28,7 +28,7 @@ export default function ForumCategoryFilter({
         <button
           key={cat.id}
           type="button"
-          className={selectedId === cat.id ? button.primary : button.secondary}
+          className={selectedId === cat.id ? button.compactPrimary : button.compactSecondary}
           onClick={() => onChange(cat.id)}
           data-testid={`category-option-${cat.id}`}
         >

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import VoteButtons from "@/components/VoteButtons";
 import ReplyItem from "@/components/ReplyItem";
 import ReplyForm from "@/components/ReplyForm";
-import { nav, typography, card, alert } from "@/lib/theme";
+import { nav, typography, card, alert, layout } from "@/lib/theme";
 import {
   getForumThread,
   createForumReply,
@@ -139,7 +139,7 @@ export default function ThreadDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className={layout.loadingCenter}>
         <p className={typography.bodyText}>Loading thread…</p>
       </div>
     );
@@ -147,8 +147,8 @@ export default function ThreadDetailPage() {
 
   if (error || !thread) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <main className="mx-auto max-w-3xl px-4 py-8">
+      <div className={layout.page}>
+        <main className={layout.container}>
           <div className={alert.error}>{error ?? "Thread not found."}</div>
         </main>
       </div>
@@ -156,7 +156,7 @@ export default function ThreadDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" data-testid="thread-detail-page">
+    <div className={layout.page} data-testid="thread-detail-page">
       <nav className={nav.bar}>
         <div className={nav.inner}>
           <ProfileLink />
@@ -165,7 +165,7 @@ export default function ThreadDetailPage() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className={layout.main}>
         <div className={card.paddedLg}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">

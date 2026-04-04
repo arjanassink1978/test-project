@@ -67,6 +67,7 @@ export const colors = {
   background: {
     50: "bg-slate-50",
     100: "bg-slate-100",
+    page: "bg-gray-50",
   },
 
   // Error/Danger: Red
@@ -77,6 +78,14 @@ export const colors = {
     text600: "text-red-600",
     text700: "text-red-700",
     border200: "border-red-200",
+  },
+
+  // Score/vote indicator colors (indigo = positive, red = negative)
+  score: {
+    positive: "bg-indigo-50 text-indigo-600",
+    negative: "bg-red-50 text-red-600",
+    positiveText: "text-indigo-600",
+    negativeText: "text-red-600",
   },
 } as const;
 
@@ -114,6 +123,15 @@ export const typography = {
 
   // Character counter
   charCounter: "text-xs text-gray-500 text-right mt-1",
+
+  // Thread list: title
+  threadTitle: "text-sm font-medium text-gray-900",
+
+  // Thread list: meta row (author, category, reply count)
+  threadMeta: "mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500",
+
+  // Inline loading text
+  loadingText: "text-gray-600",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -158,6 +176,9 @@ export const borders = {
   cardRing: "border border-amber-200",
   avatarRing: "ring-2 ring-amber-200",
   navRing: "border-b border-amber-200",
+
+  // Nesting border for threaded replies
+  nestedReply: "border-l-2 border-gray-200",
 
   // Radius options
   radiusLg: "rounded-lg",
@@ -227,6 +248,8 @@ export const input = {
   base: "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed",
   error: "w-full rounded-md border border-red-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed",
   textarea: "w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+  // Inline select matching input.base appearance
+  select: "rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500",
 } as const;
 
 /**
@@ -241,13 +264,29 @@ export const button = {
   primaryLg:
     "flex w-full items-center justify-center rounded-md bg-green-600 px-5 py-2.5 text-base font-semibold text-white hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors",
 
+  // Primary action - auto width (for inline usage)
+  primaryAuto:
+    "inline-flex items-center justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
+
   // Outline large
   outlineLg:
     "flex w-full items-center justify-center rounded-md bg-white border-2 border-green-600 px-5 py-2.5 text-base font-semibold text-green-600 hover:bg-green-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors",
 
-  // Secondary - inline (gray)
+  // Secondary - full width (gray)
   secondary:
+    "flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors",
+
+  // Secondary - inline (gray)
+  secondaryInline:
     "inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors",
+
+  // Compact primary for category filters
+  compactPrimary:
+    "inline-flex items-center justify-center rounded-md bg-green-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 transition-colors",
+
+  // Compact secondary for category filters
+  compactSecondary:
+    "inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors",
 
   // Secondary - nav variant
   secondaryNav:
@@ -256,6 +295,15 @@ export const button = {
   // Danger - red
   danger:
     "inline-flex items-center justify-center rounded-md border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 transition-colors",
+
+  // Inline text button: green link-style (e.g. "Reply" toggle)
+  inlineGreen: "text-xs text-emerald-600 hover:text-emerald-500",
+
+  // Inline text button: red link-style (e.g. "Delete" in reply)
+  inlineDanger: "text-xs text-red-600 hover:text-red-500 disabled:opacity-50",
+
+  // Collapse/expand toggle for nested replies
+  collapseToggle: "self-start mt-1 flex-shrink-0 w-5 h-5 flex items-center justify-center rounded border border-gray-300 bg-white text-xs text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors",
 
   // Spinner
   spinner: "mr-2 h-4 w-4 animate-spin",
@@ -291,4 +339,61 @@ export const avatar = {
   image: "h-10 w-10 rounded-md object-cover bg-gray-100",
   placeholder: "flex h-10 w-10 items-center justify-center rounded-md bg-amber-100",
   initial: "text-xs font-bold text-amber-700",
+  // Small round avatar used in reply headers
+  replyAvatar: "flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-600",
+} as const;
+
+/**
+ * Page layout wrappers
+ */
+export const layout = {
+  // Standard page background
+  page: "min-h-screen bg-gray-50",
+  // Centered loading state
+  loadingCenter: "min-h-screen bg-gray-50 flex items-center justify-center",
+  // Loading spinner container
+  loadingInner: "flex items-center gap-3 text-gray-600",
+  // Page container with max-width and padding
+  container: "mx-auto max-w-3xl px-4 py-8 md:px-6 md:py-12",
+  // Centered page wrapper (login, register, home)
+  centeredPage: "flex min-h-screen flex-col items-center justify-center px-4 py-12",
+  // Standard main content area
+  main: "mx-auto max-w-3xl px-4 py-8",
+  // Empty state message
+  emptyState: "text-center py-8",
+} as const;
+
+/**
+ * Vote button widget (compact inline badge)
+ */
+export const vote = {
+  // Container badge
+  container: "inline-flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-xs",
+  // Upvote arrow button
+  upvote: "rounded p-0.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
+  // Downvote arrow button
+  downvote: "rounded p-0.5 text-gray-500 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
+  // Score number — positive (green, matching primary)
+  scorePositive: "min-w-[1.25rem] text-center font-semibold text-emerald-600",
+  // Score number — negative
+  scoreNegative: "min-w-[1.25rem] text-center font-semibold text-red-600",
+} as const;
+
+/**
+ * Thread score badge (square, used in ThreadList)
+ */
+export const scoreBadge = {
+  // Shared base: fixed size, text, rounded
+  base: "inline-flex items-center justify-center w-10 h-10 text-xs font-bold rounded",
+  // Positive (score >= 0): emerald (green theme primary)
+  positive: "bg-emerald-50 text-emerald-600",
+  // Negative (score < 0): red
+  negative: "bg-red-50 text-red-600",
+} as const;
+
+/**
+ * Thread closed badge (pill)
+ */
+export const closedBadge = {
+  base: "inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700",
 } as const;

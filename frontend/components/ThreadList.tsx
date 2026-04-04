@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { button, typography, card } from "@/lib/theme";
+import { button, typography, card, scoreBadge, layout } from "@/lib/theme";
 import { FORUM_CONSTRAINTS } from "@/lib/forumConstants";
 import type { ForumThreadResponse } from "@/lib/api";
 
@@ -21,8 +21,8 @@ export default function ThreadList({
   return (
     <div className="space-y-2" data-testid="thread-list">
       {threads.length === 0 && !loading && (
-        <div className="text-center py-8">
-          <p className={`${typography.bodyText} text-gray-500`}>
+        <div className={layout.emptyState}>
+          <p className={typography.bodyText}>
             No threads yet. Start the conversation!
           </p>
         </div>
@@ -36,15 +36,13 @@ export default function ThreadList({
           <Link
             key={thread.id}
             href={`/forum/threads/${thread.id}`}
-            className={`${card.interactive} flex items-start gap-3 p-4`}
+            className={`${card.interactive} flex items-start gap-3 p-4 ${isHidden ? "opacity-50 grayscale" : ""}`}
             data-testid={`thread-item-${thread.id}`}
           >
             <div className="flex-shrink-0">
               <div
-                className={`inline-flex items-center justify-center w-10 h-10 text-xs font-bold rounded ${
-                  thread.score >= 0
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
+                className={`${scoreBadge.base} ${
+                  thread.score >= 0 ? scoreBadge.positive : scoreBadge.negative
                 }`}
                 data-testid={`thread-score-${thread.id}`}
               >
@@ -81,7 +79,6 @@ export default function ThreadList({
           onClick={onLoadMore}
           disabled={loading}
           data-testid="load-more-button"
-          style={{ width: "100%" }}
         >
           {loading ? "Loading…" : "Load more"}
         </button>

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { button, typography } from "@/lib/theme";
+import { button, typography, layout } from "@/lib/theme";
 
 export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
+    <main className={layout.centeredPage}>
       <div className="w-full max-w-md">
         <div className="mb-12 text-center">
           <h1 className={`${typography.largeHeading} mb-4`}>

@@ -11,6 +11,7 @@ import {
   card,
   input,
   typography,
+  layout,
 } from "@/lib/theme";
 
 interface ProfileFormProps {
@@ -159,8 +160,8 @@ export default function ProfileForm({ username }: ProfileFormProps) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex items-center gap-3 text-gray-600">
+      <div className={layout.loadingCenter}>
+        <div className={layout.loadingInner}>
           <svg
             className="h-5 w-5 animate-spin"
             xmlns="http://www.w3.org/2000/svg"
@@ -189,7 +190,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center px-4 py-12">
+    <main className={layout.centeredPage}>
       <div className="w-full max-w-xl space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between" data-testid="profile-header">
@@ -245,8 +246,8 @@ export default function ProfileForm({ username }: ProfileFormProps) {
               <label
                 htmlFor="avatar-upload"
                 data-testid="avatar-upload-label"
-                className={`${button.secondary} cursor-pointer${
-                  uploadingAvatar || deletingAvatar ? " cursor-not-allowed opacity-50" : ""
+                className={`${button.secondaryInline} cursor-pointer ${
+                  uploadingAvatar || deletingAvatar ? "cursor-not-allowed opacity-50" : ""
                 }`}
               >
                 {uploadingAvatar ? "Uploaden…" : "Nieuwe avatar uploaden"}
@@ -262,7 +263,7 @@ export default function ProfileForm({ username }: ProfileFormProps) {
                   {deletingAvatar ? "Verwijderen…" : "Avatar verwijderen"}
                 </button>
               )}
-              <p className="text-xs text-gray-500">
+              <p className={typography.helperText}>
                 JPEG, PNG, WebP of GIF. Maximaal 5 MB.
               </p>
             </div>
