@@ -14,6 +14,7 @@ def parse_junit_reports():
         "backend": {"passed": 0, "failed": 0, "skipped": 0, "time": 0},
         "restassured": {"passed": 0, "failed": 0, "skipped": 0, "time": 0},
         "frontend": {"passed": 0, "failed": 0, "skipped": 0, "time": 0},
+        "playwright": {"passed": 0, "failed": 0, "skipped": 0, "time": 0},
     }
 
     # Backend tests
@@ -44,13 +45,27 @@ def parse_junit_reports():
             except:
                 pass
 
+    # Playwright E2E tests (read from test-results/report.json if available)
+    playwright_report_path = "playwright-test-results/report.json"
+    if os.path.exists(playwright_report_path):
+        try:
+            with open(playwright_report_path, 'r') as f:
+                report = json.load(f)
+                test_results["playwright"]["passed"] = report.get("stats", {}).get("expected", 0)
+                test_results["playwright"]["failed"] = report.get("stats", {}).get("unexpected", 0)
+                test_results["playwright"]["skipped"] = report.get("stats", {}).get("skipped", 0)
+                test_results["playwright"]["time"] = report.get("stats", {}).get("duration", 0) / 1000
+        except:
+            pass
+
     return test_results
 
 def parse_mutation_reports():
-    """Parse PIT mutation testing reports"""
+    """Parse PIT mutation testing reports and Stryker frontend reports"""
     mutation_results = {
         "backend": {"killed": 0, "survived": 0, "no_coverage": 0, "coverage": 0},
         "restassured": {"killed": 0, "survived": 0, "no_coverage": 0, "coverage": 0},
+        "frontend": {"killed": 0, "survived": 0, "no_coverage": 0, "coverage": 0},
     }
 
     # Backend mutations
@@ -99,6 +114,24 @@ def parse_mutation_reports():
         except:
             pass
 
+    # Frontend mutations (Stryker)
+    stryker_path = "mutation-results/frontend/stryker-report.json"
+    if os.path.exists(stryker_path):
+        try:
+            with open(stryker_path, 'r') as f:
+                report = json.load(f)
+                metrics = report.get("metrics", {})
+                # Stryker reports: killed, survived, timeout, no-coverage, ignored, compile-error
+                mutation_results["frontend"]["killed"] = metrics.get("killed", 0)
+                mutation_results["frontend"]["survived"] = metrics.get("survived", 0) + metrics.get("timeout", 0)
+                mutation_results["frontend"]["no_coverage"] = metrics.get("noCoverage", 0)
+
+                total = metrics.get("total", 0)
+                if total > 0:
+                    mutation_results["frontend"]["coverage"] = metrics.get("mutationScore", 0)
+        except:
+            pass
+
     return mutation_results
 
 def generate_html_report(tests, mutations):
@@ -110,8 +143,23 @@ def generate_html_report(tests, mutations):
     total_passed = sum(t["passed"] for t in tests.values())
     total_failed = sum(t["failed"] for t in tests.values())
 
-    total_mutations = sum(m["killed"] + m["survived"] for m in mutations.values())
-    total_killed = sum(m["killed"] for m in mutations.values())
+    # For mutation scoring, exclude frontend (Stryker returns percentage directly)
+    backend_mutations = mutations.get("backend", {})
+    restassured_mutations = mutations.get("restassured", {})
+    frontend_mutations = mutations.get("frontend", {})
+
+    backend_total = backend_mutations.get("killed", 0) + backend_mutations.get("survived", 0)
+    restassured_total = restassured_mutations.get("killed", 0) + restassured_mutations.get("survived", 0)
+
+    backend_killed = backend_mutations.get("killed", 0)
+    restassured_killed = restassured_mutations.get("killed", 0)
+
+    total_mutations = backend_total + restassured_total
+    total_killed = backend_killed + restassured_killed
+
+    backend_score = round((backend_killed / backend_total * 100), 1) if backend_total > 0 else 0
+    restassured_score = round((restassured_killed / restassured_total * 100), 1) if restassured_total > 0 else 0
+    frontend_score = frontend_mutations.get("coverage", 0)
 
     overall_mutation = round((total_killed / total_mutations * 100), 1) if total_mutations > 0 else 0
 
@@ -335,6 +383,48 @@ def generate_html_report(tests, mutations):
         </div>
 
         <div class="section">
+            <h2>🎭 E2E Test Results</h2>
+"""
+
+    if "playwright" in tests and tests["playwright"]["passed"] + tests["playwright"]["failed"] > 0:
+        playwright = tests["playwright"]
+        total_e2e = playwright["passed"] + playwright["failed"] + playwright["skipped"]
+        e2e_rate = round((playwright["passed"] / total_e2e * 100), 1) if total_e2e > 0 else 0
+
+        html += f"""
+            <div class="test-module">
+                <h3>Playwright E2E Tests</h3>
+                <div class="test-stats">
+                    <div class="stat">
+                        <div class="stat-value passed">{playwright['passed']}</div>
+                        <div class="stat-label">Passed</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value failed">{playwright['failed']}</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value skipped">{playwright['skipped']}</div>
+                        <div class="stat-label">Skipped</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" style="color: #667eea;">{e2e_rate}%</div>
+                        <div class="stat-label">Pass Rate</div>
+                    </div>
+                </div>
+            </div>
+"""
+    else:
+        html += """
+            <div class="test-module">
+                <p style="color: #666;">No E2E test results available</p>
+            </div>
+"""
+
+    html += """
+        </div>
+
+        <div class="section">
             <h2>🧬 Mutation Testing Results</h2>
 """
 
@@ -370,9 +460,11 @@ def generate_html_report(tests, mutations):
             <h2>📈 Summary</h2>
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
                 <p style="color: #666; line-height: 1.8;">
-                    <strong>Test Execution:</strong> {total_passed}/{total_tests} tests passed ({round(total_passed/total_tests*100, 1) if total_tests > 0 else 0}%)<br>
-                    <strong>Mutation Coverage:</strong> {total_killed}/{total_mutations} mutations killed ({overall_mutation}%)<br>
-                    <strong>Status:</strong> {'✅ All quality gates passed' if overall_mutation >= 80 and total_failed == 0 else '⚠️ Review required'}<br>
+                    <strong>Unit Tests:</strong> {total_passed}/{total_tests} tests passed ({round(total_passed/total_tests*100, 1) if total_tests > 0 else 0}%)<br>
+                    <strong>Backend Mutation Score:</strong> {backend_score}% <span class="badge {'pass' if backend_score >= 80 else 'fail'}">{'✅' if backend_score >= 80 else '❌'}</span><br>
+                    <strong>Integration Mutation Score:</strong> {restassured_score}% <span class="badge {'pass' if restassured_score >= 80 else 'fail'}">{'✅' if restassured_score >= 80 else '❌'}</span><br>
+                    <strong>Frontend Mutation Score:</strong> {frontend_score}% <span class="badge {'pass' if frontend_score >= 80 else 'fail'}">{'✅' if frontend_score >= 80 else '❌'}</span><br>
+                    <strong>Status:</strong> {'✅ All quality gates passed' if backend_score >= 80 and restassured_score >= 80 and frontend_score >= 80 and total_failed == 0 else '⚠️ Review required'}<br>
                     <strong>Generated:</strong> {timestamp}
                 </p>
             </div>

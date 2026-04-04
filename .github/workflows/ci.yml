@@ -286,6 +286,13 @@ jobs:
           path: docker-compose.log
           retention-days: 30
 
+      - name: Copy Playwright report for dashboard
+        if: always()
+        run: |
+          mkdir -p mutation-results/playwright
+          cp -r playwright-tests/playwright-report/* mutation-results/playwright/ 2>/dev/null || true
+          cp -r playwright-tests/test-results mutation-results/playwright/test-results 2>/dev/null || true
+
       - name: Stop Docker Compose stack
         if: always()
         run: docker compose down -v
@@ -380,6 +387,14 @@ jobs:
         with:
           path: .
 
+      - name: Prepare Playwright test results
+        run: |
+          # Copy Playwright test report metadata for the Python script
+          mkdir -p playwright-test-results
+          if [ -f "playwright-report/report.json" ]; then
+            cp playwright-report/report.json playwright-test-results/report.json
+          fi
+
       - name: Generate report
         run: python3 scripts/generate-report.py
 
@@ -450,3 +465,156 @@ jobs:
           fi
           echo ""
           echo "════════════════════════════════════════════"
+
+  deploy-to-pages:
+    needs: [ generate-report, test-summary ]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && always()
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: .
+
+      - name: Copy artifacts to docs directory
+        run: |
+          mkdir -p docs/reports
+
+          # Copy test report
+          if [ -f "test-report/test-report.html" ]; then
+            cp test-report/test-report.html docs/index.html
+          fi
+
+          # Copy Playwright report
+          mkdir -p docs/playwright
+          if [ -d "playwright-report" ]; then
+            cp -r playwright-report/* docs/playwright/ 2>/dev/null || true
+          fi
+
+          # Copy mutation reports
+          mkdir -p docs/mutations
+          cp -r mutation-results/backend/target/pit-reports docs/mutations/backend 2>/dev/null || true
+          cp -r mutation-results/restassured-tests/target/pit-reports docs/mutations/restassured 2>/dev/null || true
+          cp -r mutation-results/frontend/reports docs/mutations/frontend 2>/dev/null || true
+          if [ -f "mutation-results/frontend/stryker-report.json" ]; then
+            cp mutation-results/frontend/stryker-report.json docs/mutations/frontend/stryker-report.json
+          fi
+
+          # Copy Docker logs
+          mkdir -p docs/logs
+          if [ -f "docker-compose-logs/docker-compose.log" ]; then
+            cp docker-compose-logs/docker-compose.log docs/logs/
+          fi
+
+          # Create navigation page
+          cat > docs/reports.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Test Reports Dashboard</title>
+              <style>
+                  * { margin: 0; padding: 0; box-sizing: border-box; }
+                  body {
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                      min-height: 100vh;
+                      padding: 40px 20px;
+                  }
+                  .container {
+                      max-width: 800px;
+                      margin: 0 auto;
+                      background: white;
+                      border-radius: 12px;
+                      padding: 40px;
+                      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                  }
+                  h1 {
+                      color: #333;
+                      margin-bottom: 30px;
+                      text-align: center;
+                  }
+                  .reports-grid {
+                      display: grid;
+                      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                      gap: 20px;
+                  }
+                  .report-card {
+                      background: #f8f9fa;
+                      padding: 20px;
+                      border-radius: 8px;
+                      text-align: center;
+                      border: 2px solid #e5e7eb;
+                      transition: all 0.3s ease;
+                  }
+                  .report-card:hover {
+                      border-color: #667eea;
+                      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+                  }
+                  .report-card a {
+                      display: inline-block;
+                      margin-top: 10px;
+                      padding: 10px 20px;
+                      background: #667eea;
+                      color: white;
+                      text-decoration: none;
+                      border-radius: 6px;
+                      font-weight: 600;
+                  }
+                  .report-card a:hover {
+                      background: #764ba2;
+                  }
+                  .report-icon {
+                      font-size: 2em;
+                      margin-bottom: 10px;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>🧪 Test Reports Dashboard</h1>
+                  <div class="reports-grid">
+                      <div class="report-card">
+                          <div class="report-icon">📊</div>
+                          <h3>Main Report</h3>
+                          <a href="./index.html">View Report</a>
+                      </div>
+                      <div class="report-card">
+                          <div class="report-icon">🎭</div>
+                          <h3>E2E Tests</h3>
+                          <a href="./playwright/">Playwright Report</a>
+                      </div>
+                      <div class="report-card">
+                          <div class="report-icon">🧬</div>
+                          <h3>Mutations</h3>
+                          <a href="./mutations/">View Mutations</a>
+                      </div>
+                      <div class="report-card">
+                          <div class="report-icon">📝</div>
+                          <h3>Docker Logs</h3>
+                          <a href="./logs/docker-compose.log">View Logs</a>
+                      </div>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
