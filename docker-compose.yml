@@ -9,7 +9,6 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-postgres.sh:/docker-entrypoint-initdb.d/01-init.sh
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U test -d testdb"]
@@ -63,8 +62,24 @@ services:
       start_period: 15s
       retries: 10
 
-volumes:
-  postgres_data:
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: test-project-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "False"
+      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 10
+      SCRIPT_NAME_LENGTH: 4
+    volumes:
+      - ./scripts/pgadmin-servers.json:/pgadmin4/servers.json
+    ports:
+      - "5050:80"
+    networks:
+      - test-project-network
+    depends_on:
+      - postgres
 
 networks:
   test-project-network:
