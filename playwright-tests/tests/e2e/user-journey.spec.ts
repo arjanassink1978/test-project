@@ -202,25 +202,22 @@ test.describe("Thread voting flow", () => {
     expect(after).toBe(before - 1);
   });
 
-  test("upvoting then downvoting returns score to original", async ({ page }) => {
+  test("clicking opposite vote while voted cancels the active vote", async ({ page }) => {
     const detailPage = new ThreadDetailPage(page);
     await detailPage.goto(threadId);
     await detailPage.waitForLoad();
 
     const original = await detailPage.getVoteScoreValue();
 
-    // Upvote
+    // Upvote — score goes up by 1
     await detailPage.getUpvoteButton().click();
     await expect(detailPage.getVoteScore()).not.toHaveText(String(original), { timeout: 5000 });
 
-    // Downvote — should go back to 0 (undo upvote) and then -1
-    // Two clicks: first undoes the upvote (0), second sets downvote (-1)
+    // Click downvote while upvoted — cancel-on-opposite: cancels the upvote, score returns to original
     await detailPage.getDownvoteButton().click();
-    await page.waitForTimeout(500);
-    await detailPage.getDownvoteButton().click();
-    await expect(detailPage.getVoteScore()).not.toHaveText(String(original + 1), {
-      timeout: 5000,
-    });
+    await expect(detailPage.getVoteScore()).toHaveText(String(original), { timeout: 5000 });
+    const after = await detailPage.getVoteScoreValue();
+    expect(after).toBe(original);
   });
 });
 
