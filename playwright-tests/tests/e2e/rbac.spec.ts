@@ -1,8 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { LoginPage } from "./pages/LoginPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
-
-const API_BASE = "http://localhost:8080";
+import { API_BASE } from "./config";
 
 const MODERATOR = { username: "moderator", password: "moderator1234" };
 const USER = { username: "user", password: "user1234" };

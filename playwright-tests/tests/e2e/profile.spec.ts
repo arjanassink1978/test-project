@@ -6,6 +6,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
+import { API_BASE } from "./config";
 
 // ---------------------------------------------------------------------------
 // Constants – reflect the real seeded user from DataInitializer
@@ -18,9 +19,6 @@ const SEEDED_PROFILE = {
   bio: "Software developer and coffee enthusiast",
   location: "Amsterdam, Netherlands",
 };
-
-// Backend base URL used for direct API calls in setup/teardown helpers
-const API_BASE = "http://localhost:8080";
 
 // ---------------------------------------------------------------------------
 // Helpers
