@@ -3,8 +3,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { loginAsDefaultUser } from "./fixtures/auth";
-
-const API_BASE = "http://localhost:8080";
+import { API_BASE } from "./config";
 
 const SEEDED_USERS = {
   user: { username: "user", password: "user1234" },

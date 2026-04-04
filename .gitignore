@@ -20,6 +20,9 @@ reports/
 stryker-report.json
 stryker.log
 
+# Playwright Test Results
+playwright-tests/test-results/
+
 # OS
 .DS_Store
 .env

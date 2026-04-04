@@ -2,9 +2,7 @@ import { test, expect } from "@playwright/test";
 import { ForumPage } from "./pages/ForumPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
 import { loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
-
-// Backend base URL used for direct API calls in setup/teardown helpers
-const API_BASE = "http://localhost:8080";
+import { API_BASE } from "./config";
 
 // -------------------------------------------------------------------------
 // Thread creation flow (authenticated)

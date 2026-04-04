@@ -6,8 +6,7 @@ import { ForumPage } from "./pages/ForumPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
-
-const API_BASE = "http://localhost:8080";
+import { API_BASE } from "./config";
 
 // ---------------------------------------------------------------------------
 // Full user journey: register → login → create thread → reply → vote
@@ -230,10 +229,8 @@ test.describe("Thread voting flow", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("Profile update journey", () => {
-  const API_BASE_URL = "http://localhost:8080";
-
   async function resetProfile() {
-    await fetch(`${API_BASE_URL}/api/profile/${DEFAULT_USER.username}`, {
+    await fetch(`${API_BASE}/api/profile/${DEFAULT_USER.username}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
