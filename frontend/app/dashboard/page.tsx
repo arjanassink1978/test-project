@@ -11,7 +11,9 @@ export default function DashboardPage() {
         <div className={nav.inner}>
           <ProfileLink />
           <ForumLink />
-          <LogoutButton />
+          <div className="ml-auto">
+            <LogoutButton />
+          </div>
         </div>
       </nav>
 
