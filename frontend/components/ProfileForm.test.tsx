@@ -158,6 +158,31 @@ describe("ProfileForm", () => {
     expect(screen.getByTestId("avatar-upload-input")).toBeInTheDocument();
   });
 
+  // maxLength attribute assertions — ensure browser-level constraint matches backend @Size limits
+  it("display-name-input has maxLength=100 matching backend @Size(max=100)", async () => {
+    mockGetProfile.mockResolvedValueOnce(baseProfile);
+    render(<ProfileForm username="testuser" />);
+    await waitForLoad();
+
+    expect(screen.getByTestId("display-name-input")).toHaveAttribute("maxLength", "100");
+  });
+
+  it("bio-input has maxLength=500 matching backend @Size(max=500)", async () => {
+    mockGetProfile.mockResolvedValueOnce(baseProfile);
+    render(<ProfileForm username="testuser" />);
+    await waitForLoad();
+
+    expect(screen.getByTestId("bio-input")).toHaveAttribute("maxLength", "500");
+  });
+
+  it("location-input has maxLength=100 matching backend @Size(max=100)", async () => {
+    mockGetProfile.mockResolvedValueOnce(baseProfile);
+    render(<ProfileForm username="testuser" />);
+    await waitForLoad();
+
+    expect(screen.getByTestId("location-input")).toHaveAttribute("maxLength", "100");
+  });
+
   // onChange handlers — verify state actually updates
   it("updates displayName when typing in the input", async () => {
     mockGetProfile.mockResolvedValueOnce(baseProfile);

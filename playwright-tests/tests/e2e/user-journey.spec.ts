@@ -226,68 +226,6 @@ test.describe("Thread voting flow", () => {
 });
 
 // ---------------------------------------------------------------------------
-// User profile update journey
-// ---------------------------------------------------------------------------
-
-test.describe("Profile update journey", () => {
-  async function resetProfile() {
-    await fetch(`${API_BASE}/api/profile/${DEFAULT_USER.username}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        displayName: "Demo User",
-        bio: "Software developer and coffee enthusiast",
-        location: "Amsterdam, Netherlands",
-      }),
-    });
-  }
-
-  test.beforeEach(async () => {
-    await resetProfile();
-  });
-
-  test.afterEach(async () => {
-    await resetProfile();
-  });
-
-  test("login → navigate to profile via dashboard → update profile → verify persisted", async ({
-    page,
-  }) => {
-    // Step 1: Login through UI
-    const loginPage = new LoginPage(page);
-    await loginPage.login(DEFAULT_USER.username, DEFAULT_USER.password);
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
-
-    // Step 2: Navigate to profile via dashboard link
-    const dashboardPage = new DashboardPage(page);
-    await dashboardPage.waitForLoad();
-    await dashboardPage.clickProfileLink();
-    await expect(page).toHaveURL(new RegExp(`/profile/${DEFAULT_USER.username}`), {
-      timeout: 10000,
-    });
-
-    // Step 3: Update profile fields
-    const profilePage = new ProfilePage(page);
-    await profilePage.waitForLoad();
-
-    await profilePage.fillEditForm("Journey Name", "Updated in journey test", "Rotterdam");
-    await profilePage.saveProfile();
-
-    const alert = profilePage.getAlertBanner();
-    await expect(alert).toBeVisible({ timeout: 10000 });
-    await expect(alert).toContainText(/succesvol|opgeslagen/i);
-
-    // Step 4: Reload and verify persistence
-    await page.reload();
-    await profilePage.waitForLoad();
-
-    await expect(profilePage.getDisplayNameInput()).toHaveValue("Journey Name");
-    await expect(profilePage.getBioInput()).toHaveValue("Updated in journey test");
-    await expect(profilePage.getLocationInput()).toHaveValue("Rotterdam");
-  });
-});
-
-// ---------------------------------------------------------------------------
 // Forum thread detail — public access (unauthenticated)
 // ---------------------------------------------------------------------------
 

@@ -108,6 +108,106 @@ class ProfileControllerIT extends BaseIntegrationTest {
 
     @Test
     @Order(5)
+    @DisplayName("PUT /api/profile/user — displayName exactly 100 chars @Size max → 200")
+    void updateProfile_displayNameAtLimit_returns200() {
+        String atLimit = "A".repeat(100);
+
+        UpdateProfileRequest request = new UpdateProfileRequestBuilder()
+                .displayName(atLimit)
+                .build();
+
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .put("/api/profile/{username}", USERNAME)
+        .then()
+            .statusCode(200);
+    }
+
+    @Test
+    @Order(6)
+    @DisplayName("PUT /api/profile/user — bio exactly 500 chars @Size max → 200")
+    void updateProfile_bioAtLimit_returns200() {
+        String atLimit = "B".repeat(500);
+
+        UpdateProfileRequest request = new UpdateProfileRequestBuilder()
+                .bio(atLimit)
+                .build();
+
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .put("/api/profile/{username}", USERNAME)
+        .then()
+            .statusCode(200);
+    }
+
+    @Test
+    @Order(7)
+    @DisplayName("PUT /api/profile/user — bio exceeds 500 chars @Size max → 400")
+    void updateProfile_bioTooLong_returns400() {
+        String tooLong = "B".repeat(501);
+
+        UpdateProfileRequest request = new UpdateProfileRequestBuilder()
+                .bio(tooLong)
+                .build();
+
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .put("/api/profile/{username}", USERNAME)
+        .then()
+            .statusCode(400);
+    }
+
+    @Test
+    @Order(8)
+    @DisplayName("PUT /api/profile/user — location exactly 100 chars @Size max → 200")
+    void updateProfile_locationAtLimit_returns200() {
+        String atLimit = "C".repeat(100);
+
+        UpdateProfileRequest request = new UpdateProfileRequestBuilder()
+                .location(atLimit)
+                .build();
+
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .put("/api/profile/{username}", USERNAME)
+        .then()
+            .statusCode(200);
+    }
+
+    @Test
+    @Order(9)
+    @DisplayName("PUT /api/profile/user — location exceeds 100 chars @Size max → 400")
+    void updateProfile_locationTooLong_returns400() {
+        String tooLong = "C".repeat(101);
+
+        UpdateProfileRequest request = new UpdateProfileRequestBuilder()
+                .location(tooLong)
+                .build();
+
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .body(request)
+        .when()
+            .put("/api/profile/{username}", USERNAME)
+        .then()
+            .statusCode(400);
+    }
+
+    @Test
+    @Order(10)
     @DisplayName("PUT /api/profile/user — partial update (only bio) → 200, other fields preserved")
     void updateProfile_partialUpdate_unchangedFieldsPreserved() {
         // First set a known displayName
@@ -147,7 +247,7 @@ class ProfileControllerIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(6)
+    @Order(11)
     @DisplayName("PUT /api/profile/nonexistent — unknown user → 404")
     void updateProfile_nonexistentUser_returns404() {
         UpdateProfileRequest request = new UpdateProfileRequestBuilder().build();
@@ -167,7 +267,7 @@ class ProfileControllerIT extends BaseIntegrationTest {
     // ---------------------------------------------------------------
 
     @Test
-    @Order(7)
+    @Order(12)
     @DisplayName("POST /api/profile/user/avatar — valid PNG file → 200, avatarUrl not null")
     void uploadAvatar_validImageFile_returns200WithAvatarUrl() throws Exception {
         InputStream avatarStream = getClass().getResourceAsStream("/test-avatar.png");
@@ -187,7 +287,7 @@ class ProfileControllerIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(8)
+    @Order(13)
     @DisplayName("POST /api/profile/user/avatar — missing file part → 4xx client error")
     void uploadAvatar_missingFilePart_returns4xxError() {
         // Submitting a multipart request without the required 'file' part is a client error.
@@ -208,7 +308,7 @@ class ProfileControllerIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(9)
+    @Order(14)
     @DisplayName("POST /api/profile/user/avatar — config contract test: max-file-size=5MB")
     void uploadAvatar_contractTest_maxFileSizeIs5MB() {
         // Contract test: backend max-file-size=5MB (application.properties)
@@ -238,7 +338,7 @@ class ProfileControllerIT extends BaseIntegrationTest {
     // ---------------------------------------------------------------
 
     @Test
-    @Order(10)
+    @Order(15)
     @DisplayName("DELETE /api/profile/user/avatar — removes avatar → 200, avatarUrl is null")
     void deleteAvatar_existingUser_returns200WithNullAvatarUrl() {
         // Upload avatar first so there is something to delete
@@ -266,7 +366,7 @@ class ProfileControllerIT extends BaseIntegrationTest {
     }
 
     @Test
-    @Order(11)
+    @Order(16)
     @DisplayName("DELETE /api/profile/nonexistent/avatar — unknown user → 404")
     void deleteAvatar_nonexistentUser_returns404() {
         given()
@@ -282,7 +382,7 @@ class ProfileControllerIT extends BaseIntegrationTest {
     // ---------------------------------------------------------------
 
     @Test
-    @Order(12)
+    @Order(17)
     @DisplayName("Full flow: GET → PUT → upload avatar → GET → DELETE avatar → GET")
     void fullProfileFlow_allStepsSucceed() throws Exception {
         // Step 1: GET initial profile — user exists, has id and email
