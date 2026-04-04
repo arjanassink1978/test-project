@@ -396,8 +396,8 @@ jobs:
         run: |
           # Copy Playwright test report metadata for the Python script
           mkdir -p playwright-test-results
-          if [ -f "playwright-report/report.json" ]; then
-            cp playwright-report/report.json playwright-test-results/report.json
+          if [ -f "playwright-report/playwright-tests/playwright-report/report.json" ]; then
+            cp playwright-report/playwright-tests/playwright-report/report.json playwright-test-results/report.json
           fi
 
       - name: Generate report
