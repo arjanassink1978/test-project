@@ -8,21 +8,31 @@ interface VoteButtonsProps {
   postType: "thread" | "reply";
   onVote: (value: number) => void;
   disabled?: boolean;
+  userVote?: number;
 }
 
 export default function VoteButtons({
   score,
   onVote,
   disabled = false,
+  userVote = 0,
 }: VoteButtonsProps) {
+  function handleVote(clickedValue: number) {
+    if (userVote === 0) {
+      onVote(clickedValue);
+    } else {
+      onVote(0);
+    }
+  }
+
   return (
     <div className={vote.container} data-testid="vote-buttons">
       <button
         type="button"
-        onClick={() => onVote(1)}
+        onClick={() => handleVote(1)}
         disabled={disabled}
         aria-label="Upvote"
-        className={vote.upvote}
+        className={userVote === 1 ? vote.upvoteActive : vote.upvote}
         data-testid="upvote-button"
       >
         ▲
@@ -35,10 +45,10 @@ export default function VoteButtons({
       </span>
       <button
         type="button"
-        onClick={() => onVote(-1)}
+        onClick={() => handleVote(-1)}
         disabled={disabled}
         aria-label="Downvote"
-        className={vote.downvote}
+        className={userVote === -1 ? vote.downvoteActive : vote.downvote}
         data-testid="downvote-button"
       >
         ▼

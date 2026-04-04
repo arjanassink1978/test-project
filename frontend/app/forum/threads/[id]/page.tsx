@@ -32,6 +32,7 @@ export default function ThreadDetailPage() {
   const [username, setUsername] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [closeLoading, setCloseLoading] = useState(false);
+  const [userVote, setUserVote] = useState(0);
 
   useEffect(() => {
     setUsername(localStorage.getItem("username"));
@@ -55,6 +56,7 @@ export default function ThreadDetailPage() {
     try {
       const result = await voteOnPost(thread.id, "thread", value, token);
       setThread((prev) => (prev ? { ...prev, score: result.newScore } : prev));
+      setUserVote(result.userVote);
     } catch (err) {
       console.error(err);
     }
@@ -205,6 +207,7 @@ export default function ThreadDetailPage() {
                 postType="thread"
                 onVote={handleVoteThread}
                 disabled={!username}
+                userVote={userVote}
               />
               {isModerator && (
                 <button

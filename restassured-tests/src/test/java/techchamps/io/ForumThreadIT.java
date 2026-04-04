@@ -430,8 +430,8 @@ class ForumThreadIT extends BaseIntegrationTest {
 
     @Test
     @Order(18)
-    @DisplayName("POST /api/forum/posts/{id}/vote → upserts on duplicate vote")
-    void vote_duplicateVote_updatesScore() {
+    @DisplayName("POST /api/forum/posts/{id}/vote → direct switch upvote→downvote sends -1, score goes 1→-1")
+    void vote_directSwitchUpvoteToDownvote_scoreChanges() {
         Long threadId = createThreadAndGetId();
         String token = userToken();
 
@@ -553,6 +553,89 @@ class ForumThreadIT extends BaseIntegrationTest {
 
         assertThat(threadDetail.getScore()).isEqualTo(1);
         assertThat(threadDetail.getReplies()).hasSize(1);
+    }
+
+    // -------------------------------------------------------------------------
+    // Cancel vote (voteValue=0) — issue #44
+    // -------------------------------------------------------------------------
+
+    @Test
+    @Order(22)
+    @DisplayName("POST /api/forum/posts/{id}/vote → cancel upvote by sending 0, score returns to 0")
+    void vote_cancelExistingUpvote_sendZero_returns200WithScoreZero() {
+        Long threadId = createThreadAndGetId();
+
+        // Upvote: score 0 → 1
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .auth().preemptive().basic(USER, PASSWORD)
+            .queryParam("postType", "thread")
+            .body(new VoteRequest(1))
+        .when()
+            .post("/api/forum/posts/" + threadId + "/vote")
+        .then()
+            .statusCode(200)
+            .body("newScore", equalTo(1))
+            .body("userVote", equalTo(1));
+
+        // Cancel: send 0, score 1 → 0
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .auth().preemptive().basic(USER, PASSWORD)
+            .queryParam("postType", "thread")
+            .body(new VoteRequest(0))
+        .when()
+            .post("/api/forum/posts/" + threadId + "/vote")
+        .then()
+            .statusCode(200)
+            .body("newScore", equalTo(0))
+            .body("userVote", equalTo(0));
+
+        // Verify persisted via GET
+        given()
+            .port(port)
+        .when()
+            .get("/api/forum/threads/" + threadId)
+        .then()
+            .statusCode(200)
+            .body("score", equalTo(0));
+    }
+
+    @Test
+    @Order(23)
+    @DisplayName("POST /api/forum/posts/{id}/vote → cancel downvote by sending 0, score returns to 0")
+    void vote_cancelExistingDownvote_sendZero_returns200WithScoreZero() {
+        Long threadId = createThreadAndGetId();
+
+        // Downvote: score 0 → -1
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .auth().preemptive().basic(USER, PASSWORD)
+            .queryParam("postType", "thread")
+            .body(new VoteRequest(-1))
+        .when()
+            .post("/api/forum/posts/" + threadId + "/vote")
+        .then()
+            .statusCode(200)
+            .body("newScore", equalTo(-1))
+            .body("userVote", equalTo(-1));
+
+        // Cancel: send 0, score -1 → 0
+        given()
+            .port(port)
+            .contentType(ContentType.JSON)
+            .auth().preemptive().basic(USER, PASSWORD)
+            .queryParam("postType", "thread")
+            .body(new VoteRequest(0))
+        .when()
+            .post("/api/forum/posts/" + threadId + "/vote")
+        .then()
+            .statusCode(200)
+            .body("newScore", equalTo(0))
+            .body("userVote", equalTo(0));
     }
 
     // -------------------------------------------------------------------------

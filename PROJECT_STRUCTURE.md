@@ -122,7 +122,7 @@
 - `components/ProfileLink.tsx` - Link to `/profile/{username}`, reads username from localStorage; `data-testid`: `profile-link`
 - `components/ProfileForm.tsx` - Full profile edit form (avatar, account info, editable fields); `data-testid`: `profile-heading`, `profile-alert`, `avatar-section`, `avatar-image`, `avatar-placeholder`, `avatar-upload-input`, `avatar-upload-label`, `delete-avatar-button`, `account-info-section`, `profile-username`, `profile-email`, `edit-profile-section`, `edit-profile-form`, `display-name-input`, `bio-input`, `location-input`, `save-button`
 - `components/ForumCategoryFilter.tsx` - Category filter buttons; `data-testid`: `category-filter`, `category-option-{id}`, `category-option-all`
-- `components/VoteButtons.tsx` - Upvote/downvote with score display; `data-testid`: `vote-buttons`, `upvote-button`, `downvote-button`, `vote-score`
+- `components/VoteButtons.tsx` - Upvote/downvote with score display and cancel-on-opposite logic; props: `score`, `postId`, `postType`, `onVote`, `disabled?`, `userVote?` (default 0); `data-testid`: `vote-buttons`, `upvote-button`, `downvote-button`, `vote-score`
 - `components/ThreadList.tsx` - Paginated thread list (score <-5 shown collapsed); `data-testid`: `thread-list`, `thread-item-{id}`, `thread-title-{id}`, `thread-score-{id}`, `load-more-button`
 - `components/ThreadForm.tsx` - Thread creation form with char counters; `data-testid`: `thread-form`, `thread-title-input`, `thread-desc-input`, `thread-category-select`, `thread-submit-button`, `thread-form-error`, `thread-title-counter`, `thread-desc-counter`
 - `components/ReplyForm.tsx` - Reply composer (disabled at max depth 3); `data-testid`: `reply-form`, `reply-content-input`, `reply-submit-button`, `reply-form-error`, `reply-content-counter`
@@ -136,7 +136,7 @@
 - `components/ProfileLink.test.tsx` - 4 tests: render, data-testid, href construction
 - `components/ProfileForm.test.tsx` - 43 tests: loading, profile data, onChange handlers, maxLength attribute assertions (displayName 100, bio 500, location 100), boundary validation, save/delete/upload avatar flows, error paths, alert styling
 - `components/ForumCategoryFilter.test.tsx` - 15 tests: render, All button, category buttons, onChange with exact values, className for selected/unselected, rerender
-- `components/VoteButtons.test.tsx` - 9 tests: render, data-testid, score colors, click handlers, disabled state, badge layout
+- `components/VoteButtons.test.tsx` - 11 tests: render, data-testid, score colors, click handlers (userVote=0 normal, cancel-same, cancel-opposite), disabled state, badge layout
 - `components/ReplyItem.test.tsx` - 19 tests: render, data-testid, author header, avatar initials, vote badge, reply toggle, collapse/expand, nesting border, hidden score threshold
 
 ### Libraries

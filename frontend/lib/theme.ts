@@ -371,8 +371,12 @@ export const vote = {
   container: "inline-flex items-center gap-0.5 rounded-full border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-xs",
   // Upvote arrow button
   upvote: "rounded p-0.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
+  // Upvote arrow button — active state (user has upvoted)
+  upvoteActive: "rounded p-0.5 text-emerald-600 bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
   // Downvote arrow button
   downvote: "rounded p-0.5 text-gray-500 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
+  // Downvote arrow button — active state (user has downvoted)
+  downvoteActive: "rounded p-0.5 text-red-600 bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors",
   // Score number — positive (green, matching primary)
   scorePositive: "min-w-[1.25rem] text-center font-semibold text-emerald-600",
   // Score number — negative
