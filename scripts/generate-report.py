@@ -481,8 +481,16 @@ def generate_html_report(tests, mutations):
     return html
 
 if __name__ == "__main__":
+    print("📊 Generating test report...")
+    print(f"📁 Current directory: {os.getcwd()}")
+    print(f"📁 Available directories: {os.listdir('.')}")
+
     tests = parse_junit_reports()
     mutations = parse_mutation_reports()
+
+    print(f"✅ Tests parsed: {tests}")
+    print(f"✅ Mutations parsed: {mutations}")
+
     html = generate_html_report(tests, mutations)
 
     os.makedirs("target", exist_ok=True)

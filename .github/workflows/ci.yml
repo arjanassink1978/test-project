@@ -255,6 +255,9 @@ jobs:
       - name: Install Playwright dependencies
         run: cd playwright-tests && npm install
 
+      - name: Install Playwright browsers
+        run: cd playwright-tests && npx playwright install
+
       - name: Run Playwright E2E tests
         run: cd playwright-tests && npm test
 
@@ -314,11 +317,11 @@ jobs:
         run: mvn install -q -DskipTests
 
       - name: Run backend unit mutation tests
-        run: mvn pitest:mutationCoverage -pl backend -am -q
+        run: mvn org.pitest:pitest-maven:mutationCoverage -pl backend -am -q
         continue-on-error: true
 
       - name: Run RestAssured integration mutation tests
-        run: mvn pitest:mutationCoverage -pl restassured-tests -am -q
+        run: mvn org.pitest:pitest-maven:mutationCoverage -pl restassured-tests -am -q
         continue-on-error: true
 
       - name: Setup Node.js for frontend mutation testing
@@ -486,9 +489,15 @@ jobs:
         run: |
           mkdir -p docs/reports
 
-          # Copy test report
+          # Create dashboard first (will be main index if test report missing)
+          # Dashboard HTML will be created later in the script
+
+          # Copy test report if it exists
           if [ -f "test-report/test-report.html" ]; then
             cp test-report/test-report.html docs/index.html
+            echo "✅ Test report copied"
+          else
+            echo "⚠️  test-report/test-report.html not found"
           fi
 
           # Copy Playwright report
@@ -606,6 +615,12 @@ jobs:
           </body>
           </html>
           EOF
+
+          # If no test report exists, use dashboard as index
+          if [ ! -f "docs/index.html" ]; then
+            cp docs/reports.html docs/index.html
+            echo "✅ Using dashboard as index.html fallback"
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

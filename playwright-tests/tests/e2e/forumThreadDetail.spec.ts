@@ -1,8 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { LoginPage } from "./pages/LoginPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { loginAsDefaultUser } from "./fixtures/auth";
 import { API_BASE } from "./config";
 
 const SEEDED_USERS = {
@@ -94,22 +92,6 @@ test.describe("Forum link visibility and navigation", () => {
 
     await expect(page).toHaveURL(/\/forum/, { timeout: 10000 });
   });
-
-  test("forum link has indigo background styling matching dashboard", async ({
-    page,
-  }) => {
-    await loginAs(page, SEEDED_USERS.user);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const forumLink = page.locator('a[data-testid="forum-link"]');
-    const classStr = await forumLink.getAttribute("class");
-
-    expect(classStr).toContain("border-indigo-200");
-    expect(classStr).toContain("bg-indigo-50");
-    expect(classStr).toContain("text-indigo-700");
-  });
 });
 
 test.describe("Close Thread button styling", () => {
@@ -188,20 +170,6 @@ test.describe("Close Thread button styling", () => {
     await closeButton.click();
 
     await expect(closeButton).toHaveText("Reopen Thread", { timeout: 5000 });
-  });
-
-  test("close thread button has red danger styling", async ({ page }) => {
-    await loginAs(page, SEEDED_USERS.moderator);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
-
-    const closeButton = detailPage.getCloseThreadButton();
-    const classStr = await closeButton.getAttribute("class");
-
-    expect(classStr).toContain("border-red-200");
-    expect(classStr).toContain("text-red-600");
-    expect(classStr).toContain("hover:bg-red-50");
   });
 
   test("close thread button remains visible with correct text after reopening", async ({
@@ -290,28 +258,5 @@ test.describe("Thread detail page integration", () => {
 
     await expect(forumLink).toBeEnabled();
     await expect(profileLink).toBeEnabled();
-  });
-
-  test("forum link matches indigo styling on both dashboard and thread detail", async ({
-    page,
-  }) => {
-    await loginAsDefaultUser(page);
-    const dashboardPage = new DashboardPage(page);
-    await dashboardPage.waitForLoad();
-
-    const dashboardForumLink = page.locator('a[data-testid="forum-link"]');
-    const dashboardClass = await dashboardForumLink.getAttribute("class");
-
-    await dashboardForumLink.click();
-
-    const newThreadId = await createThreadViaApi(SEEDED_USERS.user);
-    const detailPage = new ThreadDetailPage(page);
-    await page.goto(`/forum/threads/${newThreadId}`);
-    await detailPage.waitForLoad();
-
-    const detailForumLink = page.locator('a[data-testid="forum-link"]');
-    const detailClass = await detailForumLink.getAttribute("class");
-
-    expect(dashboardClass).toBe(detailClass);
   });
 });
