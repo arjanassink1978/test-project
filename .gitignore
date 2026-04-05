@@ -20,8 +20,20 @@ reports/
 stryker-report.json
 stryker.log
 
-# Playwright Test Results
+# Test Results & Reports
 playwright-tests/test-results/
+playwright-tests/playwright-report/
+frontend/test-results/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Test Logs
+*.log
+test-output.log
 
 # OS
 .DS_Store
