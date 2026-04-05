@@ -68,7 +68,7 @@ export default function CategoryManagementTab({ token }: CategoryManagementTabPr
   }
 
   return (
-    <div data-testid="category-management-tab">
+    <div>
       {error && (
         <div className={`mb-4 ${alert.error}`} data-testid="category-management-error">
           {error}

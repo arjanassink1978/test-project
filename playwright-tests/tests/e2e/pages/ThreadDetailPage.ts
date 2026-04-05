@@ -1,179 +1,80 @@
-import { Page, Locator } from "@playwright/test";
+import { Page } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
-/**
- * Page Object for /forum/threads/[id] (thread detail page).
- * Uses data-testid as primary locator with semantic fallbacks.
- */
-export class ThreadDetailPage {
-  constructor(private readonly page: Page) {}
-
-  async goto(threadId: number) {
+export class ThreadDetailPage extends BasePage {
+  async gotoThread(threadId: number) {
     await this.page.goto(`/forum/threads/${threadId}`);
   }
 
-  async waitForLoad() {
-    await this.page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    await this.getTitle().waitFor({ state: "visible", timeout: 10000 });
+  async getThreadTitle(): Promise<string> {
+    const text = await this.page.getByTestId("thread-detail-title").textContent();
+    return text || "";
   }
 
-  getTitle(): Locator {
-    return this.page
-      .getByTestId("thread-detail-title")
-      .or(this.page.locator("h1"));
+  async getThreadDescription(): Promise<string> {
+    const text = await this.page.getByTestId("thread-detail-desc").textContent();
+    return text || "";
   }
 
-  getDescription(): Locator {
-    return this.page.getByTestId("thread-detail-desc");
+  async getThreadScore(): Promise<string> {
+    const text = await this.page.getByTestId("thread-detail-score").textContent();
+    return text || "";
   }
 
-  getScore(): Locator {
-    return this.page.getByTestId("thread-detail-score");
+  async getThreadAuthor(): Promise<string> {
+    const text = await this.page.getByTestId("thread-detail-author").textContent();
+    return text || "";
   }
 
-  getAuthor(): Locator {
-    return this.page.getByTestId("thread-detail-author");
+  async fillReplyContent(content: string) {
+    await this.fillInput("reply-content-input", content);
   }
 
-  getRepliesSection(): Locator {
-    return this.page.getByTestId("replies-section");
+  async submitReply() {
+    await this.clickButton("reply-submit-button");
   }
 
-  getUpvoteButton(): Locator {
-    return this.page
-      .getByTestId("upvote-button")
-      .first()
-      .or(this.page.getByLabel("Upvote").first());
+  async upvote() {
+    await this.clickButton("upvote-button");
   }
 
-  getDownvoteButton(): Locator {
-    return this.page
-      .getByTestId("downvote-button")
-      .first()
-      .or(this.page.getByLabel("Downvote").first());
+  async downvote() {
+    await this.clickButton("downvote-button");
   }
 
-  getVoteScore(): Locator {
-    return this.page.getByTestId("vote-score").first();
+  async getVoteScore(): Promise<string> {
+    const text = await this.page.getByTestId("vote-score").textContent();
+    return text || "";
   }
 
-  /**
-   * Returns the numeric vote score value from the thread-level vote-score element.
-   */
-  async getVoteScoreValue(): Promise<number> {
-    const text = await this.getVoteScore().textContent();
-    return Number(text?.trim() ?? "0");
+  async toggleReply(replyId: number) {
+    await this.clickButton(`reply-toggle-${replyId}`);
   }
 
-  getReplyForm(): Locator {
-    return this.page.getByTestId("reply-form");
+  async getReplyContent(replyId: number): Promise<string> {
+    const text = await this.page.getByTestId(`reply-content-${replyId}`).textContent();
+    return text || "";
   }
 
-  getReplyContentInput(): Locator {
-    return this.page.getByTestId("reply-content-input");
+  async isReplyFormVisible(): Promise<boolean> {
+    try {
+      await this.expectTestIdVisible("reply-form");
+      return true;
+    } catch {
+      return false;
+    }
   }
 
-  getReplySubmitButton(): Locator {
-    return this.page
-      .getByTestId("reply-submit-button")
-      .or(this.page.getByRole("button", { name: /post reply/i }));
+  async clickForumLink() {
+    await this.page.getByTestId("forum-link").click();
   }
 
-  getReplyItem(id: number): Locator {
-    return this.page.getByTestId(`reply-item-${id}`);
-  }
-
-  getReplyContent(id: number): Locator {
-    return this.page.getByTestId(`reply-content-${id}`);
-  }
-
-  /**
-   * reply-toggle-{id} is the inline "Reply/Cancel" button used to show or
-   * hide the nested reply form for a given reply.
-   */
-  getReplyToggle(id: number): Locator {
-    return this.page.getByTestId(`reply-toggle-${id}`);
-  }
-
-  /**
-   * Returns the author header row for a reply.
-   * Contains the avatar, username, and depth indicator.
-   */
-  getReplyAuthorRow(id: number): Locator {
-    return this.page.getByTestId(`reply-author-${id}`);
-  }
-
-  /**
-   * Returns the username text within the author row of a reply.
-   * The author row (reply-author-{id}) wraps avatar + username span.
-   */
-  getReplyAuthorName(id: number): Locator {
-    return this.page
-      .getByTestId(`reply-author-${id}`)
-      .locator("span")
-      .first();
-  }
-
-  /**
-   * Returns the vote-buttons badge element scoped to a specific reply item.
-   * The badge is rendered at the top-right of the reply header row.
-   */
-  getReplyVoteBadge(id: number): Locator {
-    return this.page
-      .getByTestId(`reply-item-${id}`)
-      .getByTestId("vote-buttons");
-  }
-
-  /**
-   * Returns the upvote button scoped to a specific reply item.
-   */
-  getReplyUpvoteButton(id: number): Locator {
-    return this.page
-      .getByTestId(`reply-item-${id}`)
-      .getByTestId("upvote-button");
-  }
-
-  /**
-   * Returns the vote-score element scoped to a specific reply item.
-   */
-  getReplyVoteScore(id: number): Locator {
-    return this.page
-      .getByTestId(`reply-item-${id}`)
-      .getByTestId("vote-score");
-  }
-
-  /**
-   * Returns the numeric vote score value for a specific reply.
-   */
-  async getReplyVoteScoreValue(id: number): Promise<number> {
-    const text = await this.getReplyVoteScore(id).textContent();
-    return Number(text?.trim() ?? "0");
-  }
-
-  /**
-   * Returns the collapse toggle button (–/+) for a nested reply.
-   * This button appears in the left gutter only for depth > 0 replies
-   * that have child replies. It is identified by its aria-label.
-   */
-  getCollapseToggle(id: number): Locator {
-    return this.page
-      .getByTestId(`reply-item-${id}`)
-      .getByRole("button", { name: /collapse replies|expand replies/i })
-      .first();
-  }
-
-  getClosedBadge(): Locator {
-    return this.page.getByTestId("thread-closed-badge");
-  }
-
-  getCloseThreadButton(): Locator {
-    return this.page.getByTestId("close-thread-button");
-  }
-
-  getThreadClosedMessage(): Locator {
-    return this.page.getByTestId("thread-closed-message");
-  }
-
-  getDeleteReplyButton(replyId: number): Locator {
-    return this.page.getByTestId(`delete-reply-${replyId}`);
+  async closeThreadButtonExists(): Promise<boolean> {
+    try {
+      const element = this.page.locator("[data-testid*='close-thread']").first();
+      return element.isVisible();
+    } catch {
+      return false;
+    }
   }
 }

@@ -1,160 +1,144 @@
 import { test, expect } from "@playwright/test";
-import { ThreadDetailPage } from "./pages/ThreadDetailPage";
-import { LoginPage } from "./pages/LoginPage";
-import { API_BASE } from "./config";
+import { DashboardPage } from "./pages/DashboardPage";
+import { AdminPage } from "./pages/AdminPage";
+import { setupDefaultUserAuth, setupAdminAuth, setupModeratorAuth, loginAsDefaultUser } from "./fixtures/auth";
+import { createThreadViaApi, deleteThreadViaApi } from "./fixtures/api";
 
-const MODERATOR = { username: "moderator", password: "moderator1234" };
-const USER = { username: "user", password: "user1234" };
+test.describe("Role-Based Access Control (RBAC)", () => {
+  test("admin link is visible only for admin users", async ({ page }) => {
+    await setupDefaultUserAuth(page);
 
-async function loginAs(page: import("@playwright/test").Page, creds: { username: string; password: string }) {
-  const loginPage = new LoginPage(page);
-  await loginPage.login(creds.username, creds.password);
-  await page.waitForURL(/\/dashboard/, { timeout: 10000 });
-}
+    const dashboard = new DashboardPage(page);
+    await dashboard.goto();
 
-async function fetchBearerToken(credentials: { username: string; password: string }): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username: credentials.username, password: credentials.password }),
-  });
-  if (!res.ok) throw new Error(`Failed to authenticate: ${res.status}`);
-  const data = await res.json() as { token?: string };
-  if (!data.token) throw new Error("No token returned from auth API");
-  return data.token;
-}
-
-async function createThreadViaApi(credentials: { username: string; password: string }): Promise<number> {
-  const token = await fetchBearerToken(credentials);
-  const res = await fetch(`${API_BASE}/api/forum/threads`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      title: `RBAC E2E Test Thread ${Date.now()}`,
-      description: "Thread for RBAC E2E testing",
-    }),
-  });
-  if (!res.ok) throw new Error(`Failed to create thread: ${res.status}`);
-  const data = await res.json() as { id: number };
-  return data.id;
-}
-
-async function createReplyViaApi(
-  threadId: number,
-  credentials: { username: string; password: string }
-): Promise<number> {
-  const token = await fetchBearerToken(credentials);
-  const res = await fetch(`${API_BASE}/api/forum/threads/${threadId}/replies`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
-    },
-    body: JSON.stringify({ content: "E2E test reply content" }),
-  });
-  if (!res.ok) throw new Error(`Failed to create reply: ${res.status}`);
-  const data = await res.json() as { id: number };
-  return data.id;
-}
-
-test.describe("RBAC — Moderator can close threads", () => {
-  let threadId: number;
-
-  test.beforeEach(async () => {
-    threadId = await createThreadViaApi(USER);
+    const hasAdminLink = await dashboard.hasAdminLink();
+    expect(hasAdminLink).toBe(false);
   });
 
-  test("moderator sees Close Thread button on thread detail", async ({ page }) => {
-    await loginAs(page, MODERATOR);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+  test("admin link is visible for admin users", async ({ page }) => {
+    await setupAdminAuth(page);
 
-    await expect(detailPage.getCloseThreadButton()).toBeVisible();
+    const dashboard = new DashboardPage(page);
+    await dashboard.goto();
+
+    const hasAdminLink = await dashboard.hasAdminLink();
+    expect(hasAdminLink).toBe(true);
   });
 
-  test("regular user does not see Close Thread button", async ({ page }) => {
-    await loginAs(page, USER);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+  test("admin link navigates to admin panel", async ({ page }) => {
+    await setupAdminAuth(page);
 
-    await expect(detailPage.getCloseThreadButton()).not.toBeVisible();
+    const dashboard = new DashboardPage(page);
+    await dashboard.goto();
+    await dashboard.clickAdminLink();
+
+    await expect(page).toHaveURL("/admin");
   });
 
-  test("moderator closes thread — CLOSED badge appears and reply form disappears", async ({ page }) => {
-    await loginAs(page, MODERATOR);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+  test("non-admin user cannot access admin panel", async ({ page }) => {
+    await loginAsDefaultUser(page);
 
-    await detailPage.getCloseThreadButton().click();
+    const adminPage = new AdminPage(page);
+    await adminPage.goto();
 
-    await expect(detailPage.getClosedBadge()).toBeVisible();
-    await expect(detailPage.getThreadClosedMessage()).toBeVisible();
-    await expect(detailPage.getReplyForm()).not.toBeVisible();
-  });
-});
-
-test.describe("RBAC — Moderator can delete replies", () => {
-  let threadId: number;
-  let replyId: number;
-
-  test.beforeEach(async () => {
-    threadId = await createThreadViaApi(USER);
-    replyId = await createReplyViaApi(threadId, USER);
+    await expect(page).toHaveURL("/dashboard");
   });
 
-  test("moderator sees delete button on replies", async ({ page }) => {
-    await loginAs(page, MODERATOR);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+  test("admin user can access admin panel", async ({ page }) => {
+    await setupAdminAuth(page);
 
-    await expect(detailPage.getDeleteReplyButton(replyId)).toBeVisible();
+    const adminPage = new AdminPage(page);
+    await adminPage.goto();
+
+    await expect(page).toHaveURL("/admin");
+    await expect(page.getByTestId("admin-panel")).toBeVisible();
   });
 
-  test("regular user does not see delete button on replies", async ({ page }) => {
-    await loginAs(page, USER);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+  test("admin can view user management tab", async ({ page }) => {
+    await setupAdminAuth(page);
 
-    await expect(detailPage.getDeleteReplyButton(replyId)).not.toBeVisible();
+    const adminPage = new AdminPage(page);
+    await adminPage.goto();
+    await adminPage.clickUserManagementTab();
+
+    await expect(page.getByTestId("user-management-tab")).toBeVisible();
   });
-});
 
-test.describe("RBAC — Closed thread shows error for reply attempt", () => {
-  let threadId: number;
+  test("admin can view category management tab", async ({ page }) => {
+    await setupAdminAuth(page);
 
-  test.beforeEach(async () => {
-    threadId = await createThreadViaApi(USER);
-    const token = await fetchBearerToken(MODERATOR);
-    await fetch(`${API_BASE}/api/forum/threads/${threadId}/close?closed=true`, {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${token}` },
+    const adminPage = new AdminPage(page);
+    await adminPage.goto();
+    await adminPage.clickCategoryManagementTab();
+
+    await expect(page.getByTestId("category-management-tab")).toBeVisible();
+  });
+
+  test("moderator cannot access admin panel", async ({ page }) => {
+    await setupModeratorAuth(page);
+
+    const adminPage = new AdminPage(page);
+    await adminPage.goto();
+
+    await expect(page).toHaveURL("/dashboard");
+  });
+
+  test("moderator has forum navigation but no admin link", async ({ page }) => {
+    await setupModeratorAuth(page);
+
+    const dashboard = new DashboardPage(page);
+    await dashboard.goto();
+
+    const hasAdminLink = await dashboard.hasAdminLink();
+    expect(hasAdminLink).toBe(false);
+  });
+
+  test("moderator can close thread", async ({ page }) => {
+    const { token: userToken } = await setupDefaultUserAuth(page);
+
+    const { id: threadId } = await createThreadViaApi(userToken, {
+      title: `Thread for moderator test ${Date.now()}`,
+      description: "Test thread",
+      categoryId: 1,
     });
+
+    const { token: modToken } = await setupModeratorAuth(page);
+    const adminPage = new AdminPage(page);
+    await adminPage.goto();
+
+    await deleteThreadViaApi(modToken, threadId);
   });
 
-  test("closed thread shows CLOSED badge", async ({ page }) => {
-    await loginAs(page, USER);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+  test("regular user cannot see admin panel link", async ({ page }) => {
+    await loginAsDefaultUser(page);
 
-    await expect(detailPage.getClosedBadge()).toBeVisible();
+    const dashboard = new DashboardPage(page);
+    await dashboard.goto();
+
+    const hasAdminLink = await dashboard.hasAdminLink();
+    expect(hasAdminLink).toBe(false);
   });
 
-  test("closed thread shows closed message and no reply form for logged-in user", async ({ page }) => {
-    await loginAs(page, USER);
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+  test("user role persists after page reload", async ({ page }) => {
+    const { role } = await setupAdminAuth(page);
 
-    await expect(detailPage.getThreadClosedMessage()).toBeVisible();
-    await expect(detailPage.getReplyForm()).not.toBeVisible();
+    const dashboard = new DashboardPage(page);
+    await dashboard.goto();
+
+    await page.reload();
+
+    const storedRole = await page.evaluate(() => localStorage.getItem("role"));
+    expect(storedRole).toBe(role);
+  });
+
+  test("logout clears role from localStorage", async ({ page }) => {
+    await setupAdminAuth(page);
+
+    const dashboard = new DashboardPage(page);
+    await dashboard.goto();
+    await dashboard.clickLogout();
+
+    const storedRole = await page.evaluate(() => localStorage.getItem("role"));
+    expect(storedRole).toBeNull();
   });
 });

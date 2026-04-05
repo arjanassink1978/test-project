@@ -1,25 +1,16 @@
 import { Page } from "@playwright/test";
-import { LoginPage } from "../pages/LoginPage";
-import { API_BASE } from "../config";
+import { API_BASE, DEFAULT_USER, DEFAULT_MODERATOR, DEFAULT_ADMIN } from "../config";
 
-export const DEFAULT_USER = {
-  username: "user",
-  password: "user1234",
+type AuthCredentials = {
+  username: string;
+  password: string;
+  email: string;
 };
 
-/**
- * Sets up authentication by calling /api/auth/login with JSON credentials.
- * Stores both 'authToken' and 'username' in localStorage for frontend access.
- *
- * Navigates to "/" first to ensure the page context allows localStorage access
- * (page.evaluate() fails on about:blank with a SecurityError).
- */
-export async function setupAuthViaAPI(page: Page, credentials: { username: string; password: string }): Promise<void> {
+async function getAuthToken(credentials: AuthCredentials): Promise<string> {
   const response = await fetch(`${API_BASE}/api/auth/login`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       username: credentials.username,
       password: credentials.password,
@@ -27,43 +18,113 @@ export async function setupAuthViaAPI(page: Page, credentials: { username: strin
   });
 
   if (!response.ok) {
-    throw new Error(`Auth setup failed: ${response.status}`);
+    throw new Error(`Failed to login: ${response.status}`);
   }
 
-  const data = await response.json() as { token?: string; username?: string; role?: string };
-  const token = data.token;
-
-  if (!token) {
-    throw new Error("No token returned from auth API");
+  const data = (await response.json()) as { token?: string; role?: string };
+  if (!data.token) {
+    throw new Error("No token in login response");
   }
 
-  // Navigate to the frontend root so localStorage is accessible (about:blank blocks it).
+  return data.token;
+}
+
+async function decodeJwt(token: string): Promise<{ role?: string; userId?: number }> {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      throw new Error("Invalid JWT format");
+    }
+    return JSON.parse(atob(parts[1]));
+  } catch {
+    throw new Error("Failed to decode JWT");
+  }
+}
+
+export async function setupAuthViaAPI(
+  page: Page,
+  credentials: AuthCredentials
+): Promise<{ token: string; role: string }> {
   await page.goto("/");
 
-  await page.evaluate(({ t, u, r }) => {
-    localStorage.setItem("authToken", t);
-    if (u) localStorage.setItem("username", u);
-    if (r) localStorage.setItem("role", r);
-  }, { t: token, u: data.username ?? credentials.username, r: data.role ?? "" });
+  const token = await getAuthToken(credentials);
+  const decoded = await decodeJwt(token);
+  const role = decoded.role || "USER";
+
+  console.log(`[setupAuthViaAPI] User: ${credentials.username}, JWT decoded:`, decoded, `Extracted role: ${role}`);
+
+  await page.evaluate(
+    ({ authToken, username, role }) => {
+      localStorage.setItem("authToken", authToken);
+      localStorage.setItem("username", username);
+      localStorage.setItem("role", role);
+      console.log(`[setupAuthViaAPI browser] Stored in localStorage - authToken: ${authToken.substring(0, 20)}..., username: ${username}, role: ${role}`);
+    },
+    { authToken: token, username: credentials.username, role }
+  );
+
+  return { token, role };
 }
 
-/**
- * Performs a full login via the UI and waits for the dashboard URL.
- * Delegates to LoginPage, which uses data-testid as the primary locator
- * strategy with semantic fallbacks for all form fields.
- *
- * Call this in beforeEach for tests that need a logged-in state.
- */
 export async function loginAsDefaultUser(page: Page): Promise<void> {
-  const loginPage = new LoginPage(page);
-  await loginPage.login(DEFAULT_USER.username, DEFAULT_USER.password);
-  await page.waitForURL(/\/dashboard/, { timeout: 10000 });
+  await page.goto("/login");
+
+  await page.getByTestId("username-input").fill(DEFAULT_USER.username);
+  await page.getByTestId("password-input").fill(DEFAULT_USER.password);
+  await page.getByTestId("login-button").click();
+
+  await page.waitForURL("/dashboard");
 }
 
-/**
- * Sets up auth for the default user via API.
- * Call this in beforeEach for tests that need a logged-in state.
- */
-export async function setupDefaultUserAuth(page: Page): Promise<void> {
-  await setupAuthViaAPI(page, DEFAULT_USER);
+export async function loginAsModerator(page: Page): Promise<void> {
+  await page.goto("/login");
+
+  await page.getByTestId("username-input").fill(DEFAULT_MODERATOR.username);
+  await page.getByTestId("password-input").fill(DEFAULT_MODERATOR.password);
+  await page.getByTestId("login-button").click();
+
+  await page.waitForURL("/dashboard");
+}
+
+export async function loginAsAdmin(page: Page): Promise<void> {
+  await page.goto("/login");
+
+  await page.getByTestId("username-input").fill(DEFAULT_ADMIN.username);
+  await page.getByTestId("password-input").fill(DEFAULT_ADMIN.password);
+  await page.getByTestId("login-button").click();
+
+  await page.waitForURL("/dashboard");
+}
+
+export async function setupDefaultUserAuth(page: Page): Promise<{ token: string; role: string }> {
+  // Use UI login instead of API to match working auth flow
+  await loginAsDefaultUser(page);
+
+  // Extract token from localStorage
+  const token = await page.evaluate(() => localStorage.getItem("authToken") || "");
+  const role = "USER";
+
+  return { token, role };
+}
+
+export async function setupModeratorAuth(page: Page): Promise<{ token: string; role: string }> {
+  // Use UI login instead of API to match working auth flow
+  await loginAsModerator(page);
+
+  // Extract token from localStorage
+  const token = await page.evaluate(() => localStorage.getItem("authToken") || "");
+  const role = "MODERATOR";
+
+  return { token, role };
+}
+
+export async function setupAdminAuth(page: Page): Promise<{ token: string; role: string }> {
+  // Use UI login instead of API to match working auth flow
+  await loginAsAdmin(page);
+
+  // Extract token from localStorage
+  const token = await page.evaluate(() => localStorage.getItem("authToken") || "");
+  const role = "ADMIN";
+
+  return { token, role };
 }

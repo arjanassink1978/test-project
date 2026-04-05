@@ -29,15 +29,14 @@ export default function ThreadDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [replyLoading, setReplyLoading] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
-  const [username, setUsername] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const [username] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("username") : null
+  );
+  const [role] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("role") : null
+  );
   const [closeLoading, setCloseLoading] = useState(false);
   const [userVote, setUserVote] = useState(0);
-
-  useEffect(() => {
-    setUsername(localStorage.getItem("username"));
-    setRole(localStorage.getItem("role"));
-  }, []);
 
   useEffect(() => {
     if (!threadId) return;

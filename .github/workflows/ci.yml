@@ -202,7 +202,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-test-results
-          path: frontend/test-results.xml
+          path: frontend/test-results/*.xml
           retention-days: 30
 
   test-e2e-docker:
@@ -266,7 +266,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-test-results
-          path: playwright-tests/test-results/
+          path: playwright-tests/test-results/junit.xml
           retention-days: 30
 
       - name: Upload Playwright HTML report
@@ -364,13 +364,13 @@ jobs:
         continue-on-error: true
 
       - name: Upload mutation results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mutation-results
           path: |
-            backend/target/pit-reports/
-            restassured-tests/target/pit-reports/
-            frontend/reports/mutation/
+            backend/target/pit-reports/mutations.xml
+            restassured-tests/target/pit-reports/mutations.xml
             frontend/stryker-report.json
           retention-days: 30
 
@@ -391,14 +391,6 @@ jobs:
         continue-on-error: true
         with:
           path: .
-
-      - name: Prepare Playwright test results
-        run: |
-          # Copy Playwright test report metadata for the Python script
-          mkdir -p playwright-test-results
-          if [ -f "playwright-report/playwright-tests/playwright-report/report.json" ]; then
-            cp playwright-report/playwright-tests/playwright-report/report.json playwright-test-results/report.json
-          fi
 
       - name: Generate report
         run: python3 scripts/generate-report.py

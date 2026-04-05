@@ -121,7 +121,7 @@ export default function RegisterForm() {
           placeholder="Voer uw e-mailadres in"
         />
         {errors.email && (
-          <p className={typography.errorText}>{errors.email}</p>
+          <p className={typography.errorText} data-testid="email-error">{errors.email}</p>
         )}
       </div>
 
@@ -142,7 +142,7 @@ export default function RegisterForm() {
           placeholder="Voer uw gebruikersnaam in"
         />
         {errors.username && (
-          <p className={typography.errorText}>{errors.username}</p>
+          <p className={typography.errorText} data-testid="username-error">{errors.username}</p>
         )}
       </div>
 
@@ -163,7 +163,7 @@ export default function RegisterForm() {
           placeholder="Voer uw wachtwoord in"
         />
         {errors.password && (
-          <p className={typography.errorText}>{errors.password}</p>
+          <p className={typography.errorText} data-testid="password-error">{errors.password}</p>
         )}
       </div>
 
@@ -184,7 +184,7 @@ export default function RegisterForm() {
           placeholder="Bevestig uw wachtwoord"
         />
         {errors.confirmPassword && (
-          <p className={typography.errorText}>{errors.confirmPassword}</p>
+          <p className={typography.errorText} data-testid="confirm-password-error">{errors.confirmPassword}</p>
         )}
       </div>
 

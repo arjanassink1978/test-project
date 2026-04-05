@@ -1,100 +1,65 @@
 import { Page, Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
-/**
- * Page Object for /forum (forum index page).
- * Uses data-testid as primary locator with semantic fallbacks.
- */
-export class ForumPage {
-  constructor(private readonly page: Page) {}
-
+export class ForumPage extends BasePage {
   async goto() {
     await this.page.goto("/forum");
   }
 
-  async waitForLoad() {
-    await this.page.waitForURL(/\/forum/, { timeout: 10000 });
-    await this.getHeading().waitFor({ state: "visible", timeout: 10000 });
+  async clickNewThread() {
+    await this.clickButton("new-thread-button");
   }
 
-  getHeading(): Locator {
-    return this.page
-      .getByTestId("forum-heading")
-      .or(this.page.locator("h1"));
+  async filterByCategory(categoryId: number) {
+    await this.clickButton(`category-option-${categoryId}`);
   }
 
-  getForumLink(): Locator {
-    return this.page
-      .getByTestId("forum-link")
-      .or(this.page.locator('a[href="/forum"]'));
+  async clearCategoryFilter() {
+    await this.clickButton("category-option-all");
   }
 
-  getNewThreadButton(): Locator {
-    return this.page
-      .getByTestId("new-thread-button")
-      .or(this.page.getByRole("button", { name: /new thread|nieuw/i }));
+  async setSort(value: string) {
+    await this.page.getByTestId("sort-select").selectOption(value);
   }
 
-  getCategoryFilter(): Locator {
-    return this.page.getByTestId("category-filter");
+  async search(query: string) {
+    await this.fillInput("search-input", query);
+    await this.page.waitForLoadState("networkidle");
   }
 
-  getCategoryOption(id: number | "all"): Locator {
-    return this.page.getByTestId(`category-option-${id}`);
+  async clickThread(threadId: number) {
+    await this.page.getByTestId(`thread-item-${threadId}`).click();
   }
 
-  getSortSelect(): Locator {
-    return this.page
-      .getByTestId("sort-select")
-      .or(this.page.locator("select"));
+  async getThreadTitle(threadId: number): Promise<string> {
+    const text = await this.page.getByTestId(`thread-title-${threadId}`).textContent();
+    return text || "";
   }
 
-  getSearchInput(): Locator {
-    return this.page
-      .getByTestId("search-input")
-      .or(this.page.locator('input[type="search"]'));
+  async getThreadScore(threadId: number): Promise<string> {
+    const text = await this.page.getByTestId(`thread-score-${threadId}`).textContent();
+    return text || "";
   }
 
-  getThreadList(): Locator {
-    return this.page.getByTestId("thread-list");
+  async clickLoadMore() {
+    await this.clickButton("load-more-button");
   }
 
-  getThreadItem(id: number): Locator {
-    return this.page.getByTestId(`thread-item-${id}`);
+  async hasLoadMoreButton(): Promise<boolean> {
+    try {
+      await this.expectTestIdVisible("load-more-button");
+      return true;
+    } catch {
+      return false;
+    }
   }
 
-  getThreadTitle(id: number): Locator {
-    return this.page.getByTestId(`thread-title-${id}`);
-  }
-
-  getThreadScore(id: number): Locator {
-    return this.page.getByTestId(`thread-score-${id}`);
-  }
-
-  getLoadMoreButton(): Locator {
-    return this.page
-      .getByTestId("load-more-button")
-      .or(this.page.getByRole("button", { name: /load more/i }));
-  }
-
-  /** Clicks the New Thread button and waits for navigation to /forum/new. */
-  async clickNewThreadButton(): Promise<void> {
-    await this.getNewThreadButton().click();
-    await this.page.waitForURL(/\/forum\/new/, { timeout: 5000 });
-  }
-
-  /**
-   * Selects a sort order in the sort select dropdown.
-   * @param value — "newest" or "popular"
-   */
-  async selectSort(value: "newest" | "popular"): Promise<void> {
-    await this.getSortSelect().selectOption(value);
-  }
-
-  /**
-   * Selects a category in the category filter.
-   * @param id — numeric category ID or "all"
-   */
-  async selectCategory(id: number | "all"): Promise<void> {
-    await this.getCategoryOption(id).click();
+  async isNewThreadButtonVisible(): Promise<boolean> {
+    try {
+      await this.expectTestIdVisible("new-thread-button");
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
