@@ -51,11 +51,14 @@ export async function setupAuthViaAPI(
   const decoded = await decodeJwt(token);
   const role = decoded.role || "USER";
 
+  console.log(`[setupAuthViaAPI] User: ${credentials.username}, JWT decoded:`, decoded, `Extracted role: ${role}`);
+
   await page.evaluate(
     ({ authToken, username, role }) => {
       localStorage.setItem("authToken", authToken);
       localStorage.setItem("username", username);
       localStorage.setItem("role", role);
+      console.log(`[setupAuthViaAPI browser] Stored in localStorage - authToken: ${authToken.substring(0, 20)}..., username: ${username}, role: ${role}`);
     },
     { authToken: token, username: credentials.username, role }
   );
