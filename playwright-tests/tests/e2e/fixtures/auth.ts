@@ -101,9 +101,23 @@ export async function setupDefaultUserAuth(page: Page): Promise<{ token: string;
 }
 
 export async function setupModeratorAuth(page: Page): Promise<{ token: string; role: string }> {
-  return setupAuthViaAPI(page, DEFAULT_MODERATOR);
+  // Use UI login instead of API to match working auth flow
+  await loginAsModerator(page);
+
+  // Extract token from localStorage
+  const token = await page.evaluate(() => localStorage.getItem("authToken") || "");
+  const role = "MODERATOR";
+
+  return { token, role };
 }
 
 export async function setupAdminAuth(page: Page): Promise<{ token: string; role: string }> {
-  return setupAuthViaAPI(page, DEFAULT_ADMIN);
+  // Use UI login instead of API to match working auth flow
+  await loginAsAdmin(page);
+
+  // Extract token from localStorage
+  const token = await page.evaluate(() => localStorage.getItem("authToken") || "");
+  const role = "ADMIN";
+
+  return { token, role };
 }
