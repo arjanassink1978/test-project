@@ -18,25 +18,36 @@ export default function AdminPage() {
 
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
-    const userIdStr = localStorage.getItem("userId");
-    const role = localStorage.getItem("role");
 
-    if (!authToken || role !== "ADMIN") {
+    // Decode JWT to check authorization and get userId
+    let userRole: string | null = null;
+    let userId = 0;
+
+    if (authToken) {
+      try {
+        const parts = authToken.split(".");
+        if (parts.length === 3) {
+          const decoded = JSON.parse(atob(parts[1])) as { userId?: number; role?: string };
+          userId = decoded.userId || 0;
+          userRole = decoded.role || null;
+          console.log('[AdminPage] Decoded JWT:', { userId, userRole, fullDecoded: decoded });
+        }
+      } catch (e) {
+        console.log('[AdminPage] Token parsing failed:', e);
+      }
+    }
+
+    console.log('[AdminPage] Authorization check - authToken exists:', !!authToken, 'userRole:', userRole, 'userRole === "ADMIN":', userRole === "ADMIN");
+
+    // Check authorization: must have token and ADMIN role
+    if (!authToken || userRole !== "ADMIN") {
+      console.log('[AdminPage] Authorization FAILED - redirecting to dashboard');
       router.push("/dashboard");
       return;
     }
 
-    // Decode JWT to get userId from claims
-    try {
-      const parts = authToken.split(".");
-      if (parts.length === 3) {
-        const decoded = JSON.parse(atob(parts[1])) as { userId?: number };
-        setCurrentUserId(decoded.userId || 0);
-      }
-    } catch {
-      setCurrentUserId(0);
-    }
-
+    console.log('[AdminPage] Authorization PASSED - rendering admin page');
+    setCurrentUserId(userId);
     setToken(authToken);
     setLoading(false);
   }, [router]);
