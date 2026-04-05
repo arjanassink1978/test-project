@@ -1,4 +1,5 @@
-import { Page, expect, Locator } from "@playwright/test";
+import { expect, Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 /**
  * Page Object for /profile/[username].
@@ -6,21 +7,22 @@ import { Page, expect, Locator } from "@playwright/test";
  * The profile page is rendered by ProfileForm.tsx.  All selectors use
  * data-testid as the primary strategy with semantic fallbacks via .or().
  */
-export class ProfilePage {
-  constructor(private readonly page: Page) {}
+export class ProfilePage extends BasePage {
+  protected getRoutePattern(): RegExp {
+    return /\/profile\//;
+  }
 
   // -------------------------------------------------------------------------
   // Navigation
   // -------------------------------------------------------------------------
 
   async goto(username: string) {
-    await this.page.goto(`/profile/${username}`);
-    await expect(this.page).toHaveURL(new RegExp(`/profile/${username}`));
+    await this.gotoDynamicRoute("/profile", username);
   }
 
   /** Wait until the profile content has fully loaded (spinner gone, heading visible). */
   async waitForLoad() {
-    await expect(this.page).toHaveURL(/\/profile\//);
+    await expect(this.page).toHaveURL(this.getRoutePattern());
     await expect(this.getHeading()).toBeVisible({ timeout: 10000 });
     // Also confirm the loading spinner is gone
     await expect(

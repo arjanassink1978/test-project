@@ -1,4 +1,5 @@
-import { Page, expect, Locator } from "@playwright/test";
+import { Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 /**
  * Page Object for /admin.
@@ -7,12 +8,18 @@ import { Page, expect, Locator } from "@playwright/test";
  * - User Management: search users, change roles with confirmation dialog
  * - Category Management: create, edit, delete categories
  */
-export class AdminPage {
-  constructor(private readonly page: Page) {}
+export class AdminPage extends BasePage {
+  protected getRoutePattern(): RegExp {
+    return /\/admin$/;
+  }
 
-  async waitForLoad() {
-    await expect(this.page).toHaveURL(/\/admin/, { timeout: 10000 });
-    await expect(this.getAdminPanel()).toBeVisible({ timeout: 10000 });
+  async goto() {
+    await this.gotoRoute("/admin");
+  }
+
+  getHeading(): Locator {
+    // Admin panel uses the admin-panel element as its primary indicator
+    return this.getAdminPanel();
   }
 
   /**

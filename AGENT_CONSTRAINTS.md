@@ -22,6 +22,19 @@ Helpt agents elkaar context door te geven en tijd/tokens te sparen door bekend b
 
 ## 📋 Frontend Constraints
 
+### Test IDs (data-testid) — Required for Playwright
+- **Requirement:** Every interactive element must have a unique `data-testid` attribute
+- **Elements that need it:** Form inputs, buttons, error messages, links, forms, modals, alerts
+- **Why:** Playwright E2E tests use `page.getByTestId()` as primary locator strategy. Fragile selectors (CSS classes, text filters) break with styling changes
+- **Naming:** kebab-case, descriptive (e.g., `email-input`, `login-error`, `submit-button`)
+- **Example:**
+  ```tsx
+  <input data-testid="email-input" type="email" />
+  <p data-testid="email-error">{error}</p>
+  <button data-testid="login-submit">Login</button>
+  ```
+- **Test:** Playwright tests verify using `page.getByTestId()`
+
 ### Avatar Upload
 - **Max File Size:** 5MB
 - **Frontend:** Enforces via validation before upload

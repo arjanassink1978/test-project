@@ -1,4 +1,5 @@
-import { Page, expect, Locator } from "@playwright/test";
+import { Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 /**
  * Page Object for /dashboard.
@@ -7,12 +8,13 @@ import { Page, expect, Locator } from "@playwright/test";
  * Issue #4 requires adding a "Go to Profile" link — this Page Object
  * targets both existing content and the expected profile link.
  */
-export class DashboardPage {
-  constructor(private readonly page: Page) {}
+export class DashboardPage extends BasePage {
+  protected getRoutePattern(): RegExp {
+    return /\/dashboard$/;
+  }
 
-  async waitForLoad() {
-    await expect(this.page).toHaveURL(/\/dashboard/, { timeout: 10000 });
-    await expect(this.getHeading()).toBeVisible({ timeout: 10000 });
+  async goto() {
+    await this.gotoRoute("/dashboard");
   }
 
   /**

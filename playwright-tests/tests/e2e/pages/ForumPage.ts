@@ -1,19 +1,17 @@
-import { Page, Locator } from "@playwright/test";
+import { Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 /**
  * Page Object for /forum (forum index page).
  * Uses data-testid as primary locator with semantic fallbacks.
  */
-export class ForumPage {
-  constructor(private readonly page: Page) {}
-
-  async goto() {
-    await this.page.goto("/forum");
+export class ForumPage extends BasePage {
+  protected getRoutePattern(): RegExp {
+    return /\/forum$/;
   }
 
-  async waitForLoad() {
-    await this.page.waitForURL(/\/forum/, { timeout: 10000 });
-    await this.getHeading().waitFor({ state: "visible", timeout: 10000 });
+  async goto() {
+    await this.gotoRoute("/forum");
   }
 
   getHeading(): Locator {

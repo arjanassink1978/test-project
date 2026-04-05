@@ -1,11 +1,18 @@
-import { Page, Locator, expect } from "@playwright/test";
+import { Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
-export class LoginPage {
-  constructor(private readonly page: Page) {}
+export class LoginPage extends BasePage {
+  protected getRoutePattern(): RegExp {
+    return /\/login$/;
+  }
 
   async goto() {
-    await this.page.goto("/login");
-    await expect(this.page).toHaveURL(/\/login/);
+    await this.gotoRoute("/login");
+  }
+
+  getHeading(): Locator {
+    // Login page may not have a visible h1 heading, so provide a fallback
+    return this.page.locator("h1");
   }
 
   /**

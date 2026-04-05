@@ -1,20 +1,17 @@
-import { Page, Locator, expect } from "@playwright/test";
+import { Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 /**
  * Page Object for /register.
  * Uses data-testid as primary locator with semantic fallbacks.
  */
-export class RegisterPage {
-  constructor(private readonly page: Page) {}
-
-  async goto() {
-    await this.page.goto("/register");
-    await expect(this.page).toHaveURL(/\/register/);
+export class RegisterPage extends BasePage {
+  protected getRoutePattern(): RegExp {
+    return /\/register$/;
   }
 
-  async waitForLoad() {
-    await expect(this.page).toHaveURL(/\/register/, { timeout: 5000 });
-    await expect(this.getHeading()).toBeVisible({ timeout: 5000 });
+  async goto() {
+    await this.gotoRoute("/register");
   }
 
   getHeading(): Locator {

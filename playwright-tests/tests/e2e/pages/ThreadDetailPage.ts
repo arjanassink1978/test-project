@@ -1,19 +1,21 @@
-import { Page, Locator } from "@playwright/test";
+import { Locator } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 /**
  * Page Object for /forum/threads/[id] (thread detail page).
  * Uses data-testid as primary locator with semantic fallbacks.
  */
-export class ThreadDetailPage {
-  constructor(private readonly page: Page) {}
-
-  async goto(threadId: number) {
-    await this.page.goto(`/forum/threads/${threadId}`);
+export class ThreadDetailPage extends BasePage {
+  protected getRoutePattern(): RegExp {
+    return /\/forum\/threads\/\d+/;
   }
 
-  async waitForLoad() {
-    await this.page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    await this.getTitle().waitFor({ state: "visible", timeout: 10000 });
+  async goto(threadId: number) {
+    await this.gotoDynamicRoute("/forum/threads", threadId);
+  }
+
+  getHeading(): Locator {
+    return this.getTitle();
   }
 
   getTitle(): Locator {
