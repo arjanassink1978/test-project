@@ -1,10 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { AdminPage } from "./pages/AdminPage";
-import { LoginPage } from "./pages/LoginPage";
 import { API_BASE } from "./config";
-
-const ADMIN_USER = { username: "admin", password: "admin1234" };
-const REGULAR_USER = { username: "user", password: "user1234" };
+import { loginAsAdmin, loginAsDefaultUser, ADMIN_USER, DEFAULT_USER } from "./fixtures/auth";
 
 /**
  * API Helper: Fetch JWT token for authentication
@@ -100,9 +97,7 @@ async function getUserRoleViaApi(userId: number): Promise<string> {
 
 test.describe("Admin Authorization", () => {
   test("admin can access /admin page", async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.login(ADMIN_USER.username, ADMIN_USER.password);
-    await page.waitForURL(/\/dashboard/, { timeout: 10000 });
+    await loginAsAdmin(page);
     await page.goto("/admin");
     const adminPage = new AdminPage(page);
     await adminPage.waitForLoad();
@@ -111,9 +106,7 @@ test.describe("Admin Authorization", () => {
   });
 
   test("non-admin user is redirected from /admin to /dashboard", async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.login(REGULAR_USER.username, REGULAR_USER.password);
-    await page.waitForURL(/\/dashboard/, { timeout: 10000 });
+    await loginAsDefaultUser(page);
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
   });
@@ -125,8 +118,7 @@ test.describe("Admin Authorization", () => {
 
 test.describe("User Management", () => {
   test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.login(ADMIN_USER.username, ADMIN_USER.password);
+    await loginAsAdmin(page);
     await page.waitForURL(/\/dashboard/, { timeout: 10000 });
     await page.goto("/admin");
   });
@@ -236,9 +228,7 @@ test.describe("User Management", () => {
 
 test.describe("Category Management", () => {
   test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.login(ADMIN_USER.username, ADMIN_USER.password);
-    await page.waitForURL(/\/dashboard/, { timeout: 10000 });
+    await loginAsAdmin(page);
     await page.goto("/admin");
   });
 

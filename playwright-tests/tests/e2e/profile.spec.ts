@@ -103,9 +103,7 @@ test.describe("User Profile Page Flow", () => {
   test.describe("1. Login to dashboard to profile navigation", () => {
     test("logs in with valid credentials and navigates from dashboard to profile", async ({ page }) => {
       // Step 1: login
-      const loginPage = new LoginPage(page);
-      await loginPage.login(DEFAULT_USER.username, DEFAULT_USER.password);
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
+      await loginAsDefaultUser(page);
 
       // Step 2: click the profile link on the dashboard
       const dashboardPage = new DashboardPage(page);

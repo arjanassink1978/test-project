@@ -1,22 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
-import { LoginPage } from "./pages/LoginPage";
 import { API_BASE } from "./config";
-
-const SEEDED_USERS = {
-  user: { username: "user", password: "user1234" },
-  moderator: { username: "moderator", password: "moderator1234" },
-  admin: { username: "admin", password: "admin1234" },
-};
-
-async function loginAs(
-  page: import("@playwright/test").Page,
-  creds: { username: string; password: string }
-) {
-  const loginPage = new LoginPage(page);
-  await loginPage.login(creds.username, creds.password);
-  await page.waitForURL(/\/dashboard/, { timeout: 10000 });
-}
+import { loginAsDefaultUser, loginAsModerator, loginAsAdmin, DEFAULT_USER } from "./fixtures/auth";
 
 async function fetchBearerToken(credentials: {
   username: string;
@@ -62,11 +47,11 @@ test.describe("Forum link navigation from thread detail", () => {
   let threadId: number;
 
   test.beforeEach(async () => {
-    threadId = await createThreadViaApi(SEEDED_USERS.user);
+    threadId = await createThreadViaApi(DEFAULT_USER);
   });
 
   test("clicking forum link on thread detail navigates to /forum", async ({ page }) => {
-    await loginAs(page, SEEDED_USERS.user);
+    await loginAsDefaultUser(page);
     const detailPage = new ThreadDetailPage(page);
     await detailPage.goto(threadId);
     await detailPage.waitForLoad();
@@ -88,11 +73,11 @@ test.describe("Close and reopen thread journey", () => {
   let threadId: number;
 
   test.beforeEach(async () => {
-    threadId = await createThreadViaApi(SEEDED_USERS.user);
+    threadId = await createThreadViaApi(DEFAULT_USER);
   });
 
   test("moderator closes thread — button updates to 'Reopen Thread', then reopens", async ({ page }) => {
-    await loginAs(page, SEEDED_USERS.moderator);
+    await loginAsModerator(page);
     const detailPage = new ThreadDetailPage(page);
     await detailPage.goto(threadId);
     await detailPage.waitForLoad();
