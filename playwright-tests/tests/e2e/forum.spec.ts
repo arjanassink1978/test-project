@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { ForumPage } from "./pages/ForumPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
-import { setupDefaultUserAuth, loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
+import { loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
 import { createThreadViaApi, createReplyViaApi } from "./fixtures/forum";
 import { API_BASE } from "./config";
 
@@ -23,7 +23,7 @@ async function fetchBearerToken(credentials: { username: string; password: strin
 
 test.describe("Thread creation flow", () => {
   test.beforeEach(async ({ page }) => {
-    await setupDefaultUserAuth(page);
+    await loginAsDefaultUser(page);
     await page.goto("/forum");
   });
 
@@ -85,7 +85,7 @@ test.describe("Thread creation flow", () => {
 
 test.describe("Thread title constraint flow", () => {
   test.beforeEach(async ({ page }) => {
-    await setupDefaultUserAuth(page);
+    await loginAsDefaultUser(page);
     await page.goto("/forum/new");
   });
 
@@ -126,7 +126,7 @@ test.describe("Thread reply flow", () => {
   let threadId: number;
 
   test.beforeEach(async ({ page }) => {
-    await setupDefaultUserAuth(page);
+    await loginAsDefaultUser(page);
     threadId = await createThreadViaApi(
       `Reply Flow Thread ${Date.now()}`,
       "Thread for reply flow testing",
@@ -159,7 +159,7 @@ test.describe("Nested reply flow", () => {
   let parentReplyId: number;
 
   test.beforeEach(async ({ page }) => {
-    await setupDefaultUserAuth(page);
+    await loginAsDefaultUser(page);
 
     threadId = await createThreadViaApi(
       `Nesting Flow Thread ${Date.now()}`,

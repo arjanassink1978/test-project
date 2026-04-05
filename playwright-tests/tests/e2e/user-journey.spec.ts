@@ -5,7 +5,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { ForumPage } from "./pages/ForumPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
 import { ProfilePage } from "./pages/ProfilePage";
-import { loginAsDefaultUser, setupDefaultUserAuth, DEFAULT_USER } from "./fixtures/auth";
+import { loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
 import { API_BASE } from "./config";
 
 // ---------------------------------------------------------------------------
@@ -86,7 +86,7 @@ test.describe("Full user journey: register → login → forum → create thread
 
 test.describe("Forum navigation from dashboard", () => {
   test.beforeEach(async ({ page }) => {
-    await setupDefaultUserAuth(page);
+    await loginAsDefaultUser(page);
     await page.goto("/dashboard");
   });
 
@@ -111,7 +111,7 @@ test.describe("Forum navigation from dashboard", () => {
 
 test.describe("Forum category filter flow", () => {
   test.beforeEach(async ({ page }) => {
-    await setupDefaultUserAuth(page);
+    await loginAsDefaultUser(page);
   });
 
   test("clicking a category filter shows only threads for that category", async ({ page }) => {

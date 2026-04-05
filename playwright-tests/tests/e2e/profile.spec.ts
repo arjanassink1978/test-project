@@ -5,7 +5,7 @@ import * as os from "os";
 import { LoginPage } from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ProfilePage } from "./pages/ProfilePage";
-import { loginAsDefaultUser, setupDefaultUserAuth, DEFAULT_USER } from "./fixtures/auth";
+import { loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
 import { API_BASE } from "./config";
 
 // ---------------------------------------------------------------------------
@@ -149,7 +149,7 @@ test.describe("User Profile Page Flow", () => {
   // -------------------------------------------------------------------------
   test.describe("2. Profile display flow", () => {
     test("profile page shows account info, edit form, and avatar after load", async ({ page }) => {
-      await setupDefaultUserAuth(page);
+      await loginAsDefaultUser(page);
       await page.goto(`/profile/${DEFAULT_USER.username}`);
       const profilePage = new ProfilePage(page);
       await profilePage.waitForLoad();
@@ -172,7 +172,7 @@ test.describe("User Profile Page Flow", () => {
     });
 
     test("shows avatar placeholder when no avatar is set", async ({ page }) => {
-      await setupDefaultUserAuth(page);
+      await loginAsDefaultUser(page);
       // Mock GET so the frontend receives a profile with no avatarUrl.
       // This is an edge-case path (not the seeded default) — mocking is appropriate.
       await page.route(`**/api/profile/${DEFAULT_USER.username}`, async (route, request) => {
@@ -211,7 +211,7 @@ test.describe("User Profile Page Flow", () => {
   // -------------------------------------------------------------------------
   test.describe("3. Edit profile flow", () => {
     test.beforeEach(async ({ page }) => {
-      await setupDefaultUserAuth(page);
+      await loginAsDefaultUser(page);
       await resetProfile();
     });
 
@@ -253,7 +253,7 @@ test.describe("User Profile Page Flow", () => {
   // -------------------------------------------------------------------------
   test.describe("3b. Profile constraint error flows", () => {
     test("displayName input enforces max 100 character limit via maxlength attribute", async ({ page }) => {
-      await setupDefaultUserAuth(page);
+      await loginAsDefaultUser(page);
       // CONSTRAINT: displayName max 100 chars — must match backend validation
       await page.goto(`/profile/${DEFAULT_USER.username}`);
       const profilePage = new ProfilePage(page);
@@ -270,7 +270,7 @@ test.describe("User Profile Page Flow", () => {
     });
 
     test("bio input enforces max 500 character limit via maxlength attribute", async ({ page }) => {
-      await setupDefaultUserAuth(page);
+      await loginAsDefaultUser(page);
       // CONSTRAINT: bio max 500 chars — must match backend validation
       await page.goto(`/profile/${DEFAULT_USER.username}`);
       const profilePage = new ProfilePage(page);
@@ -285,7 +285,7 @@ test.describe("User Profile Page Flow", () => {
     });
 
     test("shows error alert when profile update API returns 500", async ({ page }) => {
-      await setupDefaultUserAuth(page);
+      await loginAsDefaultUser(page);
       await page.goto(`/profile/${DEFAULT_USER.username}`);
       const profilePage = new ProfilePage(page);
       await profilePage.waitForLoad();
@@ -317,7 +317,7 @@ test.describe("User Profile Page Flow", () => {
   // -------------------------------------------------------------------------
   test.describe("4. Avatar upload flow", () => {
     test.beforeEach(async ({ page }) => {
-      await setupDefaultUserAuth(page);
+      await loginAsDefaultUser(page);
     });
 
     test.afterEach(async () => {
@@ -387,7 +387,7 @@ test.describe("User Profile Page Flow", () => {
   // -------------------------------------------------------------------------
   test.describe("4b. Avatar delete flow", () => {
     test.beforeEach(async ({ page }) => {
-      await setupDefaultUserAuth(page);
+      await loginAsDefaultUser(page);
       await restoreAvatar();
     });
 
@@ -419,7 +419,7 @@ test.describe("User Profile Page Flow", () => {
   // -------------------------------------------------------------------------
   test.describe("5. Logout flow", () => {
     test("logout button visible on profile page and clicking it redirects to home/login", async ({ page }) => {
-      await setupDefaultUserAuth(page);
+      await loginAsDefaultUser(page);
       await page.goto(`/profile/${DEFAULT_USER.username}`);
       const profilePage = new ProfilePage(page);
       await profilePage.waitForLoad();
@@ -442,7 +442,7 @@ test.describe("User Profile Page Flow", () => {
   // -------------------------------------------------------------------------
   test.describe("Error scenarios", () => {
     test("shows error alert when profile API returns 404", async ({ page }) => {
-      await setupDefaultUserAuth(page);
+      await loginAsDefaultUser(page);
       await page.route(`**/api/profile/${DEFAULT_USER.username}`, async (route) => {
         await route.fulfill({ status: 404, body: "" });
       });
