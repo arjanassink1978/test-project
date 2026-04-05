@@ -1,86 +1,45 @@
-import { Locator } from "@playwright/test";
+import { Page } from "@playwright/test";
 import { BasePage } from "./BasePage";
 
-/**
- * Page Object for /register.
- * Uses data-testid as primary locator with semantic fallbacks.
- */
 export class RegisterPage extends BasePage {
-  protected getRoutePattern(): RegExp {
-    return /\/register$/;
-  }
-
   async goto() {
-    await this.gotoRoute("/register");
+    await this.page.goto("/register");
   }
 
-  getHeading(): Locator {
-    return this.page
-      .getByTestId("register-heading")
-      .or(this.page.locator("h1"));
+  async fillEmail(email: string) {
+    await this.fillInput("email-input", email);
   }
 
-  getEmailInput(): Locator {
-    return this.page
-      .getByTestId("email-input")
-      .or(this.page.locator("input#email"));
+  async fillUsername(username: string) {
+    await this.fillInput("username-input", username);
   }
 
-  getUsernameInput(): Locator {
-    return this.page
-      .getByTestId("username-input")
-      .or(this.page.locator("input#username"));
+  async fillPassword(password: string) {
+    await this.fillInput("password-input", password);
   }
 
-  getPasswordInput(): Locator {
-    return this.page
-      .getByTestId("password-input")
-      .or(this.page.locator("input#password"));
-  }
-
-  getConfirmPasswordInput(): Locator {
-    return this.page
-      .getByTestId("confirm-password-input")
-      .or(this.page.locator("input#confirmPassword"));
-  }
-
-  getSubmitButton(): Locator {
-    return this.page
-      .getByTestId("register-button")
-      .or(this.page.getByRole("button", { name: /registreren|register/i }));
-  }
-
-  getErrorMessage(): Locator {
-    return this.page
-      .getByTestId("register-error")
-      .or(
-        this.page
-          .locator('[role="alert"]')
-          .filter({ hasNot: this.page.locator('[id="__next-route-announcer__"]') })
-          .first()
-      );
-  }
-
-  getLoginLink(): Locator {
-    return this.page
-      .getByTestId("login-link")
-      .or(this.page.getByRole("link", { name: /inloggen|login/i }));
-  }
-
-  async fillForm(email: string, username: string, password: string, confirmPassword: string) {
-    await this.getEmailInput().fill(email);
-    await this.getUsernameInput().fill(username);
-    await this.getPasswordInput().fill(password);
-    await this.getConfirmPasswordInput().fill(confirmPassword);
+  async fillConfirmPassword(password: string) {
+    await this.fillInput("confirm-password-input", password);
   }
 
   async submit() {
-    await this.getSubmitButton().click();
+    await this.clickButton("register-button");
   }
 
-  async register(email: string, username: string, password: string, confirmPassword?: string) {
-    await this.goto();
-    await this.fillForm(email, username, password, confirmPassword ?? password);
+  async getError(): Promise<string | null> {
+    try {
+      const error = await this.page.getByTestId("register-error").textContent();
+      return error;
+    } catch {
+      return null;
+    }
+  }
+
+  async registerWith(email: string, username: string, password: string, confirmPassword: string) {
+    await this.fillEmail(email);
+    await this.fillUsername(username);
+    await this.fillPassword(password);
+    await this.fillConfirmPassword(confirmPassword);
     await this.submit();
   }
 }

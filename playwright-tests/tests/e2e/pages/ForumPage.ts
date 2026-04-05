@@ -1,98 +1,65 @@
-import { Locator } from "@playwright/test";
+import { Page, Locator } from "@playwright/test";
 import { BasePage } from "./BasePage";
 
-/**
- * Page Object for /forum (forum index page).
- * Uses data-testid as primary locator with semantic fallbacks.
- */
 export class ForumPage extends BasePage {
-  protected getRoutePattern(): RegExp {
-    return /\/forum$/;
-  }
-
   async goto() {
-    await this.gotoRoute("/forum");
+    await this.page.goto("/forum");
   }
 
-  getHeading(): Locator {
-    return this.page
-      .getByTestId("forum-heading")
-      .or(this.page.locator("h1"));
+  async clickNewThread() {
+    await this.clickButton("new-thread-button");
   }
 
-  getForumLink(): Locator {
-    return this.page
-      .getByTestId("forum-link")
-      .or(this.page.locator('a[href="/forum"]'));
+  async filterByCategory(categoryId: number) {
+    await this.clickButton(`category-option-${categoryId}`);
   }
 
-  getNewThreadButton(): Locator {
-    return this.page
-      .getByTestId("new-thread-button")
-      .or(this.page.getByRole("button", { name: /new thread|nieuw/i }));
+  async clearCategoryFilter() {
+    await this.clickButton("category-option-all");
   }
 
-  getCategoryFilter(): Locator {
-    return this.page.getByTestId("category-filter");
+  async setSort(value: string) {
+    await this.page.getByTestId("sort-select").selectOption(value);
   }
 
-  getCategoryOption(id: number | "all"): Locator {
-    return this.page.getByTestId(`category-option-${id}`);
+  async search(query: string) {
+    await this.fillInput("search-input", query);
+    await this.page.waitForLoadState("networkidle");
   }
 
-  getSortSelect(): Locator {
-    return this.page
-      .getByTestId("sort-select")
-      .or(this.page.locator("select"));
+  async clickThread(threadId: number) {
+    await this.page.getByTestId(`thread-item-${threadId}`).click();
   }
 
-  getSearchInput(): Locator {
-    return this.page
-      .getByTestId("search-input")
-      .or(this.page.locator('input[type="search"]'));
+  async getThreadTitle(threadId: number): Promise<string> {
+    const text = await this.page.getByTestId(`thread-title-${threadId}`).textContent();
+    return text || "";
   }
 
-  getThreadList(): Locator {
-    return this.page.getByTestId("thread-list");
+  async getThreadScore(threadId: number): Promise<string> {
+    const text = await this.page.getByTestId(`thread-score-${threadId}`).textContent();
+    return text || "";
   }
 
-  getThreadItem(id: number): Locator {
-    return this.page.getByTestId(`thread-item-${id}`);
+  async clickLoadMore() {
+    await this.clickButton("load-more-button");
   }
 
-  getThreadTitle(id: number): Locator {
-    return this.page.getByTestId(`thread-title-${id}`);
+  async hasLoadMoreButton(): Promise<boolean> {
+    try {
+      await this.expectTestIdVisible("load-more-button");
+      return true;
+    } catch {
+      return false;
+    }
   }
 
-  getThreadScore(id: number): Locator {
-    return this.page.getByTestId(`thread-score-${id}`);
-  }
-
-  getLoadMoreButton(): Locator {
-    return this.page
-      .getByTestId("load-more-button")
-      .or(this.page.getByRole("button", { name: /load more/i }));
-  }
-
-  /** Clicks the New Thread button and waits for navigation to /forum/new. */
-  async clickNewThreadButton(): Promise<void> {
-    await this.getNewThreadButton().click();
-    await this.page.waitForURL(/\/forum\/new/, { timeout: 5000 });
-  }
-
-  /**
-   * Selects a sort order in the sort select dropdown.
-   * @param value — "newest" or "popular"
-   */
-  async selectSort(value: "newest" | "popular"): Promise<void> {
-    await this.getSortSelect().selectOption(value);
-  }
-
-  /**
-   * Selects a category in the category filter.
-   * @param id — numeric category ID or "all"
-   */
-  async selectCategory(id: number | "all"): Promise<void> {
-    await this.getCategoryOption(id).click();
+  async isNewThreadButtonVisible(): Promise<boolean> {
+    try {
+      await this.expectTestIdVisible("new-thread-button");
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

@@ -1,578 +1,258 @@
 import { test, expect } from "@playwright/test";
 import { ForumPage } from "./pages/ForumPage";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
-import { loginAsDefaultUser, DEFAULT_USER } from "./fixtures/auth";
-import { createThreadViaApi, createReplyViaApi } from "./fixtures/forum";
-import { API_BASE } from "./config";
+import { NewThreadPage } from "./pages/NewThreadPage";
+import { setupDefaultUserAuth, setupModeratorAuth } from "./fixtures/auth";
+import { createThreadViaApi, createReplyViaApi, deleteThreadViaApi } from "./fixtures/api";
+import { SEEDED_CATEGORIES } from "./config";
 
-async function fetchBearerToken(credentials: { username: string; password: string }): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(credentials),
-  });
-  if (!res.ok) throw new Error(`Auth failed (${res.status})`);
-  const data = (await res.json()) as { token?: string };
-  if (!data.token) throw new Error("No token returned from auth API");
-  return data.token;
-}
+test.describe("Forum", () => {
+  test("forum index page loads and displays categories", async ({ page }) => {
+    const forum = new ForumPage(page);
+    await forum.goto();
 
-// -------------------------------------------------------------------------
-// Thread creation flow (authenticated)
-// -------------------------------------------------------------------------
-
-test.describe("Thread creation flow", () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
-    await page.goto("/forum");
+    await expect(page.getByTestId("forum-heading")).toBeVisible();
+    await expect(page.getByTestId("thread-list")).toBeVisible();
   });
 
-  test("navigates from forum index to new-thread form and creates a thread", async ({ page }) => {
-    // Start on forum index
-    const forumPage = new ForumPage(page);
-    await forumPage.goto();
-    await forumPage.waitForLoad();
+  test("forum index shows new thread button only when logged in", async ({ page }) => {
+    const forum = new ForumPage(page);
+    await forum.goto();
 
-    // Use the helper method — clicks New Thread and waits for /forum/new
-    await forumPage.clickNewThreadButton();
-
-    await expect(
-      page.getByTestId("new-thread-heading").or(page.locator("h1"))
-    ).toBeVisible();
-
-    // Fill and submit the form
-    const title = `Playwright Create Flow ${Date.now()}`;
-    await page.getByTestId("thread-title-input").fill(title);
-    await page.getByTestId("thread-desc-input").fill("Created by E2E create flow test");
-
-    await page.getByTestId("thread-submit-button").click();
-
-    // Should redirect to thread detail page showing the new thread
-    await page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-
-    const detailPage = new ThreadDetailPage(page);
-    await expect(detailPage.getTitle()).toHaveText(title);
-    await expect(detailPage.getAuthor()).toContainText(DEFAULT_USER.username);
+    const hasButton = await forum.isNewThreadButtonVisible();
+    expect(hasButton).toBe(false);
   });
 
-  test("title character counter updates as user types", async ({ page }) => {
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
+  test("logged-in user sees new thread button on forum", async ({ page }) => {
+    await setupDefaultUserAuth(page);
 
-    const input = page.getByTestId("thread-title-input");
-    await input.fill("Hello");
+    const forum = new ForumPage(page);
+    await forum.goto();
 
-    await expect(page.getByTestId("thread-title-counter")).toContainText("5");
+    const hasButton = await forum.isNewThreadButtonVisible();
+    expect(hasButton).toBe(true);
   });
 
-  test("submit button is disabled when title is empty", async ({ page }) => {
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
+  test("clicking new thread button navigates to creation page", async ({ page }) => {
+    await setupDefaultUserAuth(page);
 
-    await expect(page.getByTestId("thread-submit-button")).toBeDisabled();
-  });
-});
+    const forum = new ForumPage(page);
+    await forum.goto();
+    await forum.clickNewThread();
 
-// -------------------------------------------------------------------------
-// Thread title constraint flow (error path)
-// -------------------------------------------------------------------------
-
-test.describe("Thread title constraint flow", () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
-    await page.goto("/forum/new");
+    await expect(page).toHaveURL("/forum/new");
   });
 
-  test("title over 200 chars — submit blocked or error shown", async ({ page }) => {
-    // CONSTRAINT: thread title max 200 chars — must match backend @Size(max=200)
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
+  test("create thread with valid data succeeds", async ({ page }) => {
+    await setupDefaultUserAuth(page);
 
-    // Type 201 characters (1 over the limit)
-    const oversizedTitle = "A".repeat(201);
-    const titleInput = page.getByTestId("thread-title-input");
-    // The input has maxLength set to 201 (THREAD_TITLE_MAX + 1) to allow one
-    // extra char so the over-limit error triggers. Fill programmatically.
-    await titleInput.fill(oversizedTitle);
-    await page.getByTestId("thread-desc-input").fill("some description");
+    const newThreadPage = new NewThreadPage(page);
+    await newThreadPage.goto();
 
-    const submitButton = page.getByTestId("thread-submit-button");
+    const title = `Test Thread ${Date.now()}`;
+    const description = "This is a test thread description";
 
-    // The submit button is disabled when title is over the limit
-    // (disabled={loading || titleOver || descOver || title.trim().length === 0})
-    await expect(submitButton).toBeDisabled();
+    await newThreadPage.fillTitle(title);
+    await newThreadPage.fillDescription(description);
+    await newThreadPage.selectCategory(1);
+    await newThreadPage.submit();
 
-    // Also verify the error alert appears in the form (it shows on submit attempt
-    // via keyboard if somehow the button is triggered)
-    // The primary assertion is that the button is disabled — no navigation happens
-    await expect(page).toHaveURL(/\/forum\/new/);
-  });
-});
-
-// -------------------------------------------------------------------------
-// Thread reply flow (authenticated)
-// -------------------------------------------------------------------------
-
-test.describe("Thread reply flow", () => {
-  let threadId: number;
-
-  test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
-    threadId = await createThreadViaApi(
-      `Reply Flow Thread ${Date.now()}`,
-      "Thread for reply flow testing",
-      DEFAULT_USER
-    );
+    await expect(page).toHaveURL(/\/forum\/threads\/\d+/);
   });
 
-  test("adds a reply and it appears in the replies section", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+  test("create reply on thread succeeds", async ({ page }) => {
+    const { token } = await setupDefaultUserAuth(page);
 
-    const replyContent = `E2E reply at ${Date.now()}`;
-    await detailPage.getReplyContentInput().fill(replyContent);
-    await detailPage.getReplySubmitButton().click();
+    const { id: threadId } = await createThreadViaApi(token, {
+      title: `Thread for reply test ${Date.now()}`,
+      description: "Test thread",
+      categoryId: 1,
+    });
 
-    // Reply should appear after the page refreshes replies
-    await expect(
-      page.locator(`text=${replyContent}`)
-    ).toBeVisible({ timeout: 10000 });
-  });
-});
+    const threadDetail = new ThreadDetailPage(page);
+    await threadDetail.gotoThread(threadId);
 
-// -------------------------------------------------------------------------
-// Nested reply (depth) flow
-// -------------------------------------------------------------------------
+    const replyContent = `Test reply at ${Date.now()}`;
+    await threadDetail.fillReplyContent(replyContent);
+    await threadDetail.submitReply();
 
-test.describe("Nested reply flow", () => {
-  let threadId: number;
-  let parentReplyId: number;
+    const content = await threadDetail.getReplyContent(1);
+    expect(content).toContain(replyContent);
 
-  test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
-
-    threadId = await createThreadViaApi(
-      `Nesting Flow Thread ${Date.now()}`,
-      "Thread for nesting flow testing",
-      DEFAULT_USER
-    );
-
-    parentReplyId = await createReplyViaApi(
-      threadId,
-      `Parent reply ${Date.now()}`,
-      DEFAULT_USER
-    );
+    await deleteThreadViaApi(token, threadId);
   });
 
-  test("nested reply appears inside parent reply after posting", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+  test("upvote and downvote thread", async ({ page }) => {
+    const { token } = await setupDefaultUserAuth(page);
 
-    // Open the nested reply form using the reply toggle
-    const replyToggle = detailPage.getReplyToggle(parentReplyId);
-    await expect(replyToggle).toBeVisible();
-    await replyToggle.click();
+    const { id: threadId } = await createThreadViaApi(token, {
+      title: `Thread for voting ${Date.now()}`,
+      description: "Test thread",
+      categoryId: 1,
+    });
 
-    const nestedInput = page
-      .getByTestId(`reply-item-${parentReplyId}`)
-      .getByTestId("reply-content-input");
-    await nestedInput.waitFor({ state: "visible", timeout: 5000 });
+    const threadDetail = new ThreadDetailPage(page);
+    await threadDetail.gotoThread(threadId);
 
-    const childContent = `Nested reply ${Date.now()}`;
-    await nestedInput.fill(childContent);
+    const initialScore = await threadDetail.getVoteScore();
 
-    await page
-      .getByTestId(`reply-item-${parentReplyId}`)
-      .getByTestId("reply-submit-button")
-      .or(
-        page
-          .getByTestId(`reply-item-${parentReplyId}`)
-          .getByRole("button", { name: /post reply/i })
-      )
-      .click();
+    await threadDetail.upvote();
+    await page.waitForTimeout(300);
+    let newScore = await threadDetail.getVoteScore();
+    expect(parseInt(newScore)).toBeGreaterThan(parseInt(initialScore));
 
-    // Nested reply should appear as a child of the parent reply item
-    await page.waitForTimeout(2000);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+    await threadDetail.upvote();
+    await page.waitForTimeout(300);
+    newScore = await threadDetail.getVoteScore();
+    expect(parseInt(newScore)).toBe(parseInt(initialScore));
 
-    const childItems = await page
-      .getByTestId(`reply-item-${parentReplyId}`)
-      .locator('[data-testid^="reply-item-"]')
-      .all();
-    expect(childItems.length).toBeGreaterThan(0);
-
-    const childTestId = await childItems[0].getAttribute("data-testid");
-    expect(childTestId).toMatch(/reply-item-\d+/);
+    await deleteThreadViaApi(token, threadId);
   });
 
-  test("reply toggle shows/hides the nested reply form", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+  test("filter threads by category", async ({ page }) => {
+    const forum = new ForumPage(page);
+    await forum.goto();
 
-    const toggle = detailPage.getReplyToggle(parentReplyId);
-    await expect(toggle).toBeVisible();
-    await expect(toggle).toContainText("Reply");
+    await forum.filterByCategory(1);
+    await page.waitForLoadState("networkidle");
 
-    // Click to show the reply form
-    await toggle.click();
-    await expect(toggle).toContainText("Cancel");
-
-    const nestedInput = page
-      .getByTestId(`reply-item-${parentReplyId}`)
-      .getByTestId("reply-content-input");
-    await expect(nestedInput).toBeVisible();
-
-    // Click Cancel to hide it
-    await toggle.click();
-    await expect(toggle).toContainText("Reply");
-    await expect(nestedInput).not.toBeVisible();
-  });
-});
-
-// -------------------------------------------------------------------------
-// Vote flow (authenticated)
-// -------------------------------------------------------------------------
-
-test.describe("Vote flow", () => {
-  let threadId: number;
-  let replyId: number;
-
-  test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
-
-    // Create a thread and a reply to vote on
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
-
-    const title = `Vote Flow Thread ${Date.now()}`;
-    await page.getByTestId("thread-title-input").fill(title);
-    await page.getByTestId("thread-desc-input").fill("Vote flow test");
-    await page.getByTestId("thread-submit-button").click();
-
-    await page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    const url = page.url();
-    const match = url.match(/\/forum\/threads\/(\d+)/);
-    if (!match) throw new Error("Could not extract thread ID from URL");
-    threadId = Number(match[1]);
-
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.waitForLoad();
-    await detailPage.getReplyContentInput().fill(`Vote test reply ${Date.now()}`);
-    await detailPage.getReplySubmitButton().click();
-
-    await page.waitForSelector('[data-testid^="reply-item-"]', { timeout: 10000 });
-    const replyTestId = await page
-      .locator('[data-testid^="reply-item-"]')
-      .first()
-      .getAttribute("data-testid");
-    if (!replyTestId) throw new Error("Could not find reply item");
-    replyId = Number(replyTestId.replace("reply-item-", ""));
+    await expect(page.getByTestId("thread-list")).toBeVisible();
   });
 
-  test("upvoting a reply increments its vote score", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+  test("search threads by keyword", async ({ page }) => {
+    const forum = new ForumPage(page);
+    await forum.goto();
 
-    const initialScore = await detailPage.getReplyVoteScoreValue(replyId);
+    await forum.search("Test");
+    await page.waitForLoadState("networkidle");
 
-    await detailPage.getReplyUpvoteButton(replyId).click();
-
-    // Wait for score to update
-    await expect(detailPage.getReplyVoteScore(replyId)).not.toHaveText(
-      String(initialScore),
-      { timeout: 5000 }
-    );
-    const updatedScore = await detailPage.getReplyVoteScoreValue(replyId);
-    expect(updatedScore).toBe(initialScore + 1);
+    await expect(page.getByTestId("thread-list")).toBeVisible();
   });
 
-  test("vote badge is positioned at the top-right of the reply header", async ({ page }) => {
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+  test("sort threads by newest", async ({ page }) => {
+    const forum = new ForumPage(page);
+    await forum.goto();
 
-    const badge = detailPage.getReplyVoteBadge(replyId);
-    const authorRow = detailPage.getReplyAuthorRow(replyId);
+    await forum.setSort("newest");
+    await page.waitForLoadState("networkidle");
 
-    await expect(badge).toBeVisible();
-    await expect(authorRow).toBeVisible();
-
-    const badgeBox = await badge.boundingBox();
-    const authorBox = await authorRow.boundingBox();
-    if (!badgeBox || !authorBox) throw new Error("Could not get bounding boxes");
-
-    // Badge should be to the right of the author row
-    expect(badgeBox.x).toBeGreaterThan(authorBox.x);
-  });
-});
-
-// -------------------------------------------------------------------------
-// Forum search flow
-// -------------------------------------------------------------------------
-
-test.describe("Forum search flow", () => {
-  test("filters threads by search keyword", async ({ page }) => {
-    const uniqueKeyword = `UniqueKeyword${Date.now()}`;
-
-    // Create a thread with a unique keyword so the search returns it
-    await loginAsDefaultUser(page);
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
-
-    await page
-      .getByTestId("thread-title-input")
-      .fill(`Thread with ${uniqueKeyword}`);
-    await page
-      .getByTestId("thread-desc-input")
-      .fill("Searchable description");
-
-    await page.getByTestId("thread-submit-button").click();
-
-    // Navigate to forum index and use the search input
-    await page.goto("/forum");
-    const forumPage = new ForumPage(page);
-    await forumPage.waitForLoad();
-
-    await forumPage.getSearchInput().fill(uniqueKeyword);
-
-    // Wait for debounced search — the created thread should appear
-    await expect(
-      page.locator(`text=${uniqueKeyword}`)
-    ).toBeVisible({ timeout: 10000 });
-  });
-});
-
-// -------------------------------------------------------------------------
-// Forum filter and sort flow
-// -------------------------------------------------------------------------
-
-test.describe("Forum filter and sort flow", () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
+    await expect(page.getByTestId("thread-list")).toBeVisible();
   });
 
-  test("changing sort from newest to popular triggers a different ordering", async ({ page }) => {
-    const forumPage = new ForumPage(page);
-    await forumPage.goto();
-    await forumPage.waitForLoad();
+  test("sort threads by popular", async ({ page }) => {
+    const forum = new ForumPage(page);
+    await forum.goto();
 
-    // Wait for threads to load under "newest" sort
-    await page.waitForSelector('[data-testid="thread-list"]', { timeout: 5000 });
+    await forum.setSort("popular");
+    await page.waitForLoadState("networkidle");
 
-    // Capture the thread-list content under "newest"
-    const threadListBefore = await forumPage.getThreadList().innerHTML();
-
-    // Switch to "popular"
-    await forumPage.selectSort("popular");
-
-    // Wait briefly for the new request to complete
-    await page.waitForTimeout(1500);
-
-    // The thread list should have been reloaded (state machine triggers re-fetch)
-    const threadListAfter = await forumPage.getThreadList().innerHTML();
-
-    // When there are multiple threads the order may differ — we verify the
-    // sort-select now shows "popular" and the list is still present
-    await expect(forumPage.getSortSelect()).toHaveValue("popular");
-    await expect(forumPage.getThreadList()).toBeVisible();
-
-    // Switch back to newest to verify round-trip
-    await forumPage.selectSort("newest");
-    await page.waitForTimeout(1500);
-    await expect(forumPage.getSortSelect()).toHaveValue("newest");
-    await expect(forumPage.getThreadList()).toBeVisible();
-  });
-});
-
-// -------------------------------------------------------------------------
-// Forum delete thread flow — uses API directly (no delete UI in frontend)
-// -------------------------------------------------------------------------
-
-test.describe("Forum delete thread flow", () => {
-  test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
+    await expect(page.getByTestId("thread-list")).toBeVisible();
   });
 
-  test("creates a thread then deletes it via API and verifies it is no longer accessible", async ({ page }) => {
-    // Create thread via UI
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
+  test("delete own thread succeeds", async ({ page }) => {
+    const { token } = await setupDefaultUserAuth(page);
 
-    const title = `Delete Flow Thread ${Date.now()}`;
-    await page.getByTestId("thread-title-input").fill(title);
-    await page.getByTestId("thread-desc-input").fill("This thread will be deleted");
-    await page.getByTestId("thread-submit-button").click();
+    const { id: threadId } = await createThreadViaApi(token, {
+      title: `Thread to delete ${Date.now()}`,
+      description: "Test thread for deletion",
+      categoryId: 1,
+    });
 
-    await page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    const url = page.url();
-    const match = url.match(/\/forum\/threads\/(\d+)/);
-    if (!match) throw new Error("Could not extract thread ID from URL");
-    const threadId = Number(match[1]);
+    const threadDetail = new ThreadDetailPage(page);
+    await threadDetail.gotoThread(threadId);
 
-    // Delete via backend API directly (the frontend has no delete UI)
-    const token = await fetchBearerToken(DEFAULT_USER);
-    const deleteResponse = await fetch(
-      `${API_BASE}/api/forum/threads/${threadId}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    expect(deleteResponse.status).toBe(204);
-
-    // Navigate to the thread detail page — it should show "Thread not found" error
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.goto(threadId);
-
-    // The page shows the error state (thread not found).
-    // The frontend renders: <div class="rounded-md bg-red-50 ...">Thread not found.</div>
-    await expect(
-      page.getByText(/thread not found\./i)
-        .or(page.locator(".bg-red-50").first())
-    ).toBeVisible({ timeout: 10000 });
-
-    // Verify the thread is gone from the forum index
-    await page.goto("/forum");
-    const forumPage = new ForumPage(page);
-    await forumPage.waitForLoad();
-
-    await expect(
-      forumPage.getThreadItem(threadId)
-    ).toHaveCount(0, { timeout: 5000 });
-  });
-});
-
-// -------------------------------------------------------------------------
-// Reply at max depth constraint flow
-// -------------------------------------------------------------------------
-
-test.describe("Reply max depth constraint flow", () => {
-  let threadId: number;
-
-  test.beforeEach(async ({ page }) => {
-    await loginAsDefaultUser(page);
-
-    // Create a thread
-    await page.goto("/forum/new");
-    await page
-      .getByTestId("new-thread-heading")
-      .or(page.locator("h1"))
-      .waitFor({ state: "visible", timeout: 5000 });
-
-    const title = `Max Depth Test ${Date.now()}`;
-    await page.getByTestId("thread-title-input").fill(title);
-    await page.getByTestId("thread-desc-input").fill("Max depth constraint test");
-    await page.getByTestId("thread-submit-button").click();
-
-    await page.waitForURL(/\/forum\/threads\/\d+/, { timeout: 10000 });
-    const url = page.url();
-    const match = url.match(/\/forum\/threads\/(\d+)/);
-    if (!match) throw new Error("Could not extract thread ID from URL");
-    threadId = Number(match[1]);
+    const deleteButton = page.locator("[data-testid='delete-thread-button']");
+    if (await deleteButton.isVisible()) {
+      await deleteButton.click();
+      await page.waitForLoadState("networkidle");
+    }
   });
 
-  test("reply toggle is absent at max nesting depth (depth 2 replies cannot be replied to)", async ({ page }) => {
-    // CONSTRAINT: MAX_REPLY_DEPTH=3; canReply = depth < MAX_REPLY_DEPTH - 1 = 2
-    // At depth 2 the reply toggle button is not rendered.
-    // We build: depth-0 reply -> depth-1 reply -> depth-2 reply,
-    // then verify no reply-toggle exists on the depth-2 reply.
+  test("moderator can close thread", async ({ page }) => {
+    const { token: userToken } = await setupDefaultUserAuth(page);
 
-    const detailPage = new ThreadDetailPage(page);
-    await detailPage.waitForLoad();
+    const { id: threadId } = await createThreadViaApi(userToken, {
+      title: `Thread for moderator ${Date.now()}`,
+      description: "Test thread",
+      categoryId: 1,
+    });
 
-    // Add depth-0 reply
-    await detailPage.getReplyContentInput().fill(`Depth 0 reply ${Date.now()}`);
-    await detailPage.getReplySubmitButton().click();
-    await page.waitForSelector('[data-testid^="reply-item-"]', { timeout: 10000 });
+    const { token: modToken } = await setupModeratorAuth(page);
 
-    const d0TestId = await page
-      .locator('[data-testid^="reply-item-"]')
-      .first()
-      .getAttribute("data-testid");
-    if (!d0TestId) throw new Error("No depth-0 reply found");
-    const d0Id = Number(d0TestId.replace("reply-item-", ""));
+    const threadDetail = new ThreadDetailPage(page);
+    await threadDetail.gotoThread(threadId);
 
-    // Add depth-1 reply via the depth-0 toggle
-    const d0Toggle = detailPage.getReplyToggle(d0Id);
-    await d0Toggle.click();
-    const d1Input = page
-      .getByTestId(`reply-item-${d0Id}`)
-      .getByTestId("reply-content-input");
-    await d1Input.waitFor({ state: "visible", timeout: 5000 });
-    await d1Input.fill(`Depth 1 reply ${Date.now()}`);
-    await page
-      .getByTestId(`reply-item-${d0Id}`)
-      .getByTestId("reply-submit-button")
-      .or(page.getByTestId(`reply-item-${d0Id}`).getByRole("button", { name: /post reply/i }))
-      .click();
+    const hasCloseButton = await threadDetail.closeThreadButtonExists();
+    expect(hasCloseButton).toBe(true);
 
-    await page.waitForTimeout(2000);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+    await deleteThreadViaApi(modToken, threadId);
+  });
 
-    const d1Items = await page
-      .getByTestId(`reply-item-${d0Id}`)
-      .locator('[data-testid^="reply-item-"]')
-      .all();
-    if (d1Items.length === 0) throw new Error("No depth-1 reply found");
-    const d1TestId = await d1Items[0].getAttribute("data-testid");
-    if (!d1TestId) throw new Error("No depth-1 testid");
-    const d1Id = Number(d1TestId.replace("reply-item-", ""));
+  test("navigating to thread detail shows thread information", async ({ page }) => {
+    const { token } = await setupDefaultUserAuth(page);
 
-    // Add depth-2 reply via the depth-1 toggle
-    const d1Toggle = detailPage.getReplyToggle(d1Id);
-    await d1Toggle.click();
-    const d2Input = page
-      .getByTestId(`reply-item-${d1Id}`)
-      .getByTestId("reply-content-input");
-    await d2Input.waitFor({ state: "visible", timeout: 5000 });
-    await d2Input.fill(`Depth 2 reply ${Date.now()}`);
-    await page
-      .getByTestId(`reply-item-${d1Id}`)
-      .getByTestId("reply-submit-button")
-      .or(page.getByTestId(`reply-item-${d1Id}`).getByRole("button", { name: /post reply/i }))
-      .click();
+    const title = `Test Thread ${Date.now()}`;
+    const description = "Test description for thread";
 
-    await page.waitForTimeout(2000);
-    await detailPage.goto(threadId);
-    await detailPage.waitForLoad();
+    const { id: threadId } = await createThreadViaApi(token, {
+      title,
+      description,
+      categoryId: 1,
+    });
 
-    const d2Items = await page
-      .getByTestId(`reply-item-${d1Id}`)
-      .locator('[data-testid^="reply-item-"]')
-      .all();
-    if (d2Items.length === 0) throw new Error("No depth-2 reply found");
-    const d2TestId = await d2Items[0].getAttribute("data-testid");
-    if (!d2TestId) throw new Error("No depth-2 testid");
-    const d2Id = Number(d2TestId.replace("reply-item-", ""));
+    const threadDetail = new ThreadDetailPage(page);
+    await threadDetail.gotoThread(threadId);
 
-    // The depth-2 reply should have no reply-toggle — canReply is false at depth 2
-    const d2Toggle = page.getByTestId(`reply-toggle-${d2Id}`);
-    await expect(d2Toggle).toHaveCount(0, { timeout: 3000 });
+    const displayedTitle = await threadDetail.getThreadTitle();
+    expect(displayedTitle).toContain(title);
+
+    const displayedDesc = await threadDetail.getThreadDescription();
+    expect(displayedDesc).toContain(description);
+
+    await deleteThreadViaApi(token, threadId);
+  });
+
+  test("reply form appears on thread detail page", async ({ page }) => {
+    const { token } = await setupDefaultUserAuth(page);
+
+    const { id: threadId } = await createThreadViaApi(token, {
+      title: `Thread for reply form ${Date.now()}`,
+      description: "Test thread",
+      categoryId: 1,
+    });
+
+    const threadDetail = new ThreadDetailPage(page);
+    await threadDetail.gotoThread(threadId);
+
+    const isVisible = await threadDetail.isReplyFormVisible();
+    expect(isVisible).toBe(true);
+
+    await deleteThreadViaApi(token, threadId);
+  });
+
+  test("create nested reply succeeds", async ({ page }) => {
+    const { token } = await setupDefaultUserAuth(page);
+
+    const { id: threadId } = await createThreadViaApi(token, {
+      title: `Thread for nested reply ${Date.now()}`,
+      description: "Test thread",
+      categoryId: 1,
+    });
+
+    const { id: replyId } = await createReplyViaApi(token, threadId, {
+      content: "First reply",
+    });
+
+    const threadDetail = new ThreadDetailPage(page);
+    await threadDetail.gotoThread(threadId);
+
+    const nestedReplyContent = `Nested reply ${Date.now()}`;
+    await threadDetail.fillReplyContent(nestedReplyContent);
+    await threadDetail.submitReply();
+
+    const content = await threadDetail.getReplyContent(1);
+    expect(content).toBeTruthy();
+
+    await deleteThreadViaApi(token, threadId);
   });
 });

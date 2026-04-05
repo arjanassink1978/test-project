@@ -1,54 +1,106 @@
 import { Page } from "@playwright/test";
-import { LoginPage } from "../pages/LoginPage";
+import { API_BASE, DEFAULT_USER, DEFAULT_MODERATOR, DEFAULT_ADMIN } from "../config";
 
-export const DEFAULT_USER = {
-  username: "user",
-  password: "user1234",
+type AuthCredentials = {
+  username: string;
+  password: string;
+  email: string;
 };
 
-export const MODERATOR_USER = {
-  username: "moderator",
-  password: "moderator1234",
-};
+async function getAuthToken(credentials: AuthCredentials): Promise<string> {
+  const response = await fetch(`${API_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: credentials.username,
+      password: credentials.password,
+    }),
+  });
 
-export const ADMIN_USER = {
-  username: "admin",
-  password: "admin1234",
-};
+  if (!response.ok) {
+    throw new Error(`Failed to login: ${response.status}`);
+  }
 
-/**
- * Performs a full login via the UI as a regular user and waits for the dashboard URL.
- * Delegates to LoginPage, which uses data-testid as the primary locator
- * strategy with semantic fallbacks for all form fields.
- *
- * Call this in beforeEach for tests that need a logged-in state as a regular user.
- */
+  const data = (await response.json()) as { token?: string; role?: string };
+  if (!data.token) {
+    throw new Error("No token in login response");
+  }
+
+  return data.token;
+}
+
+async function decodeJwt(token: string): Promise<{ role?: string; userId?: number }> {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      throw new Error("Invalid JWT format");
+    }
+    return JSON.parse(atob(parts[1]));
+  } catch {
+    throw new Error("Failed to decode JWT");
+  }
+}
+
+export async function setupAuthViaAPI(
+  page: Page,
+  credentials: AuthCredentials
+): Promise<{ token: string; role: string }> {
+  await page.goto("/");
+
+  const token = await getAuthToken(credentials);
+  const decoded = await decodeJwt(token);
+  const role = decoded.role || "USER";
+
+  await page.evaluate(
+    ({ authToken, username, role }) => {
+      localStorage.setItem("authToken", authToken);
+      localStorage.setItem("username", username);
+      localStorage.setItem("role", role);
+    },
+    { authToken: token, username: credentials.username, role }
+  );
+
+  return { token, role };
+}
+
 export async function loginAsDefaultUser(page: Page): Promise<void> {
-  const loginPage = new LoginPage(page);
-  await loginPage.login(DEFAULT_USER.username, DEFAULT_USER.password);
-  await page.waitForURL(/\/dashboard/, { timeout: 10000 });
+  await page.goto("/login");
+
+  await page.getByTestId("username-input").fill(DEFAULT_USER.username);
+  await page.getByTestId("password-input").fill(DEFAULT_USER.password);
+  await page.getByTestId("login-button").click();
+
+  await page.waitForURL("/dashboard");
 }
 
-/**
- * Performs a full login via the UI as a moderator and waits for the dashboard URL.
- * Moderators can close threads and delete replies.
- *
- * Call this in tests that need moderator permissions.
- */
 export async function loginAsModerator(page: Page): Promise<void> {
-  const loginPage = new LoginPage(page);
-  await loginPage.login(MODERATOR_USER.username, MODERATOR_USER.password);
-  await page.waitForURL(/\/dashboard/, { timeout: 10000 });
+  await page.goto("/login");
+
+  await page.getByTestId("username-input").fill(DEFAULT_MODERATOR.username);
+  await page.getByTestId("password-input").fill(DEFAULT_MODERATOR.password);
+  await page.getByTestId("login-button").click();
+
+  await page.waitForURL("/dashboard");
 }
 
-/**
- * Performs a full login via the UI as an admin and waits for the dashboard URL.
- * Admins have access to the /admin panel for user and category management.
- *
- * Call this in tests that need admin permissions.
- */
 export async function loginAsAdmin(page: Page): Promise<void> {
-  const loginPage = new LoginPage(page);
-  await loginPage.login(ADMIN_USER.username, ADMIN_USER.password);
-  await page.waitForURL(/\/dashboard/, { timeout: 10000 });
+  await page.goto("/login");
+
+  await page.getByTestId("username-input").fill(DEFAULT_ADMIN.username);
+  await page.getByTestId("password-input").fill(DEFAULT_ADMIN.password);
+  await page.getByTestId("login-button").click();
+
+  await page.waitForURL("/dashboard");
+}
+
+export async function setupDefaultUserAuth(page: Page): Promise<{ token: string; role: string }> {
+  return setupAuthViaAPI(page, DEFAULT_USER);
+}
+
+export async function setupModeratorAuth(page: Page): Promise<{ token: string; role: string }> {
+  return setupAuthViaAPI(page, DEFAULT_MODERATOR);
+}
+
+export async function setupAdminAuth(page: Page): Promise<{ token: string; role: string }> {
+  return setupAuthViaAPI(page, DEFAULT_ADMIN);
 }
