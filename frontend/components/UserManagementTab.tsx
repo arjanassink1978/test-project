@@ -62,7 +62,7 @@ export default function UserManagementTab({ token, currentUserId }: UserManageme
   const isConfirming = confirmingUserId !== null;
 
   return (
-    <div data-testid="user-management-tab">
+    <div>
       {error && (
         <div className={`mb-4 ${alert.error}`} data-testid="user-management-error">
           {error}
