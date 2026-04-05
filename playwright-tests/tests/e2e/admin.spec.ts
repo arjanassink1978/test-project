@@ -27,17 +27,8 @@ async function fetchBearerToken(credentials: { username: string; password: strin
 /**
  * API Helper: Fetch all users as admin
  */
-async function getAllUsersViaApi(page?: import("@playwright/test").Page): Promise<Array<{ id: number; username: string; role: string }>> {
-  let token: string;
-
-  if (page) {
-    // Get token from localStorage (set by UI login)
-    token = await page.evaluate(() => localStorage.getItem("authToken") || "");
-  } else {
-    // Fallback to API auth if page not provided
-    token = await fetchBearerToken(ADMIN_USER);
-  }
-
+async function getAllUsersViaApi(): Promise<Array<{ id: number; username: string; role: string }>> {
+  const token = await fetchBearerToken(ADMIN_USER);
   const res = await fetch(`${API_BASE}/api/admin/users`, {
     method: "GET",
     headers: { "Authorization": `Bearer ${token}` },
@@ -161,7 +152,7 @@ test.describe("User Management", () => {
     await adminPage.waitForLoad();
     await adminPage.clickUserManagementTab();
 
-    const users = await getAllUsersViaApi(page);
+    const users = await getAllUsersViaApi();
     const targetUser = users.find(u => u.role !== "ADMIN" && u.username !== "admin");
 
     if (!targetUser) {
@@ -185,7 +176,7 @@ test.describe("User Management", () => {
     await adminPage.waitForLoad();
     await adminPage.clickUserManagementTab();
 
-    const users = await getAllUsersViaApi(page);
+    const users = await getAllUsersViaApi();
     const targetUser = users.find(u => u.role !== "ADMIN" && u.username !== "admin");
 
     if (!targetUser) {
@@ -219,7 +210,7 @@ test.describe("User Management", () => {
     await adminPage.waitForLoad();
     await adminPage.clickUserManagementTab();
 
-    const users = await getAllUsersViaApi(page);
+    const users = await getAllUsersViaApi();
     const adminId = users.find(u => u.username === "admin")?.id;
 
     if (!adminId) {

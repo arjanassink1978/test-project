@@ -5,6 +5,18 @@ import { setupDefaultUserAuth, loginAsDefaultUser, DEFAULT_USER } from "./fixtur
 import { createThreadViaApi, createReplyViaApi } from "./fixtures/forum";
 import { API_BASE } from "./config";
 
+async function fetchBearerToken(credentials: { username: string; password: string }): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials),
+  });
+  if (!res.ok) throw new Error(`Auth failed (${res.status})`);
+  const data = (await res.json()) as { token?: string };
+  if (!data.token) throw new Error("No token returned from auth API");
+  return data.token;
+}
+
 // -------------------------------------------------------------------------
 // Thread creation flow (authenticated)
 // -------------------------------------------------------------------------
@@ -421,7 +433,7 @@ test.describe("Forum delete thread flow", () => {
     const threadId = Number(match[1]);
 
     // Delete via backend API directly (the frontend has no delete UI)
-    const token = await page.evaluate(() => localStorage.getItem("authToken"));
+    const token = await fetchBearerToken(DEFAULT_USER);
     const deleteResponse = await fetch(
       `${API_BASE}/api/forum/threads/${threadId}`,
       {

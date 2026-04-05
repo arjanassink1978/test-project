@@ -244,8 +244,7 @@ test.describe("Forum thread detail — public access", () => {
     const threadId = page.url().match(/\/forum\/threads\/(\d+)/)?.[1];
     if (!threadId) throw new Error("Could not extract thread ID");
 
-    // Clear session (simulate logout)
-    await page.evaluate(() => localStorage.clear());
+    // Navigate to thread (publicly accessible without authentication)
     await page.goto(`/forum/threads/${threadId}`);
 
     const detailPage = new ThreadDetailPage(page);
