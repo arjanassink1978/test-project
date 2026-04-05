@@ -1,16 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { ThreadDetailPage } from "./pages/ThreadDetailPage";
-import { LoginPage } from "./pages/LoginPage";
 import { API_BASE } from "./config";
-
-const MODERATOR = { username: "moderator", password: "moderator1234" };
-const USER = { username: "user", password: "user1234" };
-
-async function loginAs(page: import("@playwright/test").Page, creds: { username: string; password: string }) {
-  const loginPage = new LoginPage(page);
-  await loginPage.login(creds.username, creds.password);
-  await page.waitForURL(/\/dashboard/, { timeout: 10000 });
-}
+import { loginAsDefaultUser, loginAsModerator, DEFAULT_USER, MODERATOR_USER } from "./fixtures/auth";
 
 async function fetchBearerToken(credentials: { username: string; password: string }): Promise<string> {
   const res = await fetch(`${API_BASE}/api/auth/login`, {
@@ -64,11 +55,11 @@ test.describe("RBAC — Moderator can close threads", () => {
   let threadId: number;
 
   test.beforeEach(async () => {
-    threadId = await createThreadViaApi(USER);
+    threadId = await createThreadViaApi(DEFAULT_USER);
   });
 
   test("moderator sees Close Thread button on thread detail", async ({ page }) => {
-    await loginAs(page, MODERATOR);
+    await loginAsModerator(page);
     const detailPage = new ThreadDetailPage(page);
     await detailPage.goto(threadId);
     await detailPage.waitForLoad();
@@ -77,7 +68,7 @@ test.describe("RBAC — Moderator can close threads", () => {
   });
 
   test("regular user does not see Close Thread button", async ({ page }) => {
-    await loginAs(page, USER);
+    await loginAsDefaultUser(page);
     const detailPage = new ThreadDetailPage(page);
     await detailPage.goto(threadId);
     await detailPage.waitForLoad();
@@ -86,7 +77,7 @@ test.describe("RBAC — Moderator can close threads", () => {
   });
 
   test("moderator closes thread — CLOSED badge appears and reply form disappears", async ({ page }) => {
-    await loginAs(page, MODERATOR);
+    await loginAsModerator(page);
     const detailPage = new ThreadDetailPage(page);
     await detailPage.goto(threadId);
     await detailPage.waitForLoad();
@@ -104,12 +95,12 @@ test.describe("RBAC — Moderator can delete replies", () => {
   let replyId: number;
 
   test.beforeEach(async () => {
-    threadId = await createThreadViaApi(USER);
-    replyId = await createReplyViaApi(threadId, USER);
+    threadId = await createThreadViaApi(DEFAULT_USER);
+    replyId = await createReplyViaApi(threadId, DEFAULT_USER);
   });
 
   test("moderator sees delete button on replies", async ({ page }) => {
-    await loginAs(page, MODERATOR);
+    await loginAsModerator(page);
     const detailPage = new ThreadDetailPage(page);
     await detailPage.goto(threadId);
     await detailPage.waitForLoad();
@@ -118,7 +109,7 @@ test.describe("RBAC — Moderator can delete replies", () => {
   });
 
   test("regular user does not see delete button on replies", async ({ page }) => {
-    await loginAs(page, USER);
+    await loginAsDefaultUser(page);
     const detailPage = new ThreadDetailPage(page);
     await detailPage.goto(threadId);
     await detailPage.waitForLoad();
@@ -131,8 +122,8 @@ test.describe("RBAC — Closed thread shows error for reply attempt", () => {
   let threadId: number;
 
   test.beforeEach(async () => {
-    threadId = await createThreadViaApi(USER);
-    const token = await fetchBearerToken(MODERATOR);
+    threadId = await createThreadViaApi(DEFAULT_USER);
+    const token = await fetchBearerToken(MODERATOR_USER);
     await fetch(`${API_BASE}/api/forum/threads/${threadId}/close?closed=true`, {
       method: "POST",
       headers: { "Authorization": `Bearer ${token}` },
@@ -140,7 +131,7 @@ test.describe("RBAC — Closed thread shows error for reply attempt", () => {
   });
 
   test("closed thread shows CLOSED badge", async ({ page }) => {
-    await loginAs(page, USER);
+    await loginAsDefaultUser(page);
     const detailPage = new ThreadDetailPage(page);
     await detailPage.goto(threadId);
     await detailPage.waitForLoad();
@@ -149,7 +140,7 @@ test.describe("RBAC — Closed thread shows error for reply attempt", () => {
   });
 
   test("closed thread shows closed message and no reply form for logged-in user", async ({ page }) => {
-    await loginAs(page, USER);
+    await loginAsDefaultUser(page);
     const detailPage = new ThreadDetailPage(page);
     await detailPage.goto(threadId);
     await detailPage.waitForLoad();
