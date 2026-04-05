@@ -27,10 +27,10 @@ export class AdminPage {
   // =========================================================================
 
   /**
-   * Expected data-testid: "user-management-tab"
+   * Expected data-testid: "user-management-tab" on button element
    */
   getUserManagementTabButton(): Locator {
-    return this.page.getByTestId("user-management-tab");
+    return this.page.locator("button[data-testid='user-management-tab']");
   }
 
   async clickUserManagementTab() {
@@ -38,10 +38,10 @@ export class AdminPage {
   }
 
   /**
-   * Expected data-testid: "category-management-tab"
+   * Expected data-testid: "category-management-tab" on button element
    */
   getCategoryManagementTabButton(): Locator {
-    return this.page.getByTestId("category-management-tab");
+    return this.page.locator("button[data-testid='category-management-tab']");
   }
 
   async clickCategoryManagementTab() {

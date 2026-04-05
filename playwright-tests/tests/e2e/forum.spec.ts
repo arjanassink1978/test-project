@@ -421,14 +421,13 @@ test.describe("Forum delete thread flow", () => {
     const threadId = Number(match[1]);
 
     // Delete via backend API directly (the frontend has no delete UI)
+    const token = await page.evaluate(() => localStorage.getItem("authToken"));
     const deleteResponse = await fetch(
       `${API_BASE}/api/forum/threads/${threadId}`,
       {
         method: "DELETE",
         headers: {
-          Authorization:
-            "Basic " +
-            Buffer.from(`${DEFAULT_USER.username}:${DEFAULT_USER.password}`).toString("base64"),
+          Authorization: `Bearer ${token}`,
         },
       }
     );

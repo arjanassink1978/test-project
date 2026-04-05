@@ -48,7 +48,8 @@ def parse_junit_reports():
     # Frontend Jest tests (artifacts downloaded as frontend-test-results/)
     junit_path = "frontend-test-results"
     if os.path.exists(junit_path):
-        for file in Path(junit_path).glob("*.xml"):
+        # Handle both flat structure and nested structure
+        for file in Path(junit_path).glob("**/*.xml"):
             try:
                 tree = ET.parse(file)
                 root = tree.getroot()
@@ -59,18 +60,18 @@ def parse_junit_reports():
             except:
                 pass
 
-    # Playwright E2E tests (read from test-results/report.json if available)
-    playwright_report_path = "playwright-test-results/report.json"
-    if os.path.exists(playwright_report_path):
-        try:
-            with open(playwright_report_path, 'r') as f:
-                report = json.load(f)
-                test_results["playwright"]["passed"] = report.get("stats", {}).get("expected", 0)
-                test_results["playwright"]["failed"] = report.get("stats", {}).get("unexpected", 0)
-                test_results["playwright"]["skipped"] = report.get("stats", {}).get("skipped", 0)
-                test_results["playwright"]["time"] = report.get("stats", {}).get("duration", 0) / 1000
-        except:
-            pass
+    # Playwright E2E tests (read from junit.xml if available)
+    if os.path.exists("playwright-test-results"):
+        for file in Path("playwright-test-results").glob("**/junit.xml"):
+            try:
+                tree = ET.parse(file)
+                root = tree.getroot()
+                test_results["playwright"]["passed"] += int(root.get("tests", 0)) - int(root.get("failures", 0)) - int(root.get("skipped", 0))
+                test_results["playwright"]["failed"] += int(root.get("failures", 0))
+                test_results["playwright"]["skipped"] += int(root.get("skipped", 0))
+                test_results["playwright"]["time"] += float(root.get("time", 0))
+            except:
+                pass
 
     return test_results
 
@@ -83,68 +84,68 @@ def parse_mutation_reports():
     }
 
     # Backend mutations
-    pit_path = "mutation-results/backend/target/pit-reports/mutations.xml"
-    if os.path.exists(pit_path):
-        try:
-            tree = ET.parse(pit_path)
-            root = tree.getroot()
-            for mutation in root.findall(".//mutation"):
-                status = mutation.get("status")
-                if status == "KILLED":
-                    mutation_results["backend"]["killed"] += 1
-                elif status == "SURVIVED":
-                    mutation_results["backend"]["survived"] += 1
-                elif status == "NO_COVERAGE":
-                    mutation_results["backend"]["no_coverage"] += 1
+    if os.path.exists("mutation-results"):
+        for pit_file in Path("mutation-results").glob("**/backend/target/pit-reports/mutations.xml"):
+            try:
+                tree = ET.parse(pit_file)
+                root = tree.getroot()
+                for mutation in root.findall(".//mutation"):
+                    status = mutation.get("status")
+                    if status == "KILLED":
+                        mutation_results["backend"]["killed"] += 1
+                    elif status == "SURVIVED":
+                        mutation_results["backend"]["survived"] += 1
+                    elif status == "NO_COVERAGE":
+                        mutation_results["backend"]["no_coverage"] += 1
 
-            total = mutation_results["backend"]["killed"] + mutation_results["backend"]["survived"] + mutation_results["backend"]["no_coverage"]
-            if total > 0:
-                mutation_results["backend"]["coverage"] = round(
-                    (mutation_results["backend"]["killed"] / total) * 100, 1
-                )
-        except:
-            pass
+                total = mutation_results["backend"]["killed"] + mutation_results["backend"]["survived"] + mutation_results["backend"]["no_coverage"]
+                if total > 0:
+                    mutation_results["backend"]["coverage"] = round(
+                        (mutation_results["backend"]["killed"] / total) * 100, 1
+                    )
+            except:
+                pass
 
     # RestAssured mutations
-    pit_path = "mutation-results/restassured-tests/target/pit-reports/mutations.xml"
-    if os.path.exists(pit_path):
-        try:
-            tree = ET.parse(pit_path)
-            root = tree.getroot()
-            for mutation in root.findall(".//mutation"):
-                status = mutation.get("status")
-                if status == "KILLED":
-                    mutation_results["restassured"]["killed"] += 1
-                elif status == "SURVIVED":
-                    mutation_results["restassured"]["survived"] += 1
-                elif status == "NO_COVERAGE":
-                    mutation_results["restassured"]["no_coverage"] += 1
+    if os.path.exists("mutation-results"):
+        for pit_file in Path("mutation-results").glob("**/restassured-tests/target/pit-reports/mutations.xml"):
+            try:
+                tree = ET.parse(pit_file)
+                root = tree.getroot()
+                for mutation in root.findall(".//mutation"):
+                    status = mutation.get("status")
+                    if status == "KILLED":
+                        mutation_results["restassured"]["killed"] += 1
+                    elif status == "SURVIVED":
+                        mutation_results["restassured"]["survived"] += 1
+                    elif status == "NO_COVERAGE":
+                        mutation_results["restassured"]["no_coverage"] += 1
 
-            total = mutation_results["restassured"]["killed"] + mutation_results["restassured"]["survived"] + mutation_results["restassured"]["no_coverage"]
-            if total > 0:
-                mutation_results["restassured"]["coverage"] = round(
-                    (mutation_results["restassured"]["killed"] / total) * 100, 1
-                )
-        except:
-            pass
+                total = mutation_results["restassured"]["killed"] + mutation_results["restassured"]["survived"] + mutation_results["restassured"]["no_coverage"]
+                if total > 0:
+                    mutation_results["restassured"]["coverage"] = round(
+                        (mutation_results["restassured"]["killed"] / total) * 100, 1
+                    )
+            except:
+                pass
 
     # Frontend mutations (Stryker)
-    stryker_path = "mutation-results/frontend/stryker-report.json"
-    if os.path.exists(stryker_path):
-        try:
-            with open(stryker_path, 'r') as f:
-                report = json.load(f)
-                metrics = report.get("metrics", {})
-                # Stryker reports: killed, survived, timeout, no-coverage, ignored, compile-error
-                mutation_results["frontend"]["killed"] = metrics.get("killed", 0)
-                mutation_results["frontend"]["survived"] = metrics.get("survived", 0) + metrics.get("timeout", 0)
-                mutation_results["frontend"]["no_coverage"] = metrics.get("noCoverage", 0)
+    if os.path.exists("mutation-results"):
+        for stryker_file in Path("mutation-results").glob("**/stryker-report.json"):
+            try:
+                with open(stryker_file, 'r') as f:
+                    report = json.load(f)
+                    metrics = report.get("metrics", {})
+                    # Stryker reports: killed, survived, timeout, no-coverage, ignored, compile-error
+                    mutation_results["frontend"]["killed"] = metrics.get("killed", 0)
+                    mutation_results["frontend"]["survived"] = metrics.get("survived", 0) + metrics.get("timeout", 0)
+                    mutation_results["frontend"]["no_coverage"] = metrics.get("noCoverage", 0)
 
-                total = metrics.get("total", 0)
-                if total > 0:
-                    mutation_results["frontend"]["coverage"] = metrics.get("mutationScore", 0)
-        except:
-            pass
+                    total = metrics.get("total", 0)
+                    if total > 0:
+                        mutation_results["frontend"]["coverage"] = metrics.get("mutationScore", 0)
+            except:
+                pass
 
     return mutation_results
 
