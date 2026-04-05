@@ -1,4 +1,4 @@
-import { Locator } from "@playwright/test";
+import { Locator, expect } from "@playwright/test";
 import { BasePage } from "./BasePage";
 
 /**
