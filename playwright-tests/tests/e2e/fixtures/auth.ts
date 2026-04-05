@@ -97,7 +97,14 @@ export async function loginAsAdmin(page: Page): Promise<void> {
 }
 
 export async function setupDefaultUserAuth(page: Page): Promise<{ token: string; role: string }> {
-  return setupAuthViaAPI(page, DEFAULT_USER);
+  // Use UI login instead of API to match working auth flow
+  await loginAsDefaultUser(page);
+
+  // Extract token from localStorage
+  const token = await page.evaluate(() => localStorage.getItem("authToken") || "");
+  const role = "USER";
+
+  return { token, role };
 }
 
 export async function setupModeratorAuth(page: Page): Promise<{ token: string; role: string }> {
