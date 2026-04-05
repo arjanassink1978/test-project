@@ -110,7 +110,7 @@ test.describe("Registration — error edge cases", () => {
 
     // Frontend validates passwords match before sending to backend
     await expect(page).toHaveURL(/\/register/);
-    await expect(page.locator("p").filter({ hasText: /overeen/i }).first()).toBeVisible({
+    await expect(page.getByTestId("confirm-password-error")).toBeVisible({
       timeout: 5000,
     });
   });
@@ -122,9 +122,7 @@ test.describe("Registration — error edge cases", () => {
     await registerPage.submit();
 
     await expect(page).toHaveURL(/\/register/);
-    await expect(
-      page.locator("p").filter({ hasText: /e-mail|geldig/i }).first()
-    ).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("email-error")).toBeVisible({ timeout: 5000 });
   });
 
   test("duplicate username shows conflict error from backend", async ({ page }) => {
@@ -149,9 +147,7 @@ test.describe("Registration — error edge cases", () => {
     await registerPage.submit();
 
     await expect(page).toHaveURL(/\/register/);
-    await expect(
-      page.locator("p").filter({ hasText: /wachtwoord|tekens/i }).first()
-    ).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("password-error")).toBeVisible({ timeout: 5000 });
   });
 
   test("login link on register page navigates to /login", async ({ page }) => {
